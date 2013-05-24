@@ -1,11 +1,9 @@
-#!/bin/sh
-
-set -e
+#!/bin/sh -e
 
 if [ ! -f ".intermediate/Makefile" ]
 then
 	echo "Please run ./prepare.sh first!"
-	exit
+	exit -1
 fi
 
 echo "Compiling..."

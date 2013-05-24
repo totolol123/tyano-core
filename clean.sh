@@ -1,6 +1,4 @@
-#!/bin/sh
-
-set -e
+#!/bin/sh -e
 
 echo "Cleaning..."
 rm -rf .intermediate

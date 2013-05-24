@@ -1,6 +1,4 @@
-#!/bin/sh
-
-set -e
+#!/bin/sh -e
 
 echo "Preparing project..."
 echo "Note: You can pass arguments for './configure' to this script."
