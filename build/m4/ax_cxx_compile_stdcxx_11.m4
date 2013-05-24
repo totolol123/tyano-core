@@ -54,16 +54,16 @@ m4_define([_AX_CXX_COMPILE_STDCXX_11_testbody], [
     auto d = a;
 ])
 
-AC_DEFUN([AX_CXX_COMPILE_STDCXX_11], [dnl
+AC_DEFUN([AX_CXX_COMPILE_STDCXX_11], [
   m4_if([$1], [], [],
         [$1], [ext], [],
         [$1], [noext], [],
-        [m4_fatal([invalid argument `$1' to AX_CXX_COMPILE_STDCXX_11])])dnl
+        [m4_fatal([invalid argument `$1' to AX_CXX_COMPILE_STDCXX_11])])
   m4_if([$2], [], [ax_cxx_compile_cxx11_required=true],
         [$2], [mandatory], [ax_cxx_compile_cxx11_required=true],
         [$2], [optional], [ax_cxx_compile_cxx11_required=false],
-        [m4_fatal([invalid second argument `$2' to AX_CXX_COMPILE_STDCXX_11])])dnl
-  AC_LANG_PUSH([C++])dnl
+        [m4_fatal([invalid second argument `$2' to AX_CXX_COMPILE_STDCXX_11])])
+  AC_LANG_PUSH([C++])
   ac_success=no
   AC_CACHE_CHECK(whether $CXX supports C++11 features by default,
   ax_cv_cxx_compile_cxx11,
@@ -74,9 +74,9 @@ AC_DEFUN([AX_CXX_COMPILE_STDCXX_11], [dnl
     ac_success=yes
   fi
 
-  m4_if([$1], [noext], [], [dnl
+  m4_if([$1], [noext], [], [
   if test x$ac_success = xno; then
-    for switch in -std=gnu++11 -std=gnu++0x; do
+    for switch in -std=gnu++11; do
       cachevar=AS_TR_SH([ax_cv_cxx_compile_cxx11_$switch])
       AC_CACHE_CHECK(whether $CXX supports C++11 features with $switch,
                      $cachevar,
@@ -94,9 +94,9 @@ AC_DEFUN([AX_CXX_COMPILE_STDCXX_11], [dnl
     done
   fi])
 
-  m4_if([$1], [ext], [], [dnl
+  m4_if([$1], [ext], [], [
   if test x$ac_success = xno; then
-    for switch in -std=c++11 -std=c++0x; do
+    for switch in -std=c++11; do
       cachevar=AS_TR_SH([ax_cv_cxx_compile_cxx11_$switch])
       AC_CACHE_CHECK(whether $CXX supports C++11 features with $switch,
                      $cachevar,
