@@ -1,0 +1,56 @@
+language: cpp
+
+compiler:
+  - gcc
+
+install: |
+  #set -e
+  #echo
+  #echo "Updating package list..."
+  #sudo apt-get -q update
+  #echo
+  #echo "Removing useless packages..."
+  #sudo apt-get -q --force-yes remove \
+  #  couchdb couchdb-bin erlang-asn1 erlang-base erlang-crypto erlang-dev erlang-eunit erlang-ic erlang-mnesia erlang-odbc erlang-parsetools \
+  #  erlang-public-key erlang-ssh erlang-ssl erlang-syntax-tools erlang-xmerl firefox firefox-globalmenu firefox-locale-en flex g++-4.6 gcc-4.6 \
+  #  imagemagick imagemagick-common libglu1-mesa libpython2.7 mongodb-10gen mysql-client mysql-client-5.5 mysql-client-core-5.5 \
+  #  mysql-server mysql-server-5.5 mysql-server-core-5.5 openjdk-6-jdk openjdk-6-jre openjdk-6-jre-headless openjdk-6-jre-lib openjdk-7-jre \
+  #  openjdk-7-jre-headless oracle-java7-installer postgresql postgresql-9.1 postgresql-client postgresql-client-9.1 postgresql-client-common \
+  #  postgresql-common postgresql-contrib postgresql-contrib-9.1 postgresql-server-dev-9.1 postgresql-server-dev-all python-apt \
+  #  python-apt-common python-aptdaemon python-bzrlib python-configobj python-crypto python-dbus python-dbus-dev python-debian python-defer \
+  #  python-gi python-httplib2 python-keyring python-launchpadlib python-lazr.restfulclient python-paramiko \
+  #  python-pkg-resources python-pycurl python-simplejson python-software-properties python-zope.interface \
+  #  sqlite3 sqlite3-doc x11-common x11-utils x11-xkb-utils x11-xserver-utils x11proto-core-dev x11proto-input-dev \
+  #  x11proto-kb-dev x11proto-randr-dev x11proto-xext-dev
+  #echo
+  #echo "Removing orphaned packages..."
+  #sudo apt-get -q --force-yes autoremove
+  #sudo rm -f /etc/apt/sources.list
+  #sudo rm -rf /etc/apt/sources.list.d/*
+  sudo bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ quantal           main restricted universe" >> /etc/apt/sources.list'
+  sudo bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ quantal-updates   main restricted universe" >> /etc/apt/sources.list'
+  sudo bash -c 'echo "deb http://archive.ubuntu.com/ubuntu/ quantal-backports main restricted universe" >> /etc/apt/sources.list'
+  sudo bash -c 'echo "deb http://security.ubuntu.com/ubuntu quantal-security  main restricted universe" >> /etc/apt/sources.list'
+  echo
+  echo "Updating new package list..."
+  sudo apt-get -q update
+  echo
+  echo "Installing required packages..."
+  sudo apt-get -q --force-yes -o Dpkg::Options::="--force-confnew" install \
+    autoconf automake bash-completion g++ libboost1.50-all-dev libgmp-dev \
+    liblog4cxx10-dev liblua5.1-dev libmysqlclient-dev libxml2-dev libz-dev make
+  #echo
+  #echo "Upgrading remaining packages..."
+  #sudo apt-get -q --force-yes -o Dpkg::Options::="--force-confnew" dist-upgrade
+  #echo
+  #echo "Helpful information:"
+  #autoconf --version
+  #automake --version
+  #aclocal --version
+  #g++ --version
+
+script: |
+  #set -e
+  chmod +x *.sh
+  ./prepare.sh
+  ./make.sh -j3
