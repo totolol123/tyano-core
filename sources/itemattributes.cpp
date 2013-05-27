@@ -328,7 +328,9 @@ bool ItemAttribute::unserialize(PropStream& stream)
 				return false;
 
 			set(v != 0);
+			break;
 		}
+
 		default:
 			break;
 	}
