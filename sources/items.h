@@ -252,12 +252,12 @@ class ItemKind {
 		uint16_t slotPosition:12;
 		uint8_t wieldPosition:4;
 
-		uint16_t transformUseTo[2], transformToFree, transformEquipTo, transformDeEquipTo,
+		uint16_t charges, transformUseTo[2], transformToFree, transformEquipTo, transformDeEquipTo,
 			id, clientId, maxItems, speed, maxTextLen, writeOnceItemId;
 
 		int32_t attack, extraAttack, defense, extraDefense, armor, breakChance, hitChance, maxHitChance,
 			runeLevel, runeMagLevel, lightLevel, lightColor, decayTo, rotateTo, alwaysOnTopOrder;
-		uint32_t shootRange, charges, decayTime, attackSpeed, wieldInfo, minReqLevel, minReqMagicLevel,
+		uint32_t shootRange, decayTime, attackSpeed, wieldInfo, minReqLevel, minReqMagicLevel,
 			worth, levelDoor;
 
 		std::string name, pluralName, article, description, runeSpellName, vocationString;

@@ -78,6 +78,7 @@ ItemKind::ItemKind() :
 		type(ITEM_TYPE_NONE),
 		slotPosition(SLOTP_HAND | SLOTP_AMMO),
 		wieldPosition(SLOT_HAND),
+		charges(0),
 		transformUseTo {0, 0},
 		transformToFree(0),
 		transformEquipTo(0),
@@ -104,7 +105,6 @@ ItemKind::ItemKind() :
 		rotateTo(0),
 		alwaysOnTopOrder(0),
 		shootRange(1),
-		charges(0),
 		decayTime(0),
 		attackSpeed(0),
 		wieldInfo(0),
@@ -691,10 +691,19 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 				if(readXMLInteger(node, "value", intValue))
 					kind->showDuration = (intValue != 0);
 			}
-			else if(tmpStrValue == "charges")
-			{
-				if(readXMLInteger(node, "value", intValue))
+			else if (tmpStrValue == "charges") {
+				if (readXMLInteger(node, "value", intValue)) {
+					if (intValue < 0) {
+						LOGw("<item> cannot have " << intValue << " charges. Must be between 0 and " << std::numeric_limits<uint16_t>::max() << ".");
+						intValue = 0;
+					}
+					else if (intValue > std::numeric_limits<uint16_t>::max()) {
+						LOGw("<item> cannot have " << intValue << " charges. Must be between 0 and " << std::numeric_limits<uint16_t>::max() << ".");
+						intValue = std::numeric_limits<uint16_t>::max();
+					}
+
 					kind->charges = intValue;
+				}
 			}
 			else if(tmpStrValue == "showcharges")
 			{
