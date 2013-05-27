@@ -2149,13 +2149,16 @@ bool Player::onDeath()
 	if(preventLoss)
 	{
 		setLossSkill(false);
-		if(preventLoss->getCharges() > 1) //weird, but transform failed to remove for some hosters
-			server.game().transformItem(preventLoss, preventLoss->getId(), std::max(0, ((int32_t)preventLoss->getCharges() - 1)));
-		else
-			server.game().internalRemoveItem(nullptr, preventDrop);
+
+		if (preventLoss->hasCharges()) {
+			if(preventLoss->getCharges() > 1) //weird, but transform failed to remove for some hosters
+				server.game().transformItem(preventLoss, preventLoss->getId(), std::max(0, ((int32_t)preventLoss->getCharges() - 1)));
+			else
+				server.game().internalRemoveItem(nullptr, preventDrop);
+		}
 	}
 
-	if(preventDrop && preventDrop != preventLoss)
+	if(preventDrop && preventDrop != preventLoss && preventDrop->hasCharges())
 	{
 		if(preventDrop->getCharges() > 1) //weird, but transform failed to remove for some hosters
 			server.game().transformItem(preventDrop, preventDrop->getId(), std::max(0, ((int32_t)preventDrop->getCharges() - 1)));
