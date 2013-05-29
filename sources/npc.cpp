@@ -69,8 +69,23 @@ Npc* Npc::createNpc(const std::string& name)
 	return nullptr;
 }
 
-Npc::Npc(const std::string& _name):
-	Creature()
+Npc::Npc(const std::string& _name)
+	: Creature(),
+	  loaded(false),
+	  walkTicks(1500),
+	  talkRadius(2),
+	  idleTime(0),
+	  idleInterval(5 * 60),
+	  focusCreature(0),
+	  floorChange(false),
+	  attackable(false),
+	  walkable(false),
+	  isIdle(true),
+	  hasBusyReply(false),
+	  hasScriptedFocus(false),
+	  defaultPublic(true),
+	  lastVoice(OTSYS_TIME()),
+	  m_npcEventHandler(nullptr)
 {
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 	npcCount++;
@@ -82,10 +97,6 @@ Npc::Npc(const std::string& _name):
 		if(fileExists(tmp.c_str()))
 			m_filename = tmp;
 	}
- 
-	m_npcEventHandler = nullptr;
-	loaded = false;
-	reset();
 }
  
 Npc::~Npc()
@@ -120,6 +131,7 @@ bool Npc::load()
 void Npc::reset()
 {
 	loaded = false;
+	walkable = false;
 	walkTicks = 1500;
 	floorChange = false;
 	attackable = false;
