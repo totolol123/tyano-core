@@ -18,16 +18,6 @@
 #ifndef _DATABASE_H
 #define _DATABASE_H
 
-#include <bits/unique_ptr.h>
-#include <boost/thread/pthread/recursive_mutex.hpp>
-#include <sys/types.h>
-#include <cstdint>
-#include <ctime>
-#include <sstream>
-#include <string>
-
-//#include "enums.h"
-
 class DBQuery;
 class DBResult;
 
