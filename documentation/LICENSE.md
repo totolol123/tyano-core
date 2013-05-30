@@ -1,21 +1,6 @@
-[ LICENSE
-	Project Name
-		The Forgotten Server
+LICENSE
+=======
 
-	Version
-		0.3.6
-
-	Codenamed
-		Crying Damson
-
-	License
-		GNU GPLv3
-
-	Forum
-		http://otland.net/
-]
-
-[ GNU GPLv3
 					  GNU GENERAL PUBLIC LICENSE
 						Version 3, 29 June 2007
 
@@ -690,4 +675,3 @@
 	the library.  If this is what you want to do, use the GNU Lesser General
 	Public License instead of this License.  But first, please read
 	<http://www.gnu.org/philosophy/why-not-lgpl.html>.
-]
