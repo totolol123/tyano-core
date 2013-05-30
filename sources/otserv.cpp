@@ -196,8 +196,6 @@ bool otserv(StringVector args, ServiceManager* services);
 
 
 int main(int argc, char *argv[]) {
-	std::set_terminate(std::abort);
-
 	int64_t startTime = OTSYS_TIME();
 
 	server.setup();
