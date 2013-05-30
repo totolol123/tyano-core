@@ -80,9 +80,9 @@ AccountP IOLoginData::loadAccount(uint32_t accountId, bool preloadOnly/* = false
 void IOLoginData::loadCharacters(Account& account) {
 	DBQuery query;
 #ifdef __LOGIN_SERVER__
-	query << "SELECT `name`, `level`, `vocation`, `world_id` FROM `players` WHERE `account_id` = " << accountId << " AND `deleted` = 0";
+	query << "SELECT `name`, `level`, `vocation`, `world_id` FROM `players` WHERE `account_id` = " << accountId << " AND `deleted` = 0 ORDER BY `name` ASC";
 #else
-	query << "SELECT `name`, `level`, `vocation` FROM `players` WHERE `account_id` = " << account.getId() << " AND `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID) << " AND `deleted` = 0";
+	query << "SELECT `name`, `level`, `vocation` FROM `players` WHERE `account_id` = " << account.getId() << " AND `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID) << " AND `deleted` = 0 ORDER BY `name` ASC";
 #endif
 
 	auto result = server.database().storeQuery(query.str());
@@ -117,8 +117,6 @@ void IOLoginData::loadCharacters(Account& account) {
 		characters.push_back(std::move(character));
 	}
 	while (result->next());
-
-	std::sort(characters.begin(), characters.end());
 }
 
 void IOLoginData::saveAccount(const Account& account)
