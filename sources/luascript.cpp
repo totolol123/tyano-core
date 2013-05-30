@@ -9271,8 +9271,15 @@ int32_t LuaScriptInterface::luaGetItemAttribute(lua_State* L)
 	boost::any value = item->getAttribute(key);
 	if(value.empty())
 		lua_pushnil(L);
-	else if(value.type() == typeid(std::string))
-		lua_pushstring(L, boost::any_cast<std::string>(value).c_str());
+	else if(value.type() == typeid(const std::string*)) {
+		auto string = boost::any_cast<const std::string*>(value);
+		if (string != nullptr) {
+			lua_pushstring(L, string->c_str());
+		}
+		else {
+			lua_pushnil(L);
+		}
+	}
 	else if(value.type() == typeid(int32_t))
 		lua_pushnumber(L, boost::any_cast<int32_t>(value));
 	else if(value.type() == typeid(float))
