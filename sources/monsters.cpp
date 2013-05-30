@@ -91,17 +91,14 @@ uint16_t Monsters::getLootRandom()
 
 void MonsterType::dropLoot(Container* corpse)
 {
-	boost::intrusive_ptr<Item> tmpItem;
 	for(LootItems::const_iterator it = lootItems.begin(); it != lootItems.end() && !corpse->full(); ++it)
 	{
-		if((tmpItem = createLoot(*it)))
+		if(boost::intrusive_ptr<Item> tmpItem = createLoot(*it))
 		{
 			if(Container* container = tmpItem->getContainer())
 			{
 				if(createChildLoot(container, (*it)))
 					corpse->__internalAddThing(tmpItem.get());
-				else
-					delete container;
 			}
 			else
 				corpse->__internalAddThing(tmpItem.get());
