@@ -903,6 +903,8 @@ bool LuaScriptInterface::closeState()
 
 	m_timerEvents.clear();
 	lua_close(m_luaState);
+	m_luaState = nullptr;
+
 	return true;
 }
 
