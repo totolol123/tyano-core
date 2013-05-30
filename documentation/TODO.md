@@ -6,4 +6,4 @@ TODO
 - fix leaking boost sockets
 - update remaining documentation located in `documentation/fixme`
 - get rid of `__LOGIN_SERVER__` preprocessor macro and allow changing the login behavior by configuration
-- turn on packing for all class members
+- re-order all class and struct members to minimize padding
