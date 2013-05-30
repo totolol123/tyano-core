@@ -7,7 +7,7 @@ The Forgotten Tyano Server
 
 ### Developers
 
-- @fluidsonic
+- fluidsonic
 
 
 
@@ -27,7 +27,7 @@ This project is based on the The Forgotten Server, which has the following autho
 - Talaturen
 - Tryller
 
-### Contributors
+### Other Contributors
 
 - Bennet
 - buzzbuzz2
