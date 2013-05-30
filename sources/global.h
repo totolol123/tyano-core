@@ -53,4 +53,16 @@
 using log4cxx::Logger;
 using log4cxx::LoggerPtr;
 
+
+namespace std {
+	template <>
+	struct default_delete<xmlDoc> {
+		void operator()(xmlDocPtr document) const {
+			xmlFreeDoc(document);
+		}
+	};
+}
+
+typedef std::unique_ptr<xmlDoc>  xmlDocP;
+
 #endif // GLOBAL_H

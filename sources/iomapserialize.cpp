@@ -56,7 +56,7 @@ bool IOMapSerialize::updateAuctions()
 	time_t now = time(nullptr);
 	query << "SELECT `house_id`, `player_id`, `bid` FROM `house_auctions` WHERE `endtime` < " << now;
 
-	DBResult* result;
+	DBResultP result;
 	if(!(result = db.storeQuery(query.str())))
 		return true;
 
@@ -77,7 +77,6 @@ bool IOMapSerialize::updateAuctions()
 		Houses::getInstance()->payHouse(house, now, result->getDataInt("bid"));
 	}
 	while(result->next());
-	result->free();
 	return success;
 }
 
@@ -87,7 +86,7 @@ bool IOMapSerialize::loadHouses()
 	DBQuery query;
 
 	query << "SELECT * FROM `houses` WHERE `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID);
-	DBResult* result;
+	DBResultP result;
 	if(!(result = db.storeQuery(query.str())))
 		return false;
 
@@ -106,7 +105,6 @@ bool IOMapSerialize::loadHouses()
 			house->setPendingTransfer(true);
 	}
 	while(result->next());
-	result->free();
 
 	for(HouseMap::iterator it = Houses::getInstance()->getHouseBegin(); it != Houses::getInstance()->getHouseEnd(); ++it)
 	{
@@ -122,7 +120,6 @@ bool IOMapSerialize::loadHouses()
 		do
 			house->setAccessList(result->getDataInt("listid"), result->getDataString("list"));
 		while(result->next());
-		result->free();
 	}
 
 	return true;
@@ -141,9 +138,8 @@ bool IOMapSerialize::updateHouses()
 
 		query << "SELECT `id` FROM `houses` WHERE `id` = " << house->getId() << " AND `world_id` = "
 			<< server.configManager().getNumber(ConfigManager::WORLD_ID) << " LIMIT 1";
-		if(DBResult* result = db.storeQuery(query.str()))
+		if(DBResultP result = db.storeQuery(query.str()))
 		{
-			result->free();
 			query.str("");
 
 			query << "UPDATE `houses` SET ";
@@ -275,21 +271,21 @@ bool IOMapSerialize::loadMapRelational(Map* map)
 		query.str("");
 		query << "SELECT * FROM `tiles` WHERE `house_id` = " << house->getId() <<
 			" AND `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID);
-		if(DBResult* result = db.storeQuery(query.str()))
+		if(DBResultP result = db.storeQuery(query.str()))
 		{
 			do
 			{
 				query.str("");
 				query << "SELECT * FROM `tile_items` WHERE `tile_id` = " << result->getDataInt("id") << " AND `world_id` = "
 					<< server.configManager().getNumber(ConfigManager::WORLD_ID) << " ORDER BY `sid` DESC";
-				if(DBResult* itemsResult = db.storeQuery(query.str()))
+				if(DBResultP itemsResult = db.storeQuery(query.str()))
 				{
 					if(house->hasPendingTransfer())
 					{
 						if(Player* player = server.game().getPlayerByGuidEx(house->getOwner()))
 						{
 							Depot* depot = player->getDepot(house->getTownId(), true);
-							loadItems(db, itemsResult, depot, true);
+							loadItems(db, std::move(itemsResult), depot, true);
 							if(player->isVirtual())
 							{
 								IOLoginData::getInstance()->savePlayer(player);
@@ -301,16 +297,13 @@ bool IOMapSerialize::loadMapRelational(Map* map)
 					{
 						Position pos(result->getDataInt("x"), result->getDataInt("y"), result->getDataInt("z"));
 						if(Tile* tile = map->getTile(pos))
-							loadItems(db, itemsResult, tile, false);
+							loadItems(db, std::move(itemsResult), tile, false);
 						else
 							LOGe("[IOMapSerialize::loadMapRelational] Unserialization of invalid tile at position " << pos);
 					}
-
-					itemsResult->free();
 				}
 			}
 			while(result->next());
-			result->free();
 		}
 		else //backward compatibility
 		{
@@ -320,19 +313,19 @@ bool IOMapSerialize::loadMapRelational(Map* map)
 				query << "SELECT `id` FROM `tiles` WHERE `x` = " << (*it)->getPosition().x << " AND `y` = "
 					<< (*it)->getPosition().y << " AND `z` = " << (*it)->getPosition().z << " AND `world_id` = "
 					<< server.configManager().getNumber(ConfigManager::WORLD_ID) << " LIMIT 1";
-				if(DBResult* result = db.storeQuery(query.str()))
+				if(DBResultP result = db.storeQuery(query.str()))
 				{
 					query.str("");
 					query << "SELECT * FROM `tile_items` WHERE `tile_id` = " << result->getDataInt("id") << " AND `world_id` = "
 						<< server.configManager().getNumber(ConfigManager::WORLD_ID) << " ORDER BY `sid` DESC";
-					if(DBResult* itemsResult = db.storeQuery(query.str()))
+					if(DBResultP itemsResult = db.storeQuery(query.str()))
 					{
 						if(house->hasPendingTransfer())
 						{
 							if(Player* player = server.game().getPlayerByGuidEx(house->getOwner()))
 							{
 								Depot* depot = player->getDepot(house->getTownId(), true);
-								loadItems(db, itemsResult, depot, true);
+								loadItems(db, std::move(itemsResult), depot, true);
 								if(player->isVirtual())
 								{
 									IOLoginData::getInstance()->savePlayer(player);
@@ -341,12 +334,8 @@ bool IOMapSerialize::loadMapRelational(Map* map)
 							}
 						}
 						else
-							loadItems(db, itemsResult, (*it), false);
-
-						itemsResult->free();
+							loadItems(db, std::move(itemsResult), (*it), false);
 					}
-
-					result->free();
 				}
 			}
 		}
@@ -389,7 +378,7 @@ bool IOMapSerialize::saveMapRelational(const Map* map)
 bool IOMapSerialize::loadMapBinary(Map* map)
 {
 	Database& db = server.database();
-	DBResult* result;
+	DBResultP result;
 
 	DBQuery query;
 	query << "SELECT `house_id`, `data` FROM `house_data` WHERE `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID);
@@ -448,7 +437,6 @@ bool IOMapSerialize::loadMapBinary(Map* map)
  		}
 	}
 	while(result->next());
-	result->free();
  	return true;
 }
 
@@ -495,7 +483,7 @@ bool IOMapSerialize::saveMapBinary(const Map* map)
  	return transaction.commit();
 }
 
-bool IOMapSerialize::loadItems(Database& db, DBResult* result, Cylinder* parent, bool depotTransfer/* = false*/)
+bool IOMapSerialize::loadItems(Database& db, DBResultP result, Cylinder* parent, bool depotTransfer/* = false*/)
 {
 	ItemMap itemMap;
 	Tile* tile = nullptr;

@@ -22,14 +22,12 @@
 boost::recursive_mutex DBQuery::databaseLock;
 
 
-DBResult* Database::verifyResult(DBResult* result)
-{
-	if(result->next())
-		return result;
+DBResultP Database::verifyResult(DBResultP result) {
+	if (!result->next()) {
+		return nullptr;
+	}
 
-	result->free();
-	result = nullptr;
-	return nullptr;
+	return result;
 }
 
 DBInsert::DBInsert(Database& db)

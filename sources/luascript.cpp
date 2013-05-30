@@ -127,12 +127,6 @@ void ScriptEnviroment::reset()
 	m_interface = nullptr;
 	m_tempItems.clear();
 
-	for(DBResultMap::iterator it = m_tempResults.begin(); it != m_tempResults.end(); ++it)
-	{
-		if(it->second)
-			it->second->free();
-	}
-
 	m_tempResults.clear();
 	m_localMap.clear();
 }
@@ -165,7 +159,7 @@ bool ScriptEnviroment::saveGameState()
 bool ScriptEnviroment::loadGameState()
 {
 	Database& db = server.database();
-	DBResult* result;
+	DBResultP result;
 
 	DBQuery query;
 	query << "SELECT `key`, `value` FROM `global_storage` WHERE `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID) << ";";
@@ -174,7 +168,6 @@ bool ScriptEnviroment::loadGameState()
 		do
 			m_storageMap[result->getDataInt("key")] = result->getDataString("value");
 		while(result->next());
-		result->free();
 	}
 
 	query.str("");
@@ -434,13 +427,13 @@ void ScriptEnviroment::removeTempItem(Item* item)
 	}
 }
 
-uint32_t ScriptEnviroment::addResult(DBResult* res)
+uint32_t ScriptEnviroment::addResult(DBResultP res)
 {
 	uint32_t lastId = 0;
 	while(m_tempResults.find(lastId) != m_tempResults.end())
 		lastId++;
 
-	m_tempResults[lastId] = res;
+	m_tempResults[lastId] = std::move(res);
 	return lastId;
 }
 
@@ -450,9 +443,6 @@ bool ScriptEnviroment::removeResult(uint32_t id)
 	if(it == m_tempResults.end())
 		return false;
 
-	if(it->second)
-		it->second->free();
-
 	m_tempResults.erase(it);
 	return true;
 }
@@ -461,7 +451,7 @@ DBResult* ScriptEnviroment::getResultByID(uint32_t id)
 {
 	DBResultMap::iterator it = m_tempResults.find(id);
 	if(it != m_tempResults.end())
-		return it->second;
+		return it->second.get();
 
 	return nullptr;
 }
@@ -7772,18 +7762,24 @@ int32_t LuaScriptInterface::luaDoPlayerAddPremiumDays(lua_State* L)
 	{
 		if(player->premiumDays < 65535)
 		{
-			Account account = IOLoginData::getInstance()->loadAccount(player->getAccount());
+			AccountP account = IOLoginData::getInstance()->loadAccount(player->getAccount());
+			if (account == nullptr) {
+				errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
+				lua_pushboolean(L, false);
+				return 1;
+			}
+
 			if(days < 0)
 			{
-				account.premiumDays = std::max((uint32_t)0, uint32_t(account.premiumDays + (int32_t)days));
+				account->setPremiumDays(std::max((uint32_t)0, uint32_t(account->getPremiumDays() + (int32_t)days)));
 				player->premiumDays = std::max((uint32_t)0, uint32_t(player->premiumDays + (int32_t)days));
 			}
 			else
 			{
-				account.premiumDays = std::min((uint32_t)65534, uint32_t(account.premiumDays + (uint32_t)days));
+				account->setPremiumDays(std::min((uint32_t)65534, uint32_t(account->getPremiumDays() + (uint32_t)days)));
 				player->premiumDays = std::min((uint32_t)65534, uint32_t(player->premiumDays + (uint32_t)days));
 			}
-			IOLoginData::getInstance()->saveAccount(account);
+			IOLoginData::getInstance()->saveAccount(*account);
 		}
 		lua_pushboolean(L, true);
 	}
@@ -9963,8 +9959,8 @@ int32_t LuaScriptInterface::luaDatabaseStoreQuery(lua_State* L)
 	ScriptEnviroment* env = getEnv();
 
 	DBQuery query; //lock mutex
-	if(DBResult* res = server.database().storeQuery(popString(L)))
-		lua_pushnumber(L, env->addResult(res));
+	if(DBResultP res = server.database().storeQuery(popString(L)))
+		lua_pushnumber(L, env->addResult(std::move(res)));
 	else
 		lua_pushboolean(L, false);
 

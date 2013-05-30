@@ -18,10 +18,61 @@
 #ifndef _DATABASE_H
 #define _DATABASE_H
 
-#include "enums.h"
+#include <bits/unique_ptr.h>
+#include <boost/thread/pthread/recursive_mutex.hpp>
+#include <sys/types.h>
+#include <cstdint>
+#include <ctime>
+#include <sstream>
+#include <string>
+
+//#include "enums.h"
 
 class DBQuery;
 class DBResult;
+
+typedef std::unique_ptr<DBResult>  DBResultP;
+
+
+class DBResult
+{
+	public:
+		/** Get the Integer value of a field in database
+		*\returns The Integer value of the selected field and row
+		*\param s The name of the field
+		*/
+		virtual int32_t getDataInt(const std::string &s) {return 0;}
+
+		/** Get the Long value of a field in database
+		*\returns The Long value of the selected field and row
+		*\param s The name of the field
+		*/
+		virtual int64_t getDataLong(const std::string &s) {return 0;}
+
+		/** Get the String of a field in database
+		*\returns The String of the selected field and row
+		*\param s The name of the field
+		*/
+		virtual std::string getDataString(const std::string &s) {return "''";}
+
+		/** Get the blob of a field in database
+		*\returns a PropStream that is initiated with the blob data field, if not exist it returns nullptr.
+		*\param s The name of the field
+		*/
+		virtual const char* getDataStream(const std::string &s, uint64_t &size) {return 0;}
+
+		/** Moves to next result in set
+		*\returns true if moved, false if there are no more results.
+		*/
+		virtual bool next() {return false;}
+
+	protected:
+		DBResult() {}
+		virtual ~DBResult() {}
+
+		friend void std::default_delete<DBResult>::operator()(DBResult* result) const;
+
+};
 
 
 enum DBParam_t
@@ -95,7 +146,7 @@ class Database
 		* @param std::string query
 		* @return results object (null on error)
 		*/
-		virtual DBResult* storeQuery(const std::string &query) {return 0;}
+		virtual DBResultP storeQuery(const std::string &query) {return 0;}
 
 		/**
 		* Escapes string for query.
@@ -136,7 +187,7 @@ class Database
 	protected:
 		Database() : m_connected(false), m_use(0) {}
 
-		DBResult* verifyResult(DBResult* result);
+		DBResultP verifyResult(DBResultP result);
 
 		bool m_connected;
 		time_t m_use;
@@ -145,46 +196,7 @@ class Database
 		static Database* _instance;
 };
 
-class DBResult
-{
-	public:
-		/** Get the Integer value of a field in database
-		*\returns The Integer value of the selected field and row
-		*\param s The name of the field
-		*/
-		virtual int32_t getDataInt(const std::string &s) {return 0;}
 
-		/** Get the Long value of a field in database
-		*\returns The Long value of the selected field and row
-		*\param s The name of the field
-		*/
-		virtual int64_t getDataLong(const std::string &s) {return 0;}
-
-		/** Get the String of a field in database
-		*\returns The String of the selected field and row
-		*\param s The name of the field
-		*/
-		virtual std::string getDataString(const std::string &s) {return "''";}
-
-		/** Get the blob of a field in database
-		*\returns a PropStream that is initiated with the blob data field, if not exist it returns nullptr.
-		*\param s The name of the field
-		*/
-		virtual const char* getDataStream(const std::string &s, uint64_t &size) {return 0;}
-
-		/** Result freeing
-		*/
-		virtual void free() {/*delete this;*/}
-
-		/** Moves to next result in set
-		*\returns true if moved, false if there are no more results.
-		*/
-		virtual bool next() {return false;}
-
-	protected:
-		DBResult() {}
-		virtual ~DBResult() {}
-};
 
 /**
  * Thread locking hack.

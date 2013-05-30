@@ -15,6 +15,7 @@ include ./$(DEPDIR)/server-otpch.Po
 server_CPPFLAGS = $(LOG4CXX_CFLAGS) $(LUA_CFLAGS) $(XML_CPPFLAGS)
 server_CXXFLAGS = $(AM_CXXFLAGS) -include "$(builddir)/otpch.h"
 server_SOURCES = $(SOURCES_DIRECTORY)/otpch.h.gch \
+                 $(SOURCES_DIRECTORY)/account.cpp \
                  $(SOURCES_DIRECTORY)/actions.cpp \
                  $(SOURCES_DIRECTORY)/admin.cpp \
                  $(SOURCES_DIRECTORY)/baseevents.cpp \

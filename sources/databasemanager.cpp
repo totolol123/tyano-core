@@ -49,7 +49,7 @@ bool DatabaseManager::optimizeTables()
 
 	DBQuery query;
 	query << "SELECT `TABLE_NAME` FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = " << db.escapeString(server.configManager().getString(ConfigManager::SQL_DB)) << " AND `DATA_FREE` > 0;";
-	DBResult* result;
+	DBResultP result;
 	if(!(result = db.storeQuery(query.str())))
 		return false;
 
@@ -65,7 +65,6 @@ bool DatabaseManager::optimizeTables()
 	}
 	while(result->next());
 
-	result->free();
 	return true;
 }
 
@@ -75,11 +74,10 @@ bool DatabaseManager::triggerExists(std::string trigger)
 	DBQuery query;
 	query << "SELECT `TRIGGER_NAME` FROM `information_schema`.`triggers` WHERE `TRIGGER_SCHEMA` = " << db.escapeString(server.configManager().getString(ConfigManager::SQL_DB)) << " AND `TRIGGER_NAME` = " << db.escapeString(trigger) << ";";
 
-	DBResult* result;
+	DBResultP result;
 	if(!(result = db.storeQuery(query.str())))
 		return false;
 
-	result->free();
 	return true;
 }
 
@@ -89,11 +87,10 @@ bool DatabaseManager::tableExists(std::string table)
 	DBQuery query;
 	query << "SELECT `TABLE_NAME` FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = " << db.escapeString(server.configManager().getString(ConfigManager::SQL_DB)) << " AND `TABLE_NAME` = " << db.escapeString(table) << ";";
 
-	DBResult* result;
+	DBResultP result;
 	if(!(result = db.storeQuery(query.str())))
 		return false;
 
-	result->free();
 	return true;
 }
 
@@ -103,11 +100,10 @@ bool DatabaseManager::isDatabaseSetup()
 	DBQuery query;
 	query << "SELECT `TABLE_NAME` FROM `information_schema`.`tables` WHERE `TABLE_SCHEMA` = " << db.escapeString(server.configManager().getString(ConfigManager::SQL_DB)) << ";";
 
-	DBResult* result;
+	DBResultP result;
 	if(!(result = db.storeQuery(query.str())))
 		return false;
 
-	result->free();
 	return true;
 }
 
@@ -143,7 +139,7 @@ uint32_t DatabaseManager::updateDatabase()
 				//update bans table
 				if(db.executeQuery("CREATE TABLE IF NOT EXISTS `bans2` (`id` INT UNSIGNED NOT nullptr auto_increment, `type` TINYINT(1) NOT nullptr COMMENT 'this field defines if its ip, account, player, or any else ban', `value` INT UNSIGNED NOT nullptr COMMENT 'ip, player guid, account number', `param` INT UNSIGNED NOT nullptr DEFAULT 4294967295 COMMENT 'mask', `active` TINYINT(1) NOT nullptr DEFAULT TRUE, `expires` INT UNSIGNED NOT nullptr, `added` INT UNSIGNED NOT nullptr, `admin_id` INT UNSIGNED NOT nullptr DEFAULT 0, `comment` TEXT NOT nullptr, `reason` INT UNSIGNED NOT nullptr DEFAULT 0, `action` INT UNSIGNED NOT nullptr DEFAULT 0, PRIMARY KEY (`id`), KEY `type` (`type`, `value`)) ENGINE = InnoDB;"))
 				{
-					if(DBResult* result = db.storeQuery("SELECT * FROM `bans`;"))
+					if(DBResultP result = db.storeQuery("SELECT * FROM `bans`;"))
 					{
 						do
 						{
@@ -177,7 +173,6 @@ uint32_t DatabaseManager::updateDatabase()
 							}
 						}
 						while(result->next());
-						result->free();
 					}
 
 					db.executeQuery("DROP TABLE `bans`;");
@@ -228,7 +223,7 @@ uint32_t DatabaseManager::updateDatabase()
 			LOGi("Updating database to version: 2...");
 			db.executeQuery("ALTER TABLE `players` ADD `promotion` INT NOT nullptr DEFAULT 0;");
 
-			DBResult* result;
+			DBResultP result;
 			if((result = db.storeQuery("SELECT `player_id`, `value` FROM `player_storage` WHERE `key` = 30018 AND `value` > 0")))
 			{
 				do
@@ -238,7 +233,6 @@ uint32_t DatabaseManager::updateDatabase()
 					query.str("");
 				}
 				while(result->next());
-				result->free();
 			}
 
 			db.executeQuery("DELETE FROM `player_storage` WHERE `key` = 30018;");
@@ -252,7 +246,6 @@ uint32_t DatabaseManager::updateDatabase()
 					query.str("");
 				}
 				while(result->next());
-				result->free();
 			}
 
 			db.executeQuery("ALTER TABLE `players` ADD `deleted` TINYINT(1) NOT nullptr DEFAULT 0;");
@@ -267,12 +260,11 @@ uint32_t DatabaseManager::updateDatabase()
 			LOGi("Updating database to version: 3...");
 			db.executeQuery("UPDATE `players` SET `vocation` = `vocation` - 4 WHERE `vocation` >= 5 AND `vocation` <= 8;");
 
-			DBResult* result;
+			DBResultP result;
 			if((result = db.storeQuery("SELECT COUNT(`id`) AS `count` FROM `players` WHERE `vocation` > 4;"))
 				&& result->getDataInt("count"))
 			{
 				LOGw("There are still " << result->getDataInt("count") << " players with vocation above 4, please mind to update them manually.");
-				result->free();
 			}
 
 			registerDatabaseConfig("db_version", 3);
@@ -326,7 +318,7 @@ uint32_t DatabaseManager::updateDatabase()
 			LOGi("Updating database to version: 7...");
 			if(server.configManager().getBool(ConfigManager::INGAME_GUILD_MANAGEMENT))
 			{
-				if(DBResult* result = db.storeQuery("SELECT `r`.`id`, `r`.`guild_id` FROM `guild_ranks` r LEFT JOIN `guilds` g ON `r`.`guild_id` = `g`.`id` WHERE `g`.`ownerid` = `g`.`id` AND `r`.`level` = 3;"))
+				if(DBResultP result = db.storeQuery("SELECT `r`.`id`, `r`.`guild_id` FROM `guild_ranks` r LEFT JOIN `guilds` g ON `r`.`guild_id` = `g`.`id` WHERE `g`.`ownerid` = `g`.`id` AND `r`.`level` = 3;"))
 				{
 					do
 					{
@@ -335,7 +327,6 @@ uint32_t DatabaseManager::updateDatabase()
 						query.str("");
 					}
 					while(result->next());
-					result->free();
 				}
 			}
 
@@ -643,7 +634,7 @@ uint32_t DatabaseManager::updateDatabase()
 				query << "SELECT `id`, `key` FROM `accounts` WHERE `key` ";
 				query << "!=";
 				query << " '0';";
-				if(DBResult* result = db.storeQuery(query.str()))
+				if(DBResultP result = db.storeQuery(query.str()))
 				{
 					query.str("");
 					do
@@ -656,7 +647,6 @@ uint32_t DatabaseManager::updateDatabase()
 						query.str("");
 					}
 					while(result->next());
-					result->free();
 				}
 			}
 
@@ -681,7 +671,7 @@ bool DatabaseManager::getDatabaseConfig(std::string config, int32_t &value)
 	value = 0;
 
 	Database& db = getDatabase();
-	DBResult* result;
+	DBResultP result;
 
 	DBQuery query;
 	query << "SELECT `value` FROM `server_config` WHERE `config` = " << db.escapeString(config) << ";";
@@ -689,7 +679,6 @@ bool DatabaseManager::getDatabaseConfig(std::string config, int32_t &value)
 		return false;
 
 	value = result->getDataInt("value");
-	result->free();
 	return true;
 }
 

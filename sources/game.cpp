@@ -4914,7 +4914,11 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 		return false;
 	}
 
-	Account account = IOLoginData::getInstance()->loadAccount(target->getAccount(), true);
+	AccountP account = IOLoginData::getInstance()->loadAccount(target->getAccount(), true);
+	if (account == nullptr) {
+		return false;
+	}
+
 	enum KickAction {
 		NONE = 1,
 		KICK = 2,
@@ -4960,7 +4964,7 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 				return false;
 			}
 			else if(tmp == PLAYERBAN_BANISHMENT)
-				account.warnings++;
+				account->setWarnings(account->getWarnings() + 1);
 
 			kickAction = (KickAction)tmp;
 			break;
@@ -4968,14 +4972,14 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 
 		case ACTION_NOTATION:
 		{
-			if(!IOBan::getInstance()->addNotation(account.number, reason,
+			if(!IOBan::getInstance()->addNotation(account->getId(), reason,
 				comment, player->getGUID(), target->getGUID()))
 			{
 				player->sendCancel("Unable to perform action.");
 				return false;
 			}
 
-			if(IOBan::getInstance()->getNotationsCount(account.number) < (uint32_t)
+			if(IOBan::getInstance()->getNotationsCount(account->getId()) < (uint32_t)
 				server.configManager().getNumber(ConfigManager::NOTATIONS_TO_BAN))
 			{
 				kickAction = NONE;
@@ -4993,20 +4997,19 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 			int64_t banTime = -1;
 			pos = 2;
 
-			account.warnings++;
-			if(account.warnings >= server.configManager().getNumber(ConfigManager::WARNINGS_TO_DELETION))
+			account->setWarnings(account->getWarnings() + 1);
+			if(static_cast<signed>(account->getWarnings()) >= server.configManager().getNumber(ConfigManager::WARNINGS_TO_DELETION))
 				action = ACTION_DELETION;
 			else if(length[0])
 				banTime = length[0];
-			else if(account.warnings >= server.configManager().getNumber(ConfigManager::WARNINGS_TO_FINALBAN))
+			else if(static_cast<signed>(account->getWarnings()) >= server.configManager().getNumber(ConfigManager::WARNINGS_TO_FINALBAN))
 				banTime = time(nullptr) + server.configManager().getNumber(ConfigManager::FINALBAN_LENGTH);
 			else
 				banTime = time(nullptr) + server.configManager().getNumber(ConfigManager::BAN_LENGTH);
 
-			if(!IOBan::getInstance()->addAccountBanishment(account.number, banTime, reason, action,
+			if(!IOBan::getInstance()->addAccountBanishment(account->getId(), banTime, reason, action,
 				comment, player->getGUID(), target->getGUID()))
 			{
-				account.warnings--;
 				player->sendCancel("Account is already banned.");
 				return false;
 			}
@@ -5035,24 +5038,23 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 			bool allow = action == ACTION_BANREPORTFINAL;
 			int64_t banTime = -1;
 
-			account.warnings++;
-			if(account.warnings >= server.configManager().getNumber(ConfigManager::WARNINGS_TO_DELETION))
+			account->setWarnings(account->getWarnings() + 1);
+			if(static_cast<signed>(account->getWarnings()) >= server.configManager().getNumber(ConfigManager::WARNINGS_TO_DELETION))
 				action = ACTION_DELETION;
 			else if(length[0])
 				banTime = length[0];
 			else
 				banTime = time(nullptr) + server.configManager().getNumber(ConfigManager::FINALBAN_LENGTH);
 
-			if(!IOBan::getInstance()->addAccountBanishment(account.number, banTime, reason, action,
+			if(!IOBan::getInstance()->addAccountBanishment(account->getId(), banTime, reason, action,
 				comment, player->getGUID(), target->getGUID()))
 			{
-				account.warnings--;
 				player->sendCancel("Account is already banned.");
 				return false;
 			}
 
 			if(action != ACTION_DELETION)
-				account.warnings += (server.configManager().getNumber(ConfigManager::WARNINGS_TO_FINALBAN) - 1);
+				account->setWarnings(account->getWarnings() + (server.configManager().getNumber(ConfigManager::WARNINGS_TO_FINALBAN) - 1));
 
 			if(allow)
 				IOBan::getInstance()->addPlayerBanishment(target->getGUID(), -1, reason, action, comment,
@@ -5065,11 +5067,10 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 		case ACTION_DELETION:
 		{
 			//completely internal
-			account.warnings++;
-			if(!IOBan::getInstance()->addAccountBanishment(account.number, -1, reason, ACTION_DELETION,
+			account->setWarnings(account->getWarnings() + 1);
+			if(!IOBan::getInstance()->addAccountBanishment(account->getId(), -1, reason, ACTION_DELETION,
 				comment, player->getGUID(), target->getGUID()))
 			{
-				account.warnings--;
 				player->sendCancel("Account is currently banned or already deleted.");
 				return false;
 			}
@@ -5091,7 +5092,7 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 	}
 
 	if(kickAction == FULL_KICK)
-		IOBan::getInstance()->removeNotations(account.number);
+		IOBan::getInstance()->removeNotations(account->getId());
 
 	std::stringstream ss;
 	if(server.configManager().getBool(ConfigManager::BROADCAST_BANISHMENTS))
@@ -5105,7 +5106,7 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 		case ACTION_NOTATION:
 		{
 			ss << " (" << (server.configManager().getNumber(ConfigManager::NOTATIONS_TO_BAN) - IOBan::getInstance()->getNotationsCount(
-				account.number)) << " left to banishment)";
+				account->getId())) << " left to banishment)";
 			break;
 		}
 		case ACTION_STATEMENT:
@@ -5117,7 +5118,7 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 			break;
 	}
 
-	ss << " against: " << name << " (Warnings: " << account.warnings << "), with reason: \"" << getReason(
+	ss << " against: " << name << " (Warnings: " << account->getWarnings() << "), with reason: \"" << getReason(
 		reason) << "\", and comment: \"" << comment << "\".";
 	if(server.configManager().getBool(ConfigManager::BROADCAST_BANISHMENTS))
 		broadcastMessage(ss.str(), MSG_STATUS_WARNING);
@@ -5140,7 +5141,7 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 			&Game::kickPlayer, this, target->getID(), false)));
 	}
 
-	IOLoginData::getInstance()->saveAccount(account);
+	IOLoginData::getInstance()->saveAccount(*account);
 	return true;
 }
 
@@ -5619,7 +5620,7 @@ Highscore Game::getHighscore(uint16_t skill)
 	Highscore hs;
 
 	Database& db = server.database();
-	DBResult* result;
+	DBResultP result;
 
 	DBQuery query;
 	if(skill >= SKILL__MAGLEVEL)
@@ -5645,7 +5646,6 @@ Highscore Game::getHighscore(uint16_t skill)
 				hs.push_back(std::make_pair(name, level));
 		}
 		while(result->next());
-		result->free();
 	}
 	else
 	{
@@ -5660,7 +5660,6 @@ Highscore Game::getHighscore(uint16_t skill)
 				hs.push_back(std::make_pair(name, result->getDataInt("value")));
 		}
 		while(result->next());
-		result->free();
 	}
 
 	return hs;
@@ -5688,7 +5687,7 @@ void Game::loadMotd()
 	DBQuery query;
 	query << "SELECT `id`, `text` FROM `server_motd` WHERE `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID) << " ORDER BY `id` DESC LIMIT 1";
 
-	DBResult* result;
+	DBResultP result;
 	if(!(result = db.storeQuery(query.str())))
 	{
 		LOGe("Failed to load motd!");
@@ -5698,7 +5697,6 @@ void Game::loadMotd()
 
 	lastMotdId = result->getDataInt("id");
 	lastMotd = result->getDataString("text");
-	result->free();
 }
 
 void Game::checkPlayersRecord(Player* player)
@@ -5720,7 +5718,7 @@ void Game::loadPlayersRecord()
 	DBQuery query;
 	query << "SELECT `record` FROM `server_record` WHERE `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID) << " ORDER BY `timestamp` DESC LIMIT 1";
 
-	DBResult* result;
+	DBResultP result;
 	if(!(result = db.storeQuery(query.str())))
 	{
 		LOGe("Failed to load players record!");
@@ -5728,7 +5726,6 @@ void Game::loadPlayersRecord()
 	}
 
 	playersRecord = result->getDataInt("record");
-	result->free();
 }
 
 bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)

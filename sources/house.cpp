@@ -1082,18 +1082,23 @@ House* Houses::getHouseByGuildId(uint32_t guildId)
 	return nullptr;
 }
 
-uint32_t Houses::getHousesCount(uint32_t accId)
-{
-	Account account = IOLoginData::getInstance()->loadAccount(accId);
-	uint32_t guid, count = 0;
-	for(Characters::iterator it = account.charList.begin(); it != account.charList.end(); ++it)
-	{
-#ifndef __LOGIN_SERVER__
-		if(IOLoginData::getInstance()->getGuidByName(guid, (*it)) && getHouseByPlayerId(guid))
-#else
-		if(IOLoginData::getInstance()->getGuidByName(guid, (std::string&)it->first) && getHouseByPlayerId(guid))
-#endif
-			count++;
+
+uint32_t Houses::getHousesCount(uint32_t accountId) {
+	auto account = IOLoginData::getInstance()->loadAccount(accountId);
+	if (account == nullptr) {
+		return 0;
+	}
+
+	uint32_t count = 0;
+
+	auto& characters = account->getCharacters();
+	for (auto it = characters.cbegin(); it != characters.cend(); ++it) {
+		const auto& character = *it;
+
+		uint32_t guid;
+		if (IOLoginData::getInstance()->getGuidByName(guid, character->getName()) && getHouseByPlayerId(guid)) {
+			++count;
+		}
 	}
 
 	return count;

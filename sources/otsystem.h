@@ -52,15 +52,4 @@ typedef std::vector<std::pair<uint32_t, uint32_t> > IpList;
 
 typedef std::vector<std::string> StringVector;
 
-namespace std {
-	template <>
-	struct default_delete<xmlDoc> {
-		void operator()(xmlDocPtr document) {
-			xmlFreeDoc(document);
-		}
-	};
-}
-
-typedef std::unique_ptr<xmlDoc>  xmlDocP;
-
 #endif // _OTSYSTEM_H

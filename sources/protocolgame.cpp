@@ -808,18 +808,21 @@ void ProtocolGame::parsePacket(NetworkMessage &msg)
 				parseQuestInfo(msg);
 				break;
 
-			default:
-			{
-				if(server.configManager().getBool(ConfigManager::BAN_UNKNOWN_BYTES))
-				{
+			default: {
+				if (server.configManager().getBool(ConfigManager::BAN_UNKNOWN_BYTES)) {
 					int64_t banTime = -1;
 					ViolationAction_t action = ACTION_BANISHMENT;
-					Account tmp = IOLoginData::getInstance()->loadAccount(player->getAccount(), true);
 
-					tmp.warnings++;
-					if(tmp.warnings >= server.configManager().getNumber(ConfigManager::WARNINGS_TO_DELETION))
+					AccountP account = IOLoginData::getInstance()->loadAccount(player->getAccount(), true);
+					if (account == nullptr) {
+						return;
+					}
+
+					uint32_t warnings = account->getWarnings() + 1;
+
+					if(static_cast<signed>(warnings) >= server.configManager().getNumber(ConfigManager::WARNINGS_TO_DELETION))
 						action = ACTION_DELETION;
-					else if(tmp.warnings >= server.configManager().getNumber(ConfigManager::WARNINGS_TO_FINALBAN))
+					else if(static_cast<signed>(warnings) >= server.configManager().getNumber(ConfigManager::WARNINGS_TO_FINALBAN))
 					{
 						banTime = time(nullptr) + server.configManager().getNumber(ConfigManager::FINALBAN_LENGTH);
 						action = ACTION_BANFINAL;
@@ -827,10 +830,11 @@ void ProtocolGame::parsePacket(NetworkMessage &msg)
 					else
 						banTime = time(nullptr) + server.configManager().getNumber(ConfigManager::BAN_LENGTH);
 
-					if(IOBan::getInstance()->addAccountBanishment(tmp.number, banTime, 13, action,
+					if(IOBan::getInstance()->addAccountBanishment(account->getId(), banTime, 13, action,
 						"Sending unknown packets to the server.", 0, player->getGUID()))
 					{
-						IOLoginData::getInstance()->saveAccount(tmp);
+						account->setWarnings(warnings);
+						IOLoginData::getInstance()->saveAccount(*account);
 						player->sendTextMessage(MSG_INFO_DESCR, "You have been banished.");
 
 						server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_WRAPS_GREEN);

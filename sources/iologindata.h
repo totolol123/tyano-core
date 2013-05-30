@@ -29,7 +29,8 @@ class  Group;
 class  Item;
 class  Player;
 
-typedef std::vector<DeathEntry>  DeathList;
+typedef std::unique_ptr<DBResult>  DBResultP;
+typedef std::vector<DeathEntry>    DeathList;
 
 
 enum DeleteCharacter_t
@@ -40,6 +41,8 @@ enum DeleteCharacter_t
 	DELETE_ONLINE,
 	DELETE_SUCCESS
 };
+
+typedef std::shared_ptr<Account>  AccountP;
 
 typedef std::pair<int32_t, Item*> itemBlock;
 typedef std::list<itemBlock> ItemBlockList;
@@ -53,8 +56,8 @@ class IOLoginData
 			return &instance;
 		}
 
-		Account loadAccount(uint32_t accountId, bool preLoad = false);
-		bool saveAccount(Account account);
+		AccountP loadAccount(uint32_t accountId, bool preLoad = false);
+		void saveAccount(const Account& account);
 
 		bool getAccountId(const std::string& name, uint32_t& number);
 		bool getAccountName(uint32_t number, std::string& name);
@@ -73,7 +76,7 @@ class IOLoginData
 		bool setRecoveryKey(uint32_t accountId, std::string newRecoveryKey);
 
 		uint64_t createAccount(std::string name, std::string password);
-		void removePremium(Account account);
+		void removePremium(Account& account);
 
 		const Group* getPlayerGroupByAccount(uint32_t accountId);
 
@@ -94,6 +97,7 @@ class IOLoginData
 		bool playerExists(std::string& name, bool multiworld = false, bool checkCache = true);
 		bool getNameByGuid(uint32_t guid, std::string& name, bool multiworld = false);
 		bool getGuidByName(uint32_t& guid, std::string& name, bool multiworld = false);
+		bool getGuidByName(uint32_t& guid, const std::string& name, bool multiworld = false);
 		bool getGuidByNameEx(uint32_t& guid, bool& specialVip, std::string& name);
 
 		bool changeName(uint32_t guid, std::string newName, std::string oldName);
@@ -126,8 +130,10 @@ class IOLoginData
 
 		typedef std::map<int32_t, std::pair<boost::intrusive_ptr<Item>, int32_t> > ItemMap;
 
+		void loadCharacters(Account& account);
+
 		bool saveItems(const Player* player, const ItemBlockList& itemList, DBInsert& query_insert);
-		void loadItems(ItemMap& itemMap, DBResult* result);
+		void loadItems(ItemMap& itemMap, DBResultP result);
 
 		bool storeNameByGuid(uint32_t guid);
 };

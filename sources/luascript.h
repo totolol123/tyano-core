@@ -34,6 +34,8 @@ struct Outfit_t;
 class  Player;
 class  Thing;
 
+typedef std::unique_ptr<DBResult>  DBResultP;
+
 
 enum LuaVariantType_t
 {
@@ -116,7 +118,7 @@ class ScriptEnviroment
 		static void removeTempItem(Item* item);
 
 		DBResult* getResultByID(uint32_t id);
-		uint32_t addResult(DBResult* res);
+		uint32_t addResult(DBResultP res);
 		bool removeResult(uint32_t id);
 
 		static void addUniqueThing(Thing* thing);
@@ -150,7 +152,7 @@ class ScriptEnviroment
 		typedef std::map<uint32_t, Condition*> ConditionMap;
 		typedef std::list<boost::intrusive_ptr<Item>> ItemList;
 		typedef std::map<ScriptEnviroment*, ItemList> TempItemListMap;
-		typedef std::map<uint32_t, DBResult*> DBResultMap;
+		typedef std::map<uint32_t, DBResultP> DBResultMap;
 
 		LOGGER_DECLARATION;
 

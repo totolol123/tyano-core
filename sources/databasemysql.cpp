@@ -75,15 +75,13 @@ void DatabaseMySQL::start() {
 	if(server.configManager().getBool(ConfigManager::HOUSE_STORAGE))
 	{
 		//we cannot lock mutex here :)
-		if(DBResult* result = storeQuery("SHOW variables LIKE 'max_allowed_packet';"))
+		if(DBResultP result = storeQuery("SHOW variables LIKE 'max_allowed_packet';"))
 		{
 			if(result->getDataLong("Value") < 16776192)
 			{
 				LOGw("WARNING: max_allowed_packet might be set too low for binary map storage.");
 				LOGw("Use the following query to raise max_allow_packet: SET GLOBAL max_allowed_packet = 16776192;");
 			}
-
-			result->free();
 		}
 	}
 
@@ -159,7 +157,7 @@ bool DatabaseMySQL::executeQuery(const std::string &query)
 	return state;
 }
 
-DBResult* DatabaseMySQL::storeQuery(const std::string &query)
+DBResultP DatabaseMySQL::storeQuery(const std::string &query)
 {
 	if(!m_connected)
 		return nullptr;
@@ -178,8 +176,7 @@ DBResult* DatabaseMySQL::storeQuery(const std::string &query)
 
 	if(MYSQL_RES* tmp = mysql_store_result(&m_handle))
 	{
-		DBResult* res = (DBResult*)new MySQLResult(tmp);
-		return verifyResult(res);
+		return verifyResult(DBResultP(new MySQLResult(tmp)));
 	}
 
 	error = mysql_errno(&m_handle);
@@ -335,19 +332,6 @@ const char* MySQLResult::getDataStream(const std::string &s, uint64_t &size)
 	return nullptr; // Failed
 }
 
-void MySQLResult::free()
-{
-	if(m_handle)
-	{
-		mysql_free_result(m_handle);
-		m_handle = nullptr;
-
-		m_listNames.clear();
-		delete this;
-	}
-	else
-		LOGe("[Warning - MySQLResult::free] Trying to free already freed result.");
-}
 
 bool MySQLResult::next()
 {
@@ -385,4 +369,11 @@ MySQLResult::MySQLResult(MYSQL_RES* result)
 	}
 	else
 		delete this;
+}
+
+
+MySQLResult::~MySQLResult() {
+	if (m_handle != nullptr) {
+		mysql_free_result(m_handle);
+	}
 }

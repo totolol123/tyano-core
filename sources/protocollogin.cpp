@@ -136,8 +136,13 @@ bool ProtocolLogin::parseFirstPacket(NetworkMessage& msg)
 		return false;
 	}
 
-	Account account = IOLoginData::getInstance()->loadAccount(id);
-	if(!encryptTest(password, account.password))
+	AccountP account = IOLoginData::getInstance()->loadAccount(id);
+	if (account == nullptr) {
+		disconnectClient(0x0A, "Invalid account name.");
+		return false;
+	}
+
+	if(!encryptTest(password, account->getPassword()))
 	{
 		ConnectionManager::getInstance()->addAttempt(clientIp, protocolId, false);
 		disconnectClient(0x0A, "Invalid password.");
@@ -145,10 +150,10 @@ bool ProtocolLogin::parseFirstPacket(NetworkMessage& msg)
 	}
 
 	Ban ban;
-	ban.value = account.number;
+	ban.value = account->getId();
 
 	ban.type = BAN_ACCOUNT;
-	if(IOBan::getInstance()->getData(ban) && !IOLoginData::getInstance()->hasFlag(account.number, PlayerFlag_CannotBeBanned))
+	if(IOBan::getInstance()->getData(ban) && !IOLoginData::getInstance()->hasFlag(account->getId(), PlayerFlag_CannotBeBanned))
 	{
 		bool deletion = ban.expires < 0;
 		std::string name_ = "Automatic ";
@@ -169,8 +174,10 @@ bool ProtocolLogin::parseFirstPacket(NetworkMessage& msg)
 	}
 
 	//Remove premium days
-	IOLoginData::getInstance()->removePremium(account);
-	if(!server.configManager().getBool(ConfigManager::ACCOUNT_MANAGER) && !account.charList.size())
+	IOLoginData::getInstance()->removePremium(*account);
+
+	const Account::Characters& characters = account->getCharacters();
+	if(!server.configManager().getBool(ConfigManager::ACCOUNT_MANAGER) && characters.empty())
 	{
 		disconnectClient(0x0A, std::string("This account does not contain any character yet.\nCreate a new character on the "
 			+ server.configManager().getString(ConfigManager::SERVER_NAME) + " website at " + server.configManager().getString(ConfigManager::URL) + ".").c_str());
@@ -201,32 +208,24 @@ bool ProtocolLogin::parseFirstPacket(NetworkMessage& msg)
 		output->AddByte(0x64);
 		if(server.configManager().getBool(ConfigManager::ACCOUNT_MANAGER) && id != 1)
 		{
-			output->AddByte(account.charList.size() + 1);
+			output->AddByte(characters.size() + 1);
 			output->AddString("Account Manager");
 			output->AddString(server.configManager().getString(ConfigManager::SERVER_NAME));
 			output->AddU32(serverIp);
 			output->AddU16(server.configManager().getNumber(ConfigManager::GAME_PORT));
 		}
 		else
-			output->AddByte((uint8_t)account.charList.size());
+			output->AddByte((uint8_t)characters.size());
 
-		for(Characters::iterator it = account.charList.begin(); it != account.charList.end(); it++)
-		{
-			#ifndef __LOGIN_SERVER__
-			output->AddString((*it));
-			if(server.configManager().getBool(ConfigManager::ON_OR_OFF_CHARLIST))
-			{
-				if(server.game().getPlayerByName((*it)))
-					output->AddString("Online");
-				else
-					output->AddString("Offline");
-			}
-			else
-				output->AddString(server.configManager().getString(ConfigManager::SERVER_NAME));
+		for (auto it = characters.cbegin(); it != characters.cend(); ++it) {
+			auto& character = *it;
 
+#ifndef __LOGIN_SERVER__
+			output->AddString(character->getName());
+			output->AddString(character->getType());
 			output->AddU32(serverIp);
 			output->AddU16(server.configManager().getNumber(ConfigManager::GAME_PORT));
-			#else
+#else
 			if(version < it->second->getVersionMin() || version > it->second->getVersionMax())
 				continue;
 
@@ -234,14 +233,14 @@ bool ProtocolLogin::parseFirstPacket(NetworkMessage& msg)
 			output->AddString(it->second->getName());
 			output->AddU32(it->second->getAddress());
 			output->AddU16(it->second->getPort());
-			#endif
+#endif
 		}
 
 		//Add premium days
 		if(server.configManager().getBool(ConfigManager::FREE_PREMIUM))
-			output->AddU16(65535); //client displays free premium
+			output->AddU16(std::numeric_limits<uint16_t>::max()); //client displays free premium
 		else
-			output->AddU16(account.premiumDays);
+			output->AddU16(account->getPremiumDays());
 
 		OutputMessagePool::getInstance()->send(output);
 	}

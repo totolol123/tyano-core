@@ -4232,7 +4232,11 @@ void Player::manageAccount(const std::string &text)
 		}
 		case MANAGER_ACCOUNT:
 		{
-			Account account = IOLoginData::getInstance()->loadAccount(managerNumber);
+			AccountP account = IOLoginData::getInstance()->loadAccount(managerNumber);
+			if (account == nullptr) {
+				return;
+			}
+
 			if(checkText(text, "cancel") || (checkText(text, "account") && !talkState[1]))
 			{
 				talkState[1] = true;
@@ -4337,7 +4341,7 @@ void Player::manageAccount(const std::string &text)
 			}
 			else if(checkText(text, "character") && talkState[1])
 			{
-				if(account.charList.size() <= 15)
+				if(account->getCharacters().size() <= 15)
 				{
 					talkState[1] = false;
 					talkState[6] = true;
@@ -4503,7 +4507,7 @@ void Player::manageAccount(const std::string &text)
 			}
 			else if(checkText(text, "yes") && talkState[10])
 			{
-				if(account.recoveryKey != "0")
+				if(account->getRecoveryKey() != "0")
 					msg << "Sorry, you already have a recovery key, for security reasons I may not give you a new one.";
 				else
 				{

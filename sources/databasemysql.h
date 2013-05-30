@@ -37,7 +37,7 @@ class DatabaseMySQL : public Database
 		bool commit();
 
 		bool executeQuery(const std::string &query);
-		DBResult* storeQuery(const std::string &query);
+		DBResultP storeQuery(const std::string &query);
 
 		std::string escapeString(const std::string &s) {return escapeBlob(s.c_str(), s.length());}
 		std::string escapeBlob(const char* s, uint32_t length);
@@ -73,7 +73,7 @@ class MySQLResult : public DBResult
 
 	private:
 		MySQLResult(MYSQL_RES* result);
-		~MySQLResult() {}
+		virtual ~MySQLResult();
 
 		void fetch();
 		bool refetch();

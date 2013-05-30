@@ -30,6 +30,7 @@ class PropWriteStream;
 class Tile;
 
 typedef std::list<std::pair<Container*,int32_t>>                         ContainerStackList;
+typedef std::unique_ptr<DBResult>                                        DBResultP;
 typedef std::map<int32_t, std::pair<boost::intrusive_ptr<Item>,int32_t>> ItemMap;
 
 
@@ -64,7 +65,7 @@ class IOMapSerialize
 		bool loadMapBinary(Map* map);
 		bool saveMapBinary(const Map* map);
 
-		bool loadItems(Database& db, DBResult* result, Cylinder* parent, bool depotTransfer);
+		bool loadItems(Database& db, DBResultP result, Cylinder* parent, bool depotTransfer);
 		bool saveItems(Database& db, uint32_t& tileId, uint32_t houseId, const Tile* tile);
 
 		bool loadContainer(PropStream& propStream, Container* container);
