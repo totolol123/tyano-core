@@ -111,7 +111,7 @@ bool MoveEvents::registerEvent(const MoveEventP& moveEvent, xmlNodePtr p, bool o
 			{
 				while(intVector[0] < intVector[1])
 				{
-					addEvent(std::make_shared<MoveEvent>(*moveEvent), ++intVector[0], m_itemIdMap, override);
+					addEvent(moveEvent, ++intVector[0], m_itemIdMap, override);
 					if(equip)
 					{
 						ItemKindP kind = server.items().getMutableKind(intVector[0]);
@@ -150,7 +150,7 @@ bool MoveEvents::registerEvent(const MoveEventP& moveEvent, xmlNodePtr p, bool o
 
 				while(intVector[i] < endIntVector[i])
 				{
-					addEvent(std::make_shared<MoveEvent>(*moveEvent), ++intVector[i], m_itemIdMap, override);
+					addEvent(moveEvent, ++intVector[i], m_itemIdMap, override);
 					if(equip)
 					{
 						ItemKindP kind = server.items().getMutableKind(intVector[0]);
@@ -181,7 +181,7 @@ bool MoveEvents::registerEvent(const MoveEventP& moveEvent, xmlNodePtr p, bool o
 			if(intVector.size() > 1)
 			{
 				while(intVector[0] < intVector[1])
-					addEvent(std::make_shared<MoveEvent>(*moveEvent), ++intVector[0], m_uniqueIdMap, override);
+					addEvent(moveEvent, ++intVector[0], m_uniqueIdMap, override);
 			}
 		}
 	}
@@ -196,7 +196,7 @@ bool MoveEvents::registerEvent(const MoveEventP& moveEvent, xmlNodePtr p, bool o
 			{
 				addEvent(moveEvent, intVector[i], m_uniqueIdMap, override);
 				while(intVector[i] < endIntVector[i])
-					addEvent(std::make_shared<MoveEvent>(*moveEvent), ++intVector[i], m_uniqueIdMap, override);
+					addEvent(moveEvent, ++intVector[i], m_uniqueIdMap, override);
 			}
 		}
 		else
@@ -216,7 +216,7 @@ bool MoveEvents::registerEvent(const MoveEventP& moveEvent, xmlNodePtr p, bool o
 			if(intVector.size() > 1)
 			{
 				while(intVector[0] < intVector[1])
-					addEvent(std::make_shared<MoveEvent>(*moveEvent), ++intVector[0], m_actionIdMap, override);
+					addEvent(moveEvent, ++intVector[0], m_actionIdMap, override);
 			}
 		}
 	}
@@ -231,7 +231,7 @@ bool MoveEvents::registerEvent(const MoveEventP& moveEvent, xmlNodePtr p, bool o
 			{
 				addEvent(moveEvent, intVector[i], m_actionIdMap, override);
 				while(intVector[i] < endIntVector[i])
-					addEvent(std::make_shared<MoveEvent>(*moveEvent), ++intVector[i], m_actionIdMap, override);
+					addEvent(moveEvent, ++intVector[i], m_actionIdMap, override);
 			}
 		}
 		else
@@ -603,25 +603,6 @@ Event(_interface)
 	reqLevel = 0;
 	reqMagLevel = 0;
 	premium = false;
-}
-
-MoveEvent::MoveEvent(const MoveEvent& copy):
-Event(copy)
-{
-	m_eventType = copy.m_eventType;
-	stepFunction = copy.stepFunction;
-	moveFunction = copy.moveFunction;
-	equipFunction = copy.equipFunction;
-	slot = copy.slot;
-	if(copy.m_eventType == MOVE_EVENT_EQUIP)
-	{
-		wieldInfo = copy.wieldInfo;
-		reqLevel = copy.reqLevel;
-		reqMagLevel = copy.reqMagLevel;
-		vocationString = copy.vocationString;
-		premium = copy.premium;
-		vocEquipMap = copy.vocEquipMap;
-	}
 }
 
 MoveEvent::~MoveEvent()

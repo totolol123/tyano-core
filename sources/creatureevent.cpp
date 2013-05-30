@@ -338,7 +338,6 @@ void CreatureEvent::copyEvent(const CreatureEventP& creatureEvent)
 void CreatureEvent::clearEvent()
 {
 	m_scriptId = 0;
-	m_interface = nullptr;
 	m_scripted = EVENT_SCRIPT_FALSE;
 	m_isLoaded = false;
 }

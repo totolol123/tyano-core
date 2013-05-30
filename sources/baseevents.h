@@ -216,9 +216,7 @@ protected:
 
 class Event : virtual public EventBase, public std::enable_shared_from_this<Event> {
 	protected:
-		Event(LuaScriptInterface* _interface): m_interface(_interface),
-			m_scripted(EVENT_SCRIPT_FALSE), m_scriptId(0) {}
-		Event(const Event& copy);
+		Event(LuaScriptInterface* interface);
 
 	public:
 
@@ -242,6 +240,10 @@ class Event : virtual public EventBase, public std::enable_shared_from_this<Even
 
 
 	private:
+
+		Event(const Event& event) = delete;
+		Event(Event&& event) = delete;
+
 
 		LOGGER_DECLARATION;
 

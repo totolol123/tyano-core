@@ -92,8 +92,7 @@ typedef bool (ActionFunction)(Player* player, Item* item, const PositionEx& posF
 class Action : public Event
 {
 	public:
-		Action(const Action& copy);
-		Action(LuaScriptInterface* _interface);
+		Action(LuaScriptInterface* interface);
 		virtual ~Action() {}
 
 		virtual bool configureEvent(xmlNodePtr p);

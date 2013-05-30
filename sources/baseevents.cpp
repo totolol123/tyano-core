@@ -24,14 +24,15 @@
 LOGGER_DEFINITION(Event);
 
 
-Event::Event(const Event& copy)
-	: std::enable_shared_from_this<Event>(copy)
+
+Event::Event(LuaScriptInterface* interface)
+	: m_interface(interface),
+	  m_scripted(EVENT_SCRIPT_FALSE),
+	  m_scriptId(0)
 {
-	m_interface = copy.m_interface;
-	m_scripted = copy.m_scripted;
-	m_scriptId = copy.m_scriptId;
-	m_scriptData = copy.m_scriptData;
+	assert(interface != nullptr);
 }
+
 
 bool Event::loadBuffer(const std::string& buffer)
 {

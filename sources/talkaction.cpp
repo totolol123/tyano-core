@@ -93,7 +93,7 @@ bool TalkActions::registerEvent(const TalkActionP& talkAction, xmlNodePtr p, boo
 			}
 		}
 
-		talksMap[(*it)] = std::make_shared<TalkAction>(*talkAction);
+		talksMap[(*it)] = talkAction;
 	}
 
 	return true;
@@ -186,19 +186,6 @@ Event(_interface)
 	m_sensitive = true;
 }
 
-TalkAction::TalkAction(const TalkAction& copy):
-Event(copy)
-{
-	m_words = copy.m_words;
-	m_function = copy.m_function;
-	m_filter = copy.m_filter;
-	m_access = copy.m_access;
-	m_channel = copy.m_channel;
-	m_logged = copy.m_logged;
-	m_hidden = copy.m_hidden;
-	m_sensitive = copy.m_sensitive;
-	m_exceptions = copy.m_exceptions;
-}
 
 bool TalkAction::configureEvent(xmlNodePtr p)
 {

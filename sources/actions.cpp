@@ -111,7 +111,7 @@ bool Actions::registerEvent(const ActionP& action, xmlNodePtr p, bool override)
 				}
 			}
 
-			useItemMap[intVector[i]] = std::make_shared<Action>(*action);
+			useItemMap[intVector[i]] = action;
 		}
 	}
 	else if(readXMLString(p, "fromid", strValue) && readXMLString(p, "toid", endStrValue))
@@ -136,7 +136,7 @@ bool Actions::registerEvent(const ActionP& action, xmlNodePtr p, bool override)
 						}
 					}
 
-					useItemMap[intVector[i]++] = std::make_shared<Action>(*action);
+					useItemMap[intVector[i]++] = action;
 				}
 			}
 		}
@@ -176,7 +176,7 @@ bool Actions::registerEvent(const ActionP& action, xmlNodePtr p, bool override)
 				}
 			}
 
-			uniqueItemMap[intVector[i]] = std::make_shared<Action>(*action);
+			uniqueItemMap[intVector[i]] = action;
 		}
 	}
 	else if(readXMLString(p, "fromuid", strValue) && readXMLString(p, "touid", endStrValue))
@@ -201,7 +201,7 @@ bool Actions::registerEvent(const ActionP& action, xmlNodePtr p, bool override)
 						}
 					}
 
-					uniqueItemMap[intVector[i]++] = std::make_shared<Action>(*action);
+					uniqueItemMap[intVector[i]++] = action;
 				}
 			}
 		}
@@ -241,7 +241,7 @@ bool Actions::registerEvent(const ActionP& action, xmlNodePtr p, bool override)
 				}
 			}
 
-			actionItemMap[intVector[i]] = std::make_shared<Action>(*action);
+			actionItemMap[intVector[i]] = action;
 		}
 	}
 	else if(readXMLString(p, "fromaid", strValue) && readXMLString(p, "toaid", endStrValue))
@@ -266,7 +266,7 @@ bool Actions::registerEvent(const ActionP& action, xmlNodePtr p, bool override)
 						}
 					}
 
-					actionItemMap[intVector[i]++] = std::make_shared<Action>(*action);
+					actionItemMap[intVector[i]++] = action;
 				}
 			}
 		}
@@ -652,12 +652,6 @@ Action::Action(LuaScriptInterface* _interface) :
 		checkLineOfSight(true)
 {}
 
-Action::Action(const Action& copy) :
-		Event(copy),
-		function(nullptr),
-		allowFarUse(copy.allowFarUse),
-		checkLineOfSight(copy.checkLineOfSight)
-{}
 
 bool Action::configureEvent(xmlNodePtr p)
 {

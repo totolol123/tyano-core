@@ -112,7 +112,6 @@ class MoveEvent : public Event
 {
 	public:
 		MoveEvent(LuaScriptInterface* _interface);
-		MoveEvent(const MoveEvent& copy);
 		virtual ~MoveEvent();
 
 		MoveEvent_t getEventType() const;
