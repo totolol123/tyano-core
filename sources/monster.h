@@ -195,7 +195,6 @@ class Monster : public Creature
 		virtual uint16_t getLookCorpse() {return mType->lookCorpse;}
 		virtual uint16_t getLookCorpse() const {return mType->lookCorpse;}
 		virtual void getPathSearchParams(const Creature* creature, FindPathParams& fpp) const;
-		virtual bool useCacheMap() const {return true;}
 };
 
 #endif // _MONSTER_H

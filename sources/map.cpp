@@ -229,14 +229,6 @@ bool Map::canThrowObjectTo(const Position& origin, const Position& destination, 
 
 
 bool Map::canWalkTo(const Creature* creature, const Position& destination) const {
-	switch (creature->getWalkCache(destination)) {
-		case 0:
-			return false;
-
-		case 1:
-			return true;
-	}
-
 	Tile* tile = getTile(destination);
 	if (creature->getTile() != tile && (tile == nullptr || tile->__queryAdd(0, creature, 1, FLAG_PATHFINDING | FLAG_IGNOREFIELDDAMAGE) != RET_NOERROR)) {
 		return false;

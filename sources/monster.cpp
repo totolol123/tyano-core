@@ -543,9 +543,6 @@ void Monster::updateIdleStatus()
 void Monster::onAddCondition(ConditionType_t type, bool hadCondition)
 {
 	Creature::onAddCondition(type, hadCondition);
-	//the walkCache need to be updated if the monster becomes "resistent" to the damage, see Tile::__queryAdd()
-	if(type == CONDITION_FIRE || type == CONDITION_ENERGY || type == CONDITION_POISON)
-		updateMapCache();
 
 	updateIdleStatus();
 }
@@ -553,9 +550,6 @@ void Monster::onAddCondition(ConditionType_t type, bool hadCondition)
 void Monster::onEndCondition(ConditionType_t type)
 {
 	Creature::onEndCondition(type);
-	//the walkCache need to be updated if the monster loose the "resistent" to the damage, see Tile::__queryAdd()
-	if(type == CONDITION_FIRE || type == CONDITION_ENERGY || type == CONDITION_POISON)
-		updateMapCache();
 
 	updateIdleStatus();
 }
@@ -1121,7 +1115,7 @@ bool Monster::canWalkTo(Position pos, Direction dir)
 			break;
 	}
 
-	if(!isInSpawnRange(pos) || !getWalkCache(pos))
+	if(!isInSpawnRange(pos))
 		return false;
 
 	Tile* tile = server.game().getTile(pos);

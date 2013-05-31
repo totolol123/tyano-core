@@ -422,18 +422,12 @@ class Creature : public AutoId, virtual public Thing
 		virtual Position getPosition() const;
 		virtual Tile* getTile() {return _tile;}
 		virtual const Tile* getTile() const {return _tile;}
-		int32_t getWalkCache(const Position& pos) const;
 
 		const Position& getLastPosition() {return lastPosition;}
 		void setLastPosition(Position newLastPos) {lastPosition = newLastPos;}
 		static bool canSee(const Position& myPos, const Position& pos, uint32_t viewRangeX, uint32_t viewRangeY);
 
 	protected:
-		static const int32_t mapWalkWidth = Map::maxViewportX * 2 + 1;
-		static const int32_t mapWalkHeight = Map::maxViewportY * 2 + 1;
-		bool localMapCache[mapWalkHeight][mapWalkWidth];
-
-		virtual bool useCacheMap() const {return false;}
 
 		Tile* _tile;
 		uint32_t id;
@@ -503,14 +497,6 @@ class Creature : public AutoId, virtual public Thing
 		CreatureEventList eventsList;
 		uint32_t scriptEventsBitField, blockCount, blockTicks, lastHitCreature;
 		CombatType_t lastDamageSource;
-
-		#ifdef __DEBUG__
-		void validateMapCache();
-		#endif
-		void updateMapCache();
-
-		void updateTileCache(const Tile* tile, int32_t dx, int32_t dy);
-		void updateTileCache(const Tile* tile, const Position& pos);
 
 		bool hasEventRegistered(CreatureEventType_t event) const {return (0 != (scriptEventsBitField & ((uint32_t)1 << event)));}
 		virtual bool hasExtraSwing() {return false;}
