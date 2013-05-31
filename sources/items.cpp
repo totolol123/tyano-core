@@ -917,271 +917,271 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 			{
 				if(readXMLInteger(node, "value", intValue))
 				{
-					for(int32_t i = COMBAT_FIRST; i <= COMBAT_LAST; i++)
-						kind->abilities.absorb[i] += intValue;
+					for(uint32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
+						kind->abilities.setAbsorb((CombatType_t)i, intValue);
 				}
 			}
 			else if(tmpStrValue == "absorbpercentelements")
 			{
 				if(readXMLInteger(node, "value", intValue))
 				{
-					kind->abilities.absorb[COMBAT_ENERGYDAMAGE] += intValue;
-					kind->abilities.absorb[COMBAT_FIREDAMAGE] += intValue;
-					kind->abilities.absorb[COMBAT_EARTHDAMAGE] += intValue;
-					kind->abilities.absorb[COMBAT_ICEDAMAGE] += intValue;
+					kind->abilities.setAbsorb(COMBAT_ENERGYDAMAGE, intValue);
+					kind->abilities.setAbsorb(COMBAT_FIREDAMAGE, intValue);
+					kind->abilities.setAbsorb(COMBAT_EARTHDAMAGE, intValue);
+					kind->abilities.setAbsorb(COMBAT_ICEDAMAGE, intValue);
 				}
 			}
 			else if(tmpStrValue == "absorbpercentmagic")
 			{
 				if(readXMLInteger(node, "value", intValue))
 				{
-					kind->abilities.absorb[COMBAT_ENERGYDAMAGE] += intValue;
-					kind->abilities.absorb[COMBAT_FIREDAMAGE] += intValue;
-					kind->abilities.absorb[COMBAT_EARTHDAMAGE] += intValue;
-					kind->abilities.absorb[COMBAT_ICEDAMAGE] += intValue;
-					kind->abilities.absorb[COMBAT_HOLYDAMAGE] += intValue;
-					kind->abilities.absorb[COMBAT_DEATHDAMAGE] += intValue;
+					kind->abilities.setAbsorb(COMBAT_ENERGYDAMAGE, intValue);
+					kind->abilities.setAbsorb(COMBAT_FIREDAMAGE, intValue);
+					kind->abilities.setAbsorb(COMBAT_EARTHDAMAGE, intValue);
+					kind->abilities.setAbsorb(COMBAT_ICEDAMAGE, intValue);
+					kind->abilities.setAbsorb(COMBAT_HOLYDAMAGE, intValue);
+					kind->abilities.setAbsorb(COMBAT_DEATHDAMAGE, intValue);
 				}
 			}
 			else if(tmpStrValue == "absorbpercentenergy")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_ENERGYDAMAGE] += intValue;
+					kind->abilities.setAbsorb(COMBAT_ENERGYDAMAGE, intValue);
 			}
 			else if(tmpStrValue == "absorbpercentfire")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_FIREDAMAGE] += intValue;
+					kind->abilities.setAbsorb(COMBAT_FIREDAMAGE, intValue);
 			}
 			else if(tmpStrValue == "absorbpercentpoison" ||	tmpStrValue == "absorbpercentearth")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_EARTHDAMAGE] += intValue;
+					kind->abilities.setAbsorb(COMBAT_EARTHDAMAGE, intValue);
 			}
 			else if(tmpStrValue == "absorbpercentice")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_ICEDAMAGE] += intValue;
+					kind->abilities.setAbsorb(COMBAT_ICEDAMAGE, intValue);
 			}
 			else if(tmpStrValue == "absorbpercentholy")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_HOLYDAMAGE] += intValue;
+					kind->abilities.setAbsorb(COMBAT_HOLYDAMAGE, intValue);
 			}
 			else if(tmpStrValue == "absorbpercentdeath")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_DEATHDAMAGE] += intValue;
+					kind->abilities.setAbsorb(COMBAT_DEATHDAMAGE, intValue);
 			}
 			else if(tmpStrValue == "absorbpercentlifedrain")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_LIFEDRAIN] += intValue;
+					kind->abilities.setAbsorb(COMBAT_LIFEDRAIN, intValue);
 			}
 			else if(tmpStrValue == "absorbpercentmanadrain")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_MANADRAIN] += intValue;
+					kind->abilities.setAbsorb(COMBAT_MANADRAIN, intValue);
 			}
 			else if(tmpStrValue == "absorbpercentdrown")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_DROWNDAMAGE] += intValue;
+					kind->abilities.setAbsorb(COMBAT_DROWNDAMAGE, intValue);
 			}
 			else if(tmpStrValue == "absorbpercentphysical")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_PHYSICALDAMAGE] += intValue;
+					kind->abilities.setAbsorb(COMBAT_PHYSICALDAMAGE, intValue);
 			}
 			else if(tmpStrValue == "absorbpercenthealing")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_HEALING] += intValue;
+					kind->abilities.setAbsorb(COMBAT_HEALING, intValue);
 			}
 			else if(tmpStrValue == "absorbpercentundefined")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.absorb[COMBAT_UNDEFINEDDAMAGE] += intValue;
+					kind->abilities.setAbsorb(COMBAT_UNDEFINEDDAMAGE, intValue);
 			}
 			else if(tmpStrValue == "reflectpercentall")
 			{
 				if(readXMLInteger(node, "value", intValue))
 				{
-					for(int32_t i = COMBAT_FIRST; i <= COMBAT_LAST; i++)
-						kind->abilities.reflect[REFLECT_PERCENT][i] += intValue;
+					for(int32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
+						kind->abilities.setReflect((CombatType_t)i, REFLECT_PERCENT, intValue);
 				}
 			}
 			else if(tmpStrValue == "reflectpercentelements")
 			{
 				if(readXMLInteger(node, "value", intValue))
 				{
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_ENERGYDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_FIREDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_EARTHDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_ICEDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_PERCENT, intValue);
+					kind->abilities.setReflect(COMBAT_FIREDAMAGE, REFLECT_PERCENT, intValue);
+					kind->abilities.setReflect(COMBAT_EARTHDAMAGE, REFLECT_PERCENT, intValue);
+					kind->abilities.setReflect(COMBAT_ICEDAMAGE, REFLECT_PERCENT, intValue);
 				}
 			}
 			else if(tmpStrValue == "reflectpercentmagic")
 			{
 				if(readXMLInteger(node, "value", intValue))
 				{
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_ENERGYDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_FIREDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_EARTHDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_ICEDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_HOLYDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_DEATHDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_PERCENT, intValue);
+					kind->abilities.setReflect(COMBAT_FIREDAMAGE, REFLECT_PERCENT, intValue);
+					kind->abilities.setReflect(COMBAT_EARTHDAMAGE, REFLECT_PERCENT, intValue);
+					kind->abilities.setReflect(COMBAT_ICEDAMAGE, REFLECT_PERCENT, intValue);
+					kind->abilities.setReflect(COMBAT_HOLYDAMAGE, REFLECT_PERCENT, intValue);
+					kind->abilities.setReflect(COMBAT_DEATHDAMAGE, REFLECT_PERCENT, intValue);
 				}
 			}
 			else if(tmpStrValue == "reflectpercentenergy")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_ENERGYDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectpercentfire")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_FIREDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_FIREDAMAGE, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectpercentpoison" ||	tmpStrValue == "reflectpercentearth")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_EARTHDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_EARTHDAMAGE, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectpercentice")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_ICEDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_ICEDAMAGE, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectpercentholy")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_HOLYDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_HOLYDAMAGE, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectpercentdeath")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_DEATHDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_DEATHDAMAGE, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectpercentlifedrain")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_LIFEDRAIN] += intValue;
+					kind->abilities.setReflect(COMBAT_LIFEDRAIN, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectpercentmanadrain")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_MANADRAIN] += intValue;
+					kind->abilities.setReflect(COMBAT_MANADRAIN, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectpercentdrown")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_DROWNDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_DROWNDAMAGE, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectpercentphysical")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_PHYSICALDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_PHYSICALDAMAGE, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectpercenthealing")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_HEALING] += intValue;
+					kind->abilities.setReflect(COMBAT_HEALING, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectpercentundefined")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_PERCENT][COMBAT_UNDEFINEDDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_UNDEFINEDDAMAGE, REFLECT_PERCENT, intValue);
 			}
 			else if(tmpStrValue == "reflectchanceall")
 			{
 				if(readXMLInteger(node, "value", intValue))
 				{
-					for(int32_t i = COMBAT_FIRST; i <= COMBAT_LAST; i++)
-						kind->abilities.reflect[REFLECT_CHANCE][i] += intValue;
+					for(int32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
+						kind->abilities.setReflect((CombatType_t)i, REFLECT_CHANCE, intValue);
 				}
 			}
 			else if(tmpStrValue == "reflectchanceelements")
 			{
 				if(readXMLInteger(node, "value", intValue))
 				{
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_ENERGYDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_FIREDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_EARTHDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_ICEDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_CHANCE, intValue);
+					kind->abilities.setReflect(COMBAT_FIREDAMAGE, REFLECT_CHANCE, intValue);
+					kind->abilities.setReflect(COMBAT_EARTHDAMAGE, REFLECT_CHANCE, intValue);
+					kind->abilities.setReflect(COMBAT_ICEDAMAGE, REFLECT_CHANCE, intValue);
 				}
 			}
 			else if(tmpStrValue == "reflectchancemagic")
 			{
 				if(readXMLInteger(node, "value", intValue))
 				{
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_ENERGYDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_FIREDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_EARTHDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_ICEDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_HOLYDAMAGE] += intValue;
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_DEATHDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_CHANCE, intValue);
+					kind->abilities.setReflect(COMBAT_FIREDAMAGE, REFLECT_CHANCE, intValue);
+					kind->abilities.setReflect(COMBAT_EARTHDAMAGE, REFLECT_CHANCE, intValue);
+					kind->abilities.setReflect(COMBAT_ICEDAMAGE, REFLECT_CHANCE, intValue);
+					kind->abilities.setReflect(COMBAT_HOLYDAMAGE, REFLECT_CHANCE, intValue);
+					kind->abilities.setReflect(COMBAT_DEATHDAMAGE, REFLECT_CHANCE, intValue);
 				}
 			}
 			else if(tmpStrValue == "reflectchanceenergy")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_ENERGYDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "reflectchancefire")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_FIREDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_FIREDAMAGE, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "reflectchancepoison" ||	tmpStrValue == "reflectchanceearth")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_EARTHDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_EARTHDAMAGE, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "reflectchanceice")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_ICEDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_ICEDAMAGE, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "reflectchanceholy")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_HOLYDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_HOLYDAMAGE, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "reflectchancedeath")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_DEATHDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_DEATHDAMAGE, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "reflectchancelifedrain")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_LIFEDRAIN] += intValue;
+					kind->abilities.setReflect(COMBAT_LIFEDRAIN, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "reflectchancemanadrain")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_MANADRAIN] += intValue;
+					kind->abilities.setReflect(COMBAT_MANADRAIN, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "reflectchancedrown")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_DROWNDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_DROWNDAMAGE, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "reflectchancephysical")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_PHYSICALDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_PHYSICALDAMAGE, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "reflectchancehealing")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_HEALING] += intValue;
+					kind->abilities.setReflect(COMBAT_HEALING, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "reflectchanceundefined")
 			{
 				if(readXMLInteger(node, "value", intValue))
-					kind->abilities.reflect[REFLECT_CHANCE][COMBAT_UNDEFINEDDAMAGE] += intValue;
+					kind->abilities.setReflect(COMBAT_UNDEFINEDDAMAGE, REFLECT_CHANCE, intValue);
 			}
 			else if(tmpStrValue == "suppressshock" || tmpStrValue == "suppressenergy")
 			{

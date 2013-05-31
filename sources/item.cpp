@@ -1043,10 +1043,10 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			s << "magic level " << std::showpos << (int32_t)kind->abilities.stats[STAT_MAGICLEVEL] << std::noshowpos;
 		}
 
-		int32_t show = kind->abilities.absorb[COMBAT_FIRST];
-		for(uint32_t i = (COMBAT_FIRST + 1); i <= COMBAT_LAST; i++)
+		int32_t show = kind->abilities.getAbsorb(COMBAT_PHYSICALDAMAGE);
+		for(uint32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.absorb[i] == show)
+			if(kind->abilities.getAbsorb((CombatType_t)i) == show)
 				continue;
 
 			show = 0;
@@ -1056,9 +1056,10 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 		if(!show)
 		{
 			bool tmp = true;
-			for(uint32_t i = COMBAT_FIRST; i <= COMBAT_LAST; i++)
+			for(uint32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				if(!kind->abilities.absorb[i])
+				int16_t absorb = kind->abilities.getAbsorb((CombatType_t)i);
+				if(absorb <= 0)
 					continue;
 
 				if(tmp)
@@ -1077,7 +1078,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 				else
 					s << ", ";
 
-				s << getCombatName((CombatType_t)i) << " " << std::showpos << kind->abilities.absorb[i] << std::noshowpos << "%";
+				s << getCombatName((CombatType_t)i) << " " << absorb << "%";
 			}
 		}
 		else
@@ -1090,7 +1091,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			else
 				s << ", ";
 
-			s << "protection all " << std::showpos << show << std::noshowpos << "%";
+			s << "protection all " << show << "%";
 		}
 
 		if(kind->abilities.speed)
@@ -1151,10 +1152,10 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			s << "magic level " << std::showpos << (int32_t)kind->abilities.stats[STAT_MAGICLEVEL] << std::noshowpos;
 		}
 
-		int32_t show = kind->abilities.absorb[COMBAT_FIRST];
-		for(int32_t i = (COMBAT_FIRST + 1); i <= COMBAT_LAST; i++)
+		int32_t show = kind->abilities.getAbsorb(COMBAT_PHYSICALDAMAGE);
+		for(int32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.absorb[i] == show)
+			if(kind->abilities.getAbsorb((CombatType_t)i) == show)
 				continue;
 
 			show = 0;
@@ -1164,9 +1165,10 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 		if(!show)
 		{
 			bool tmp = true;
-			for(int32_t i = COMBAT_FIRST; i <= COMBAT_LAST; i++)
+			for(int32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				if(!kind->abilities.absorb[i])
+				int16_t absorb = kind->abilities.getAbsorb((CombatType_t)i);
+				if(absorb <= 0)
 					continue;
 
 				if(tmp)
@@ -1185,7 +1187,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 				else
 					s << ", ";
 
-				s << getCombatName((CombatType_t)i) << " " << std::showpos << kind->abilities.absorb[i] << std::noshowpos << "%";
+				s << getCombatName((CombatType_t)i) << " " << absorb << "%";
 			}
 		}
 		else
@@ -1198,13 +1200,13 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			else
 				s << ", ";
 
-			s << "protection all " << std::showpos << show << std::noshowpos << "%";
+			s << "protection all " << show << "%";
 		}
 
-		show = kind->abilities.reflect[REFLECT_CHANCE][COMBAT_FIRST];
-		for(int32_t i = (COMBAT_FIRST + 1); i <= COMBAT_LAST; i++)
+		show = kind->abilities.getReflect(COMBAT_PHYSICALDAMAGE, REFLECT_CHANCE);
+		for(int32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.reflect[REFLECT_CHANCE][i] == show)
+			if(kind->abilities.getReflect((CombatType_t)i, REFLECT_CHANCE) == show)
 				continue;
 
 			show = 0;
@@ -1214,9 +1216,10 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 		if(!show)
 		{
 			bool tmp = true;
-			for(int32_t i = COMBAT_FIRST; i <= COMBAT_LAST; i++)
+			for(int32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				if(!kind->abilities.reflect[REFLECT_CHANCE][i])
+				int16_t chance = kind->abilities.getReflect((CombatType_t)i, REFLECT_CHANCE);
+				if(chance <= 0)
 					continue;
 
 				if(tmp)
@@ -1236,18 +1239,20 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 					s << ", ";
 
 				std::string ss = "no";
-				if(kind->abilities.reflect[REFLECT_PERCENT][i] > 99)
-					ss = "whole";
-				else if(kind->abilities.reflect[REFLECT_PERCENT][i] >= 75)
+
+				int16_t percent = kind->abilities.getReflect((CombatType_t)i, REFLECT_PERCENT);
+				if(percent > 99)
+					ss = "all";
+				else if(percent >= 75)
 					ss = "huge";
-				else if(kind->abilities.reflect[REFLECT_PERCENT][i] >= 50)
+				else if(percent >= 50)
 					ss = "medium";
-				else if(kind->abilities.reflect[REFLECT_PERCENT][i] >= 25)
+				else if(percent >= 25)
 					ss = "small";
-				else if(kind->abilities.reflect[REFLECT_PERCENT][i] > 0)
+				else if(percent > 0)
 					ss = "tiny";
 
-				s << getCombatName((CombatType_t)i) << " " << std::showpos << kind->abilities.reflect[REFLECT_PERCENT][i] << std::noshowpos << "% for " << ss;
+				s << getCombatName((CombatType_t)i) << " " << chance << "% for " << ss;
 			}
 
 			if(!tmp)
@@ -1263,7 +1268,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			else
 				s << ", ";
 
-			s << "reflect all " << std::showpos << show << std::noshowpos << "% for mixed damage";
+			s << "reflect all " << show << "% for mixed damage";
 		}
 
 		if(kind->abilities.speed)

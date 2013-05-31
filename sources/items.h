@@ -102,20 +102,116 @@ enum FloorChange_t
 	CHANGE_LAST = CHANGE_NONE
 };
 
-struct Abilities
+class Abilities
 {
+
+public:
+
 	Abilities()
 	{
 		memset(this, 0, sizeof(*this));
 	};
 
+
+	int16_t getAbsorb(CombatType_t combatType) const {
+		CombatTypeIndex index = combatTypeIndexFromCombatType(combatType);
+		if (index == COMBATINDEX_NONE) {
+			return 0;
+		}
+
+		return _absorb[index-1];
+	}
+
+
+	int16_t getReflect(CombatType_t combatType, Reflect_t reflectType) const {
+		CombatTypeIndex index = combatTypeIndexFromCombatType(combatType);
+		if (index == COMBATINDEX_NONE) {
+			return 0;
+		}
+
+		return _reflect[index-1][reflectType];
+	}
+
+
+	void setAbsorb(CombatType_t combatType, int16_t absorb) {
+		CombatTypeIndex index = combatTypeIndexFromCombatType(combatType);
+		if (index == COMBATINDEX_NONE) {
+			return;
+		}
+
+		_absorb[index-1] = absorb;
+	}
+
+
+	void setReflect(CombatType_t combatType, Reflect_t reflectType, int16_t reflect) {
+		CombatTypeIndex index = combatTypeIndexFromCombatType(combatType);
+		if (index == COMBATINDEX_NONE) {
+			return;
+		}
+
+		_reflect[index-1][reflectType] = reflect;
+	}
+
+
 	bool manaShield:1, invisible:1, regeneration:1, preventLoss:1, preventDrop:1;
 	CombatType_t elementType:12;
 	uint32_t conditionSuppressions:24;
 
-	int16_t elementDamage, absorb[COMBAT_LAST + 1], increment[INCREMENT_LAST + 1], reflect[REFLECT_LAST + 1][COMBAT_LAST + 1];
+	int16_t elementDamage, increment[INCREMENT_LAST + 1];
 	int32_t skills[SKILL_LAST + 1], skillsPercent[SKILL_LAST + 1], stats[STAT_LAST + 1], statsPercent[STAT_LAST + 1],
 		speed, healthGain, healthTicks, manaGain, manaTicks;
+
+private:
+
+	static CombatTypeIndex combatTypeIndexFromCombatType(CombatType_t combatType) {
+		switch (combatType) {
+		case COMBAT_NONE:
+			return COMBATINDEX_NONE;
+
+		case COMBAT_PHYSICALDAMAGE:
+			return COMBATINDEX_PHYSICALDAMAGE;
+
+		case COMBAT_ENERGYDAMAGE:
+			return COMBATINDEX_ENERGYDAMAGE;
+
+		case COMBAT_EARTHDAMAGE:
+			return COMBATINDEX_EARTHDAMAGE;
+
+		case COMBAT_FIREDAMAGE:
+			return COMBATINDEX_FIREDAMAGE;
+
+		case COMBAT_UNDEFINEDDAMAGE:
+			return COMBATINDEX_UNDEFINEDDAMAGE;
+
+		case COMBAT_LIFEDRAIN:
+			return COMBATINDEX_LIFEDRAIN;
+
+		case COMBAT_MANADRAIN:
+			return COMBATINDEX_MANADRAIN;
+
+		case COMBAT_HEALING:
+			return COMBATINDEX_HEALING;
+
+		case COMBAT_DROWNDAMAGE:
+			return COMBATINDEX_DROWNDAMAGE;
+
+		case COMBAT_ICEDAMAGE:
+			return COMBATINDEX_ICEDAMAGE;
+
+		case COMBAT_HOLYDAMAGE:
+			return COMBATINDEX_HOLYDAMAGE;
+
+		case COMBAT_DEATHDAMAGE:
+			return COMBATINDEX_DEATHDAMAGE;
+		}
+
+		return COMBATINDEX_NONE;
+	}
+
+
+	int16_t _absorb[COMBATINDEX_COUNT-1];
+	int16_t _reflect[COMBATINDEX_COUNT-1][REFLECT_COUNT];
+
 };
 
 class Condition;

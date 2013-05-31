@@ -2046,18 +2046,23 @@ BlockType_t Player::blockHit(Creature* attacker, CombatType_t combatType, int32_
 				continue;
 
 			ItemKindPC kind = item->getKind();
-			if(kind->abilities.absorb[combatType])
+
+			int16_t absorb = kind->abilities.getAbsorb(combatType);
+			if(absorb > 0)
 			{
-				blocked += (int32_t)std::ceil((double)(damage * kind->abilities.absorb[combatType]) / 100.);
+				blocked += (int32_t)std::ceil((double)(damage * absorb) / 100.);
 				if(item->hasCharges())
 					server.game().transformItem(item, item->getId(), std::max((int32_t)0, (int32_t)item->getCharges() - 1));
 			}
 
-			if(kind->abilities.reflect[REFLECT_PERCENT][combatType] && kind->abilities.reflect[REFLECT_CHANCE][combatType] < random_range(0, 100))
-			{
-				reflected += (int32_t)std::ceil((double)(damage * kind->abilities.reflect[REFLECT_PERCENT][combatType]) / 100.);
-				if(item->hasCharges() && !kind->abilities.absorb[combatType])
-					server.game().transformItem(item, item->getId(), std::max((int32_t)0, (int32_t)item->getCharges() - 1));
+			int16_t reflectPercent = kind->abilities.getReflect(combatType, REFLECT_PERCENT);
+			if (reflectPercent > 0) {
+				int16_t reflectChance = kind->abilities.getReflect(combatType, REFLECT_CHANCE);
+				if (reflectChance > random_range(0, 100)) {
+					reflected += (int32_t)std::ceil((double)(damage * reflectPercent) / 100.);
+					if(item->hasCharges() && absorb <= 0)
+						server.game().transformItem(item, item->getId(), std::max((int32_t)0, (int32_t)item->getCharges() - 1));
+				}
 			}
 		}
 
