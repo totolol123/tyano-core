@@ -55,12 +55,25 @@ using log4cxx::LoggerPtr;
 
 
 namespace std {
+
+#ifdef __CYGWIN__
+
+	// Cygwin development is a bit behind and doesn't propagate all math functions to the std namespace.
+
+	using ::ceil;
+	using ::floor;
+	using ::round;
+
+#endif
+
+
 	template <>
 	struct default_delete<xmlDoc> {
 		void operator()(xmlDocPtr document) const {
 			xmlFreeDoc(document);
 		}
 	};
+
 }
 
 typedef std::unique_ptr<xmlDoc>  xmlDocP;

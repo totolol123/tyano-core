@@ -811,12 +811,12 @@ bool TalkAction::thingProporties(Creature* creature, const std::string& cmd, con
 			{
 				std::string key = parseParams(it, tokens.end()), value = parseParams(it, tokens.end());
 				if(atoi(value.c_str()) || value == "0")
-					item->setAttribute(key, atoi(value.c_str()));
+					item->getAttributes().set(key, atoi(value.c_str()));
 				else
-					item->setAttribute(key, value);
+					item->getAttributes().set(key, value);
 			}
 			else if(action == "erase" || action == "remove")
-				item->eraseAttribute(parseParams(it, tokens.end()));
+				item->getAttributes().remove(parseParams(it, tokens.end()));
 			else if(action == "action" || action == "actionid" || action == "aid")
 			{
 				int32_t tmp = atoi(parseParams(it, tokens.end()).c_str());

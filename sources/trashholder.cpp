@@ -22,6 +22,18 @@
 #include "spells.h"
 
 
+
+TrashHolder::ClassAttributesP TrashHolder::getClassAttributes() {
+	return Item::getClassAttributes();
+}
+
+
+const std::string& TrashHolder::getClassName() {
+	static const std::string name("Trash Holder");
+	return name;
+}
+
+
 void TrashHolder::__addThing(Creature* actor, int32_t index, Thing* thing)
 {
 	if(Item* item = thing->getItem())

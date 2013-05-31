@@ -622,6 +622,23 @@ Door::~Door()
 		delete accessList;
 }
 
+
+Door::ClassAttributesP Door::getClassAttributes() {
+	using attributes::Type;
+
+	auto attributes = Container::getClassAttributes();
+	attributes->emplace(ATTRIBUTE_DOORID, Type::INTEGER);
+
+	return attributes;
+}
+
+
+const std::string& Door::getClassName() {
+	static const std::string name("Door");
+	return name;
+}
+
+
 Attr_ReadValue Door::readAttr(AttrTypes_t attr, PropStream& propStream)
 {
 	if(attr != ATTR_HOUSEDOORID)

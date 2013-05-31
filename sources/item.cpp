@@ -14,9 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
-#include "otpch.h"
 
+#include "otpch.h"
 #include "item.h"
+
+#include "attributes/Attribute.hpp"
+#include "items/Class.hpp"
 #include "container.h"
 #include "depot.h"
 
@@ -66,6 +69,55 @@ const std::string Item::ATTRIBUTE_WRITER("writer");
 
 LOGGER_DEFINITION(Item);
 
+
+
+Item::Attributes& Item::getAttributes() {
+	return _attributes;
+}
+
+
+const Item::Attributes& Item::getAttributes() const {
+	return _attributes;
+}
+
+
+Item::ClassAttributesP Item::getClassAttributes() {
+	using attributes::Type;
+
+	auto attributes = ClassAttributesP(new ClassAttributes);
+	attributes->emplace(ATTRIBUTE_AID, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_ARMOR, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_ARTICLE, Type::STRING);
+	attributes->emplace(ATTRIBUTE_ATTACK, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_ATTACKSPEED, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_CHARGES, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_CORPSEOWNER, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_DATE, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_DECAYING, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_DEFENSE, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_DESCRIPTION, Type::STRING);
+	attributes->emplace(ATTRIBUTE_DURATION, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_EXTRAATTACK, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_EXTRADEFENSE, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_FLUIDTYPE, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_HITCHANCE, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_NAME, Type::STRING);
+	attributes->emplace(ATTRIBUTE_OWNER, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_PLURALNAME, Type::STRING);
+	attributes->emplace(ATTRIBUTE_SCRIPTPROTECTED, Type::BOOLEAN);
+	attributes->emplace(ATTRIBUTE_SHOOTRANGE, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_TEXT, Type::STRING);
+	attributes->emplace(ATTRIBUTE_UID, Type::INTEGER);
+	attributes->emplace(ATTRIBUTE_WRITER, Type::STRING);
+
+	return attributes;
+}
+
+
+const std::string& Item::getClassName() {
+	static const std::string name("Generic");
+	return name;
+}
 
 
 boost::intrusive_ptr<Item> Item::CreateItem(uint16_t kindId, uint16_t amount/* = 1*/) {
@@ -169,9 +221,9 @@ bool Item::loadItem(xmlNodePtr node, Container* parent)
 				continue;
 
 			if(atoi(v[1].c_str()) || v[1] == "0")
-				item->setAttribute(v[0], atoi(v[1].c_str()));
+				item->_attributes.set(v[0], atoi(v[1].c_str()));
 			else
-				item->setAttribute(v[0], v[1]);
+				item->_attributes.set(v[0], v[1]);
 		}
 	}
 
@@ -220,7 +272,7 @@ bool Item::loadContainer(xmlNodePtr parentNode, Container* parent)
 }
 
 Item::Item(const ItemKindPC& kind, uint16_t amount/* = 0*/):
-	ItemAttributes(), kind(kind)
+	_attributes(kind->_class->getAttributesScheme()), kind(kind)
 {
 	assert(kind);
 
@@ -246,24 +298,20 @@ boost::intrusive_ptr<Item> Item::clone() const
 	if(!tmp)
 		return nullptr;
 
-	if(!attributes || attributes->empty())
-		return tmp;
+	tmp->_attributes = _attributes;
 
-	tmp->createAttributes();
-	*tmp->attributes = *attributes;
 	return tmp;
 }
 
-void Item::copyAttributes(Item* item)
-{
-	if(item && item->attributes && !item->attributes->empty())
-	{
-		createAttributes();
-		*attributes = *item->attributes;
+void Item::copyAttributes(Item* item) {
+	if (item == nullptr) {
+		return;
 	}
 
-	eraseAttribute(ATTRIBUTE_DECAYING);
-	eraseAttribute(ATTRIBUTE_DURATION);
+	_attributes = item->_attributes;
+
+	_attributes.remove(ATTRIBUTE_DECAYING);
+	_attributes.remove(ATTRIBUTE_DURATION);
 }
 
 void Item::onRemoved()
@@ -370,12 +418,13 @@ void Item::setKind(const ItemKindPC& kind) {
 	uint32_t newDuration = kind->decayTime * 1000;
 	if(!newDuration && !kind->stopTime && kind->decayTo == -1)
 	{
-		eraseAttribute(ATTRIBUTE_DECAYING);
-		eraseAttribute(ATTRIBUTE_DURATION);
+		_attributes.remove(ATTRIBUTE_DECAYING);
+		_attributes.remove(ATTRIBUTE_DURATION);
 	}
 
-	eraseAttribute(ATTRIBUTE_CORPSEOWNER);
-	if(newDuration > 0 && (!previousStopTime || !hasIntegerAttribute(ATTRIBUTE_DURATION)))
+	_attributes.remove(ATTRIBUTE_CORPSEOWNER);
+
+	if(newDuration > 0 && (!previousStopTime || !_attributes.contains(ATTRIBUTE_DURATION)))
 	{
 		setDecaying(DECAYING_FALSE);
 		setDuration(newDuration);
@@ -456,7 +505,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_USHORT(aid))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_AID, aid);
+			_attributes.set(ATTRIBUTE_AID, aid);
 			break;
 		}
 
@@ -476,7 +525,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(name))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_NAME, name);
+			_attributes.set(ATTRIBUTE_NAME, name);
 			break;
 		}
 
@@ -486,7 +535,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(name))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_PLURALNAME, name);
+			_attributes.set(ATTRIBUTE_PLURALNAME, name);
 			break;
 		}
 
@@ -496,7 +545,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(article))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_ARTICLE, article);
+			_attributes.set(ATTRIBUTE_ARTICLE, article);
 			break;
 		}
 
@@ -506,7 +555,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)attack))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_ATTACK, attack);
+			_attributes.set(ATTRIBUTE_ATTACK, attack);
 			break;
 		}
 
@@ -516,7 +565,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)attack))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_EXTRAATTACK, attack);
+			_attributes.set(ATTRIBUTE_EXTRAATTACK, attack);
 			break;
 		}
 
@@ -526,7 +575,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)defense))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_DEFENSE, defense);
+			_attributes.set(ATTRIBUTE_DEFENSE, defense);
 			break;
 		}
 
@@ -536,7 +585,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)defense))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_EXTRADEFENSE, defense);
+			_attributes.set(ATTRIBUTE_EXTRADEFENSE, defense);
 			break;
 		}
 
@@ -546,7 +595,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)armor))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_ARMOR, armor);
+			_attributes.set(ATTRIBUTE_ARMOR, armor);
 			break;
 		}
 
@@ -556,7 +605,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)attackSpeed))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_ATTACKSPEED, attackSpeed);
+			_attributes.set(ATTRIBUTE_ATTACKSPEED, attackSpeed);
 			break;
 		}
 
@@ -566,7 +615,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)hitChance))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_HITCHANCE, hitChance);
+			_attributes.set(ATTRIBUTE_HITCHANCE, hitChance);
 			break;
 		}
 
@@ -576,7 +625,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_UCHAR(protection))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_SCRIPTPROTECTED, protection != 0);
+			_attributes.set(ATTRIBUTE_SCRIPTPROTECTED, protection != 0);
 			break;
 		}
 
@@ -586,7 +635,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(text))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_TEXT, text);
+			_attributes.set(ATTRIBUTE_TEXT, text);
 			break;
 		}
 
@@ -596,7 +645,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)date))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_DATE, date);
+			_attributes.set(ATTRIBUTE_DATE, date);
 			break;
 		}
 
@@ -606,7 +655,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(writer))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_WRITER, writer);
+			_attributes.set(ATTRIBUTE_WRITER, writer);
 			break;
 		}
 
@@ -616,7 +665,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(text))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_DESCRIPTION, text);
+			_attributes.set(ATTRIBUTE_DESCRIPTION, text);
 			break;
 		}
 
@@ -646,7 +695,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)duration))
 				return ATTR_READ_ERROR;
 
-			setAttribute(ATTRIBUTE_DURATION, duration);
+			_attributes.set(ATTRIBUTE_DURATION, duration);
 			break;
 		}
 
@@ -657,7 +706,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 				return ATTR_READ_ERROR;
 
 			if((ItemDecayState_t)state != DECAYING_FALSE)
-				setAttribute(ATTRIBUTE_DECAYING, (int32_t)DECAYING_PENDING);
+				_attributes.set(ATTRIBUTE_DECAYING, (int32_t)DECAYING_PENDING);
 
 			break;
 		}
@@ -726,9 +775,9 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 		//ItemAttributes class
 		case ATTR_ATTRIBUTE_MAP:
 		{
-			bool unique = hasIntegerAttribute(ATTRIBUTE_UID);
+			bool unique = _attributes.contains(ATTRIBUTE_UID);
 			bool ret = unserializeMap(propStream);
-			if(!unique && hasIntegerAttribute(ATTRIBUTE_UID)) // unfortunately we have to do this
+			if(!unique && _attributes.contains(ATTRIBUTE_UID)) // unfortunately we have to do this
 				ScriptEnviroment::addUniqueThing(this);
 
 			// this attribute has a custom behavior as well
@@ -764,23 +813,6 @@ bool Item::unserializeAttr(PropStream& propStream)
 			default:
 				break;
 		}
-	}
-
-	return true;
-}
-
-bool Item::serializeAttr(PropWriteStream& propWriteStream) const
-{
-	if(isStackable() || isFluidContainer() || isSplash())
-	{
-		propWriteStream.ADD_UCHAR(ATTR_COUNT);
-		propWriteStream.ADD_UCHAR((uint8_t)getSubType());
-	}
-
-	if(attributes && !attributes->empty())
-	{
-		propWriteStream.ADD_UCHAR(ATTR_ATTRIBUTE_MAP);
-		serializeMap(propWriteStream);
 	}
 
 	return true;
@@ -1315,7 +1347,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 
 	if(kind->showDuration)
 	{
-		if(item && item->hasIntegerAttribute(ATTRIBUTE_DURATION))
+		if(item && item->_attributes.contains(ATTRIBUTE_DURATION))
 		{
 			int32_t duration = item->getDuration() / 1000;
 			s << " that has energy for ";
@@ -1505,7 +1537,7 @@ void Item::setActionId(int32_t aid)
 	if(getActionId())
 		server.moveEvents().onRemoveTileItem(getTile(), this);
 
-	setAttribute(ATTRIBUTE_AID, aid);
+	_attributes.set(ATTRIBUTE_AID, aid);
 	server.moveEvents().onAddTileItem(getTile(), this);
 }
 
@@ -1514,7 +1546,7 @@ void Item::resetActionId()
 	if(!getActionId())
 		return;
 
-	eraseAttribute(ATTRIBUTE_AID);
+	_attributes.remove(ATTRIBUTE_AID);
 	server.moveEvents().onAddTileItem(getTile(), this);
 }
 
@@ -1523,7 +1555,7 @@ void Item::setUniqueId(int32_t uid)
 	if(getUniqueId())
 		return;
 
-	setAttribute(ATTRIBUTE_UID, uid);
+	_attributes.set(ATTRIBUTE_UID, uid);
 	ScriptEnviroment::addUniqueThing(this);
 }
 
@@ -1551,7 +1583,7 @@ void Item::__startDecaying()
 
 std::string Item::getName() const
 {
-	const std::string* v = getStringAttribute(ATTRIBUTE_NAME);
+	const std::string* v = _attributes.getString(ATTRIBUTE_NAME);
 	if(v)
 		return *v;
 
@@ -1560,7 +1592,7 @@ std::string Item::getName() const
 
 std::string Item::getPluralName() const
 {
-	const std::string* v = getStringAttribute(ATTRIBUTE_PLURALNAME);
+	const std::string* v = _attributes.getString(ATTRIBUTE_PLURALNAME);
 	if(v)
 		return *v;
 
@@ -1569,7 +1601,7 @@ std::string Item::getPluralName() const
 
 std::string Item::getArticle() const
 {
-	const std::string* v = getStringAttribute(ATTRIBUTE_ARTICLE);
+	const std::string* v = _attributes.getString(ATTRIBUTE_ARTICLE);
 	if(v)
 		return *v;
 
@@ -1578,7 +1610,7 @@ std::string Item::getArticle() const
 
 bool Item::isScriptProtected() const
 {
-	const bool* v = getBooleanAttribute(ATTRIBUTE_SCRIPTPROTECTED);
+	const bool* v = _attributes.getBoolean(ATTRIBUTE_SCRIPTPROTECTED);
 	if(v)
 		return *v;
 
@@ -1587,7 +1619,7 @@ bool Item::isScriptProtected() const
 
 int32_t Item::getAttack() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_ATTACK);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_ATTACK);
 	if(v)
 		return *v;
 
@@ -1596,7 +1628,7 @@ int32_t Item::getAttack() const
 
 int32_t Item::getExtraAttack() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_EXTRAATTACK);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_EXTRAATTACK);
 	if(v)
 		return *v;
 
@@ -1605,7 +1637,7 @@ int32_t Item::getExtraAttack() const
 
 int32_t Item::getDefense() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_DEFENSE);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_DEFENSE);
 	if(v)
 		return *v;
 
@@ -1614,7 +1646,7 @@ int32_t Item::getDefense() const
 
 int32_t Item::getExtraDefense() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_EXTRADEFENSE);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_EXTRADEFENSE);
 	if(v)
 		return *v;
 
@@ -1623,7 +1655,7 @@ int32_t Item::getExtraDefense() const
 
 int32_t Item::getArmor() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_ARMOR);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_ARMOR);
 	if(v)
 		return *v;
 
@@ -1632,7 +1664,7 @@ int32_t Item::getArmor() const
 
 int32_t Item::getAttackSpeed() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_ATTACKSPEED);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_ATTACKSPEED);
 	if(v)
 		return *v;
 
@@ -1641,7 +1673,7 @@ int32_t Item::getAttackSpeed() const
 
 int32_t Item::getHitChance() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_HITCHANCE);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_HITCHANCE);
 	if(v)
 		return *v;
 
@@ -1650,7 +1682,7 @@ int32_t Item::getHitChance() const
 
 int32_t Item::getShootRange() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_SHOOTRANGE);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_SHOOTRANGE);
 	if(v)
 		return *v;
 
@@ -1659,14 +1691,14 @@ int32_t Item::getShootRange() const
 
 void Item::decreaseDuration(int32_t time)
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_DURATION);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_DURATION);
 	if(v)
-		setAttribute(ATTRIBUTE_DURATION, *v - time);
+		_attributes.set(ATTRIBUTE_DURATION, *v - time);
 }
 
 int32_t Item::getDuration() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_DURATION);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_DURATION);
 	if(v)
 		return *v;
 
@@ -1675,7 +1707,7 @@ int32_t Item::getDuration() const
 
 const std::string& Item::getSpecialDescription() const
 {
-	const std::string* v = getStringAttribute(ATTRIBUTE_DESCRIPTION);
+	const std::string* v = _attributes.getString(ATTRIBUTE_DESCRIPTION);
 	if(v)
 		return *v;
 
@@ -1684,7 +1716,7 @@ const std::string& Item::getSpecialDescription() const
 
 const std::string& Item::getText() const
 {
-	const std::string* v = getStringAttribute(ATTRIBUTE_TEXT);
+	const std::string* v = _attributes.getString(ATTRIBUTE_TEXT);
 	if(v)
 		return *v;
 
@@ -1693,7 +1725,7 @@ const std::string& Item::getText() const
 
 time_t Item::getDate() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_DATE);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_DATE);
 	if(v)
 		return (time_t)*v;
 
@@ -1702,7 +1734,7 @@ time_t Item::getDate() const
 
 const std::string& Item::getWriter() const
 {
-	const std::string* v = getStringAttribute(ATTRIBUTE_WRITER);
+	const std::string* v = _attributes.getString(ATTRIBUTE_WRITER);
 	if(v)
 		return *v;
 
@@ -1711,7 +1743,7 @@ const std::string& Item::getWriter() const
 
 int32_t Item::getActionId() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_AID);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_AID);
 	if(v)
 		return *v;
 
@@ -1720,7 +1752,7 @@ int32_t Item::getActionId() const
 
 int32_t Item::getUniqueId() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_UID);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_UID);
 	if(v)
 		return *v;
 
@@ -1729,7 +1761,7 @@ int32_t Item::getUniqueId() const
 
 uint16_t Item::getCharges() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_CHARGES);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_CHARGES);
 	if(v && *v >= 0)
 		return (uint16_t)*v;
 
@@ -1738,7 +1770,7 @@ uint16_t Item::getCharges() const
 
 uint16_t Item::getFluidType() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_FLUIDTYPE);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_FLUIDTYPE);
 	if(v && *v >= 0)
 		return (uint16_t)*v;
 
@@ -1747,7 +1779,7 @@ uint16_t Item::getFluidType() const
 
 uint32_t Item::getOwner() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_OWNER);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_OWNER);
 	if(v)
 		return (uint32_t)*v;
 
@@ -1756,7 +1788,7 @@ uint32_t Item::getOwner() const
 
 uint32_t Item::getCorpseOwner()
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_CORPSEOWNER);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_CORPSEOWNER);
 	if(v)
 		return (uint32_t)*v;
 
@@ -1765,7 +1797,7 @@ uint32_t Item::getCorpseOwner()
 
 ItemDecayState_t Item::getDecaying() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_DECAYING);
+	const int32_t* v = _attributes.getInteger(ATTRIBUTE_DECAYING);
 	if(v)
 		return (ItemDecayState_t)*v;
 
@@ -1784,4 +1816,123 @@ uint32_t Item::countByType(const Item* item, int32_t checkType, bool multiCount)
 		return item->getCharges();
 
 	return item->getItemCount();
+}
+
+
+typedef enum {
+	SerializedTypeNone = 0,
+	SerializedTypeString = 1,
+	SerializedTypeInt = 2,
+	SerializedTypeFloat = 3,
+	SerializedTypeBool = 4
+} SerializedType;
+
+
+
+bool Item::serializeAttr(PropWriteStream& stream) const
+{
+	if(isStackable() || isFluidContainer() || isSplash())
+	{
+		stream.ADD_UCHAR(ATTR_COUNT);
+		stream.ADD_UCHAR((uint8_t)getSubType());
+	}
+
+	auto entries = _attributes.getEntries();
+	if (entries != nullptr && !entries->empty()) {
+		stream.ADD_UCHAR(ATTR_ATTRIBUTE_MAP);
+		stream.ADD_USHORT((uint16_t)std::min((size_t)0xFFFF, entries->size()));
+
+		for (auto& it : *entries) {
+			auto& attribute = *it.first;
+
+			stream.ADD_STRING(attribute.getName());
+
+			switch (attribute.getType()) {
+			case attributes::Type::BOOLEAN:
+				stream.ADD_UCHAR((uint8_t)SerializedTypeBool);
+				stream.ADD_UCHAR(boost::any_cast<bool>(it.second) ? 1 : 0);
+				break;
+
+			case attributes::Type::FLOAT:
+				stream.ADD_UCHAR((uint8_t)SerializedTypeFloat);
+				stream.ADD_VALUE(boost::any_cast<float>(it.second));
+				break;
+
+			case attributes::Type::INTEGER:
+				stream.ADD_UCHAR((uint8_t)SerializedTypeInt);
+				stream.ADD_VALUE(boost::any_cast<int32_t>(it.second));
+				break;
+
+			case attributes::Type::STRING:
+				stream.ADD_UCHAR((uint8_t)SerializedTypeString);
+				stream.ADD_LSTRING(boost::any_cast<const std::string&>(it.second));
+				break;
+
+			default:
+				stream.ADD_UCHAR((uint8_t)SerializedTypeNone);
+			}
+		}
+	}
+
+	return true;
+}
+
+
+bool Item::unserializeMap(PropStream& stream) {
+	uint16_t n;
+	if(!stream.GET_USHORT(n))
+		return true;
+
+	while(n--)
+	{
+		std::string key;
+		if(!stream.GET_STRING(key))
+			return false;
+
+
+		uint8_t type = 0;
+		stream.GET_UCHAR(type);
+
+		switch (type)
+		{
+			case SerializedTypeString:
+			{
+				std::string v;
+				if(!stream.GET_LSTRING(v))
+					return false;
+
+				_attributes.set(key, v);
+				break;
+			}
+			case SerializedTypeInt:
+			{
+				int32_t v;
+				if(!stream.GET_VALUE(v))
+					return false;
+
+				_attributes.set(key, v);
+				break;
+			}
+			case SerializedTypeFloat:
+			{
+				float v;
+				if(!stream.GET_VALUE(v))
+					return false;
+
+				_attributes.set(key, v);
+				break;
+			}
+			case SerializedTypeBool:
+			{
+				uint8_t v;
+				if(!stream.GET_UCHAR(v))
+					return false;
+
+				_attributes.set(key, v != 0);
+				break;
+			}
+		}
+	}
+
+	return true;
 }

@@ -25,6 +25,10 @@
 class TrashHolder : public Item, public Cylinder
 {
 	public:
+
+		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassName();
+
 		TrashHolder(const ItemKindPC& kind, MagicEffect_t _effect = MAGIC_EFFECT_NONE): Item(kind), effect(_effect) {}
 		virtual ~TrashHolder() {}
 

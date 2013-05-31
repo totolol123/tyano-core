@@ -31,6 +31,9 @@ class BedItem : public Item
 		static const std::string ATTRIBUTE_SLEEPSTART;
 
 
+		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassName();
+
 		BedItem(const ItemKindPC& kind): Item(kind), house(nullptr) {internalRemoveSleeper();}
 		virtual ~BedItem() {}
 

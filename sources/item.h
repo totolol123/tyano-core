@@ -18,8 +18,10 @@
 #ifndef _ITEM_H
 #define _ITEM_H
 
+#include "attributes/Attribute.hpp"
+#include "attributes/Scheme.hpp"
+#include "attributes/Values.hpp"
 #include "const.h"
-#include "itemattributes.h"
 #include "items.h"
 #include "thing.h"
 
@@ -35,6 +37,8 @@ class  MagicField;
 class  Mailbox;
 struct NodeStruct;
 class  Player;
+class  PropStream;
+class  PropWriteStream;
 class  Raid;
 class  Teleport;
 class  TrashHolder;
@@ -126,9 +130,14 @@ struct TeleportDest
 };
 #pragma pack()
 
-class Item : virtual public Thing, public ItemAttributes
-{
+class Item : virtual public Thing {
+
 	public:
+
+		typedef attributes::Values               Attributes;
+		typedef attributes::Scheme::Attributes   ClassAttributes;
+		typedef attributes::Scheme::AttributesP  ClassAttributesP;
+
 
 		static const std::string ATTRIBUTE_AID;
 		static const std::string ATTRIBUTE_ARMOR;
@@ -154,6 +163,13 @@ class Item : virtual public Thing, public ItemAttributes
 		static const std::string ATTRIBUTE_TEXT;
 		static const std::string ATTRIBUTE_UID;
 		static const std::string ATTRIBUTE_WRITER;
+
+
+		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassName();
+
+		Attributes&       getAttributes ();
+		const Attributes& getAttributes () const;
 
 		//Factory member to create item of right type based on type
 		static boost::intrusive_ptr<Item> CreateItem(uint16_t type, uint16_t amount = 1);
@@ -214,24 +230,24 @@ class Item : virtual public Thing, public ItemAttributes
 		virtual bool unserializeItemNode(FileLoader& f, const NodeStruct* node, PropStream& propStream) {return unserializeAttr(propStream);}
 
 		// Item attributes
-		void setDuration(int32_t time) {setAttribute(ATTRIBUTE_DURATION, time);}
+		void setDuration(int32_t time) {_attributes.set(ATTRIBUTE_DURATION, time);}
 		void decreaseDuration(int32_t time);
 		int32_t getDuration() const;
 
-		void setSpecialDescription(const std::string& description) {setAttribute(ATTRIBUTE_DESCRIPTION, description);}
-		void resetSpecialDescription() {eraseAttribute(ATTRIBUTE_DESCRIPTION);}
+		void setSpecialDescription(const std::string& description) {_attributes.set(ATTRIBUTE_DESCRIPTION, description);}
+		void resetSpecialDescription() {_attributes.remove(ATTRIBUTE_DESCRIPTION);}
 		const std::string& getSpecialDescription() const;
 
-		void setText(const std::string& text) {setAttribute(ATTRIBUTE_TEXT, text);}
-		void resetText() {eraseAttribute(ATTRIBUTE_TEXT);}
+		void setText(const std::string& text) {_attributes.set(ATTRIBUTE_TEXT, text);}
+		void resetText() {_attributes.remove(ATTRIBUTE_TEXT);}
 		const std::string& getText() const;
 
-		void setDate(time_t date) {setAttribute(ATTRIBUTE_DATE, (int32_t)date);}
-		void resetDate() {eraseAttribute(ATTRIBUTE_DATE);}
+		void setDate(time_t date) {_attributes.set(ATTRIBUTE_DATE, (int32_t)date);}
+		void resetDate() {_attributes.remove(ATTRIBUTE_DATE);}
 		time_t getDate() const;
 
-		void setWriter(std::string writer) {setAttribute(ATTRIBUTE_WRITER, writer);}
-		void resetWriter() {eraseAttribute(ATTRIBUTE_WRITER);}
+		void setWriter(std::string writer) {_attributes.set(ATTRIBUTE_WRITER, writer);}
+		void resetWriter() {_attributes.remove(ATTRIBUTE_WRITER);}
 		const std::string& getWriter() const;
 
 		void setActionId(int32_t aid);
@@ -241,19 +257,19 @@ class Item : virtual public Thing, public ItemAttributes
 		void setUniqueId(int32_t uid);
 		int32_t getUniqueId() const;
 
-		void setCharges(uint16_t charges) {setAttribute(ATTRIBUTE_CHARGES, charges);}
+		void setCharges(uint16_t charges) {_attributes.set(ATTRIBUTE_CHARGES, charges);}
 		uint16_t getCharges() const;
 
-		void setFluidType(uint16_t fluidType) {setAttribute(ATTRIBUTE_FLUIDTYPE, fluidType);}
+		void setFluidType(uint16_t fluidType) {_attributes.set(ATTRIBUTE_FLUIDTYPE, fluidType);}
 		uint16_t getFluidType() const;
 
-		void setOwner(uint32_t owner) {setAttribute(ATTRIBUTE_OWNER, (int32_t)owner);}
+		void setOwner(uint32_t owner) {_attributes.set(ATTRIBUTE_OWNER, (int32_t)owner);}
 		uint32_t getOwner() const;
 
-		void setCorpseOwner(uint32_t corpseOwner) {setAttribute(ATTRIBUTE_CORPSEOWNER, (int32_t)corpseOwner);}
+		void setCorpseOwner(uint32_t corpseOwner) {_attributes.set(ATTRIBUTE_CORPSEOWNER, (int32_t)corpseOwner);}
 		uint32_t getCorpseOwner();
 
-		void setDecaying(ItemDecayState_t state) {setAttribute(ATTRIBUTE_DECAYING, (int32_t)state);}
+		void setDecaying(ItemDecayState_t state) {_attributes.set(ATTRIBUTE_DECAYING, (int32_t)state);}
 		ItemDecayState_t getDecaying() const;
 
 		ItemKindPC getKind() const;
@@ -353,8 +369,13 @@ class Item : virtual public Thing, public ItemAttributes
 
 	private:
 
+		bool unserializeMap (PropStream& stream);
+
+
 		LOGGER_DECLARATION;
 
+
+		attributes::Values _attributes;
 
 		ItemKindPC kind;
 

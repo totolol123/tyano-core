@@ -31,6 +31,23 @@ Depot::Depot(const ItemKindPC& kind):
 	depotLimit = 1000;
 }
 
+
+Depot::ClassAttributesP Depot::getClassAttributes() {
+	using attributes::Type;
+
+	auto attributes = Container::getClassAttributes();
+	attributes->emplace(ATTRIBUTE_DEPOTID, Type::INTEGER);
+
+	return attributes;
+}
+
+
+const std::string& Depot::getClassName() {
+	static const std::string name("Depot");
+	return name;
+}
+
+
 Attr_ReadValue Depot::readAttr(AttrTypes_t attr, PropStream& propStream)
 {
 	if(attr != ATTR_DEPOT_ID)
@@ -40,7 +57,7 @@ Attr_ReadValue Depot::readAttr(AttrTypes_t attr, PropStream& propStream)
 	if(!propStream.GET_USHORT(depotId))
 		return ATTR_READ_ERROR;
 
-	setAttribute(ATTRIBUTE_DEPOTID, depotId);
+	getAttributes().set(ATTRIBUTE_DEPOTID, depotId);
 	return ATTR_READ_CONTINUE;
 }
 

@@ -1383,6 +1383,17 @@ void CombatArea::setupExtArea(const std::list<uint32_t>& list, uint32_t rows)
 
 // **********************************************************
 
+MagicField::ClassAttributesP MagicField::getClassAttributes() {
+	return Item::getClassAttributes();
+}
+
+
+const std::string& MagicField::getClassName() {
+	static const std::string name("Magic Field");
+	return name;
+}
+
+
 bool MagicField::isBlocking(const Creature* creature) const
 {
 	if(getId() != ITEM_MAGICWALL_SAFE && getId() != ITEM_WILDGROWTH_SAFE)

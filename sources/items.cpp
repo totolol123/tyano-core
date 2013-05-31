@@ -16,15 +16,24 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include "otpch.h"
-
 #include "items.h"
 
+#include "beds.h"
 #include "configmanager.h"
 #include "condition.h"
+#include "depot.h"
 #include "fileloader.h"
+#include "house.h"
+#include "items/Class.hpp"
+#include "items/Key.hpp"
+#include "mailbox.h"
 #include "server.h"
 #include "spells.h"
+#include "teleport.h"
+#include "trashholder.h"
 #include "weapons.h"
+
+using namespace items;
 
 
 ItemKind::ItemKind() :
@@ -75,9 +84,9 @@ ItemKind::ItemKind() :
 		shootType(SHOOT_EFFECT_SPEAR),
 		ammoType(AMMO_NONE),
 		group(ITEM_GROUP_NONE),
-		type(ITEM_TYPE_NONE),
 		slotPosition(SLOTP_HAND | SLOTP_AMMO),
 		wieldPosition(SLOT_HAND),
+		type(ItemType::GENERIC),
 		charges(0),
 		transformUseTo {0, 0},
 		transformToFree(0),
@@ -177,6 +186,7 @@ ItemKindVector::const_iterator Items::begin() const {
 
 
 void Items::clear() {
+	_classes.clear();
 	_kindIdsByClientId.clear();
 	_kinds.clear();
 	_randomizations.clear();
@@ -331,27 +341,37 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 					tmpStrValue = asLowerCaseString(strValue);
 					if(tmpStrValue == "container")
 					{
-						kind->type = ITEM_TYPE_CONTAINER;
+						kind->type = ItemType::CONTAINER;
 						kind->group = ITEM_GROUP_CONTAINER;
 					}
 					else if(tmpStrValue == "key")
-						kind->type = ITEM_TYPE_KEY;
+						kind->type = ItemType::KEY;
 					else if(tmpStrValue == "magicfield")
-						kind->type = ITEM_TYPE_MAGICFIELD;
+						kind->type = ItemType::MAGICFIELD;
 					else if(tmpStrValue == "depot")
-						kind->type = ITEM_TYPE_DEPOT;
+						kind->type = ItemType::DEPOT;
 					else if(tmpStrValue == "mailbox")
-						kind->type = ITEM_TYPE_MAILBOX;
+						kind->type = ItemType::MAILBOX;
 					else if(tmpStrValue == "trashholder")
-						kind->type = ITEM_TYPE_TRASHHOLDER;
+						kind->type = ItemType::TRASHHOLDER;
 					else if(tmpStrValue == "teleport")
-						kind->type = ITEM_TYPE_TELEPORT;
+						kind->type = ItemType::TELEPORT;
 					else if(tmpStrValue == "door")
-						kind->type = ITEM_TYPE_DOOR;
+						kind->type = ItemType::DOOR;
 					else if(tmpStrValue == "bed")
-						kind->type = ITEM_TYPE_BED;
-					else
-						LOGw("<item> <kind> node has unknown value '" << strValue << "' for item " << kind->id << " in " << filePath << ".");
+						kind->type = ItemType::BED;
+					else {
+						LOGe("<item> <kind> node has unknown value '" << strValue << "' for item " << kind->id << " in " << filePath << ".");
+						continue;
+					}
+
+					auto clazzIt = _classes.find(kind->type);
+					if (clazzIt == _classes.cend()) {
+						LOGe("Cannot update item kind of unsupported type " << static_cast<uint32_t>(kind->type));
+						continue;
+					}
+
+					kind->_class = clazzIt->second;
 				}
 			}
 			else if(tmpStrValue == "name")
@@ -1276,7 +1296,7 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 			else if(tmpStrValue == "field")
 			{
 				kind->group = ITEM_GROUP_MAGICFIELD;
-				kind->type = ITEM_TYPE_MAGICFIELD;
+				kind->type = ItemType::MAGICFIELD;
 				CombatType_t combatType = COMBAT_NONE;
 				ConditionDamage* conditionDamage = nullptr;
 
@@ -1614,19 +1634,19 @@ bool Items::loadKindsFromOtb() {
 		flags_t flags;
 		switch (nodeType) {
 			case ITEM_GROUP_CONTAINER:
-				kind->type = ITEM_TYPE_CONTAINER;
+				kind->type = ItemType::CONTAINER;
 				break;
 
 			case ITEM_GROUP_DOOR: // unused
-				kind->type = ITEM_TYPE_DOOR;
+				kind->type = ItemType::DOOR;
 				break;
 
 			case ITEM_GROUP_MAGICFIELD: // unused
-				kind->type = ITEM_TYPE_MAGICFIELD;
+				kind->type = ItemType::MAGICFIELD;
 				break;
 
 			case ITEM_GROUP_TELEPORT: // unused
-				kind->type = ITEM_TYPE_TELEPORT;
+				kind->type = ItemType::TELEPORT;
 				break;
 
 			case ITEM_GROUP_NONE:
@@ -1783,6 +1803,14 @@ bool Items::loadKindsFromOtb() {
 			}
 		}
 
+		auto clazzIt = _classes.find(kind->type);
+		if (clazzIt == _classes.cend()) {
+			LOGe("Cannot add item kind of unsupported type " << static_cast<uint32_t>(kind->type));
+			continue;
+		}
+
+		kind->_class = clazzIt->second;
+
 		addKind(kind, filePath);
 	}
 
@@ -1852,7 +1880,7 @@ bool Items::loadKindsFromXml() {
 			continue;
 		}
 
-		if ((type->transformToFree || type->transformUseTo[PLAYERSEX_FEMALE] || type->transformUseTo[PLAYERSEX_MALE]) && type->type != ITEM_TYPE_BED) {
+		if ((type->transformToFree || type->transformUseTo[PLAYERSEX_FEMALE] || type->transformUseTo[PLAYERSEX_MALE]) && type->type != ItemType::BED) {
 			LOGw("Item " << type->id << " is not set as a bed-type in " << filePath << ".");
 		}
 	}
@@ -1949,6 +1977,8 @@ bool Items::reload() {
 
 	clear();
 
+	setupClasses();
+
 	if (!loadKindsFromOtb()) {
 		return false;
 	}
@@ -1960,6 +1990,20 @@ bool Items::reload() {
 	}
 
 	return true;
+}
+
+
+void Items::setupClasses() {
+	_classes[ItemType::BED] = makeClass<BedItem>();
+	_classes[ItemType::CONTAINER] = makeClass<Container>();
+	_classes[ItemType::DEPOT] = makeClass<Depot>();
+	_classes[ItemType::DOOR] = makeClass<Door>();
+	_classes[ItemType::MAGICFIELD] = makeClass<MagicField>();
+	_classes[ItemType::MAILBOX] = makeClass<Mailbox>();
+	_classes[ItemType::GENERIC] = makeClass<Item>();
+	_classes[ItemType::TELEPORT] = makeClass<Teleport>();
+	_classes[ItemType::TRASHHOLDER] = makeClass<TrashHolder>();
+	_classes[ItemType::KEY] = makeClass<Key>();
 }
 
 

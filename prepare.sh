@@ -1,16 +1,24 @@
-#!/bin/sh -e
+#!/bin/bash -e
+
+if [[ -z "$*" ]]; then
+	echo "Note: You can pass arguments for './configure' to this script."
+fi
 
 echo "Preparing project..."
-echo "Note: You can pass arguments for './configure' to this script."
-echo
 
 mkdir -p .intermediate
+
+chmod u=rwx,g=,o= *.sh
+chmod u=rwx,g=,o= build/link-sources.sh
+build/link-sources.sh
+
 cd .intermediate
 ln -fs ../build/configure.ac
 ln -fs ../build/Makefile.am
 ln -fs ../build/m4
-ln -fs ../sources
-autoreconf -vi
+
+echo "Generating configure..."
+autoreconf -i
 
 echo "./configure -C $*"
 ./configure -C $*

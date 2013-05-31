@@ -14,8 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
+
 #include "otpch.h"
 #include "luascript.h"
+
+#include "attributes/Attribute.hpp"
+#include "attributes/Scheme.hpp"
+#include "items/Class.hpp"
 #include "scriptmanager.h"
 
 #include "player.h"
@@ -4245,7 +4250,7 @@ int32_t LuaScriptInterface::luaGetTileItemByType(lua_State* L)
 {
 	//getTileItemByType(pos, type)
 	uint32_t rType = (uint32_t)popNumber(L);
-	if(rType >= ITEM_TYPE_LAST)
+	if(rType > static_cast<uint8_t>(ItemType::LAST))
 	{
 		errorEx("Not a valid item type");
 		pushThing(L, nullptr, 0);
@@ -4263,37 +4268,36 @@ int32_t LuaScriptInterface::luaGetTileItemByType(lua_State* L)
 	}
 
 	bool found = true;
-	switch((ItemTypes_t)rType)
-	{
-		case ITEM_TYPE_TELEPORT:
+	switch(static_cast<ItemType>(rType)) {
+		case ItemType::TELEPORT:
 		{
 			if(!tile->hasFlag(TILESTATE_TELEPORT))
 				found = false;
 
 			break;
 		}
-		case ITEM_TYPE_MAGICFIELD:
+		case ItemType::MAGICFIELD:
 		{
 			if(!tile->hasFlag(TILESTATE_MAGICFIELD))
 				found = false;
 
 			break;
 		}
-		case ITEM_TYPE_MAILBOX:
+		case ItemType::MAILBOX:
 		{
 			if(!tile->hasFlag(TILESTATE_MAILBOX))
 				found = false;
 
 			break;
 		}
-		case ITEM_TYPE_TRASHHOLDER:
+		case ItemType::TRASHHOLDER:
 		{
 			if(!tile->hasFlag(TILESTATE_TRASHHOLDER))
 				found = false;
 
 			break;
 		}
-		case ITEM_TYPE_BED:
+		case ItemType::BED:
 		{
 			if(!tile->hasFlag(TILESTATE_BED))
 				found = false;
@@ -4317,7 +4321,7 @@ int32_t LuaScriptInterface::luaGetTileItemByType(lua_State* L)
 		if(!(item = tile->__getThing(i)->getItem()))
 			continue;
 
-		if(item->getKind()->type != (ItemTypes_t)rType)
+		if(item->getKind()->type != (ItemType)rType)
 			continue;
 
 		pushThing(L, item, env->addThing(item));
@@ -9268,91 +9272,169 @@ int32_t LuaScriptInterface::luaGetItemAttribute(lua_State* L)
 		return 1;
 	}
 
-	boost::any value = item->getAttribute(key);
-	if(value.empty())
+	auto entry = item->getAttributes().getEntry(key);
+	if (entry == nullptr) {
 		lua_pushnil(L);
-	else if(value.type() == typeid(const std::string*)) {
-		auto string = boost::any_cast<const std::string*>(value);
-		if (string != nullptr) {
-			lua_pushstring(L, string->c_str());
-		}
-		else {
+	}
+	else {
+		switch (entry->first->getType()) {
+		case attributes::Type::BOOLEAN:
+			lua_pushboolean(L, boost::any_cast<bool>(entry->second));
+			break;
+
+		case attributes::Type::FLOAT:
+			lua_pushnumber(L, boost::any_cast<float>(entry->second));
+			break;
+
+		case attributes::Type::INTEGER:
+			lua_pushnumber(L, boost::any_cast<int32_t>(entry->second));
+			break;
+
+		case attributes::Type::STRING:
+			lua_pushstring(L, boost::any_cast<const std::string&>(entry->second).c_str());
+			break;
+
+		default:
 			lua_pushnil(L);
 		}
 	}
-	else if(value.type() == typeid(int32_t))
-		lua_pushnumber(L, boost::any_cast<int32_t>(value));
-	else if(value.type() == typeid(float))
-		lua_pushnumber(L, boost::any_cast<float>(value));
-	else if(value.type() == typeid(bool))
-		lua_pushboolean(L, boost::any_cast<bool>(value));
-	else
-		lua_pushnil(L);
 
 	return 1;
 }
 
-int32_t LuaScriptInterface::luaDoItemSetAttribute(lua_State* L)
-{
-	//doItemSetAttribute(uid, key, value)
-	boost::any value;
-	if(lua_isnumber(L, -1))
-	{
-		float tmp = popFloatNumber(L);
-		if(std::floor(tmp) < tmp)
-			value = tmp;
-		else
-			value = (int32_t)tmp;
-	}
-	else if(lua_isboolean(L, -1))
-		value = popBoolean(L);
-	else if(lua_isstring(L, -1))
-		value = popString(L);
-	else
-	{
-		lua_pop(L, 1);
-		errorEx("Invalid data type");
 
+int32_t LuaScriptInterface::luaDoItemSetAttribute(lua_State* L) {
+	// doItemSetAttribute(uid, key, value)
+
+	using attributes::Attribute;
+	using attributes::Type;
+
+	bool booleanValue = false;
+	float floatValue = 0;
+	int32_t integerValue = 0;
+	std::string stringValue;
+
+	Type type;
+	if (lua_isnumber(L, -1)) {
+		floatValue = popFloatNumber(L);
+
+		auto roundedFloatValue = std::round(floatValue);
+		if (std::abs(floatValue - roundedFloatValue) >= 0.001f || floatValue < std::numeric_limits<int32_t>::min() || floatValue > std::numeric_limits<int32_t>::max()) {
+			type = Type::FLOAT;
+		}
+		else {
+			integerValue = static_cast<uint32_t>(roundedFloatValue);
+			type = Type::INTEGER;
+		}
+	}
+	else if (lua_isboolean(L, -1)) {
+		booleanValue = popBoolean(L);
+		type = Type::BOOLEAN;
+	}
+	else if (lua_isstring(L, -1)) {
+		stringValue = popString(L);
+		type = Type::STRING;
+	}
+	else {
+		lua_pop(L, 1);
+
+		errorEx("Invalid data type for attribute. Can only be boolean, number or string.");
 		lua_pushboolean(L, false);
 		return 1;
 	}
 
-	std::string key = popString(L);
-	ScriptEnviroment* env = getEnv();
+	std::string name = popString(L);
 
+	ScriptEnviroment* env = getEnv();
 	Item* item = env->getItemByUID(popNumber(L));
-	if(!item)
-	{
+	if (item == nullptr) {
 		errorEx(getError(LUA_ERROR_ITEM_NOT_FOUND));
 		lua_pushboolean(L, false);
 		return 1;
 	}
 
-	if(value.type() == typeid(int32_t))
-	{
-		if(key == "uid")
-		{
-			int32_t tmp = boost::any_cast<int32_t>(value);
-			if(tmp < 1000 || tmp > 0xFFFF)
-			{
-				errorEx("Value for protected key \"uid\" must be in range of 1000 to 65535");
-				lua_pushboolean(L, false);
-				return 1;
-			}
+	// FIXME WTF!
+	auto attribute = item->getKind()->_class->getAttributesScheme()->getAttributeByName(name);
+	if (attribute == nullptr) {
+		std::ostringstream stream;
+		stream << "Item has no attribute named '" << stream << "'.";
 
-			item->setUniqueId(tmp);
-		}		
-		else if(key == "aid")
-			item->setActionId(boost::any_cast<int32_t>(value));
-		else
-			item->setAttribute(key, boost::any_cast<int32_t>(value));
+		errorEx(stream.str());
+		lua_pushboolean(L, false);
+		return 1;
 	}
-	else
-		item->setAttribute(key, value);
+
+	bool typeMatches = false;
+
+	switch (attribute->getType()) {
+	case Type::BOOLEAN:
+		if (type == Type::BOOLEAN) {
+			typeMatches = true;
+			item->getAttributes().set(name, booleanValue);
+		}
+		break;
+
+	case Type::FLOAT:
+		switch (type) {
+		case Type::FLOAT:
+			typeMatches = true;
+			item->getAttributes().set(name, floatValue);
+			break;
+
+		case Type::INTEGER:
+			typeMatches = true;
+			item->getAttributes().set(name, integerValue);
+			break;
+
+		case Type::BOOLEAN:
+		case Type::STRING:
+			break;
+		}
+		break;
+
+	case Type::INTEGER:
+		if (type == Type::INTEGER) {
+			typeMatches = true;
+
+			if (name == Item::ATTRIBUTE_UID) {
+				if (integerValue < 1000 || integerValue > 0xFFFF) {
+					errorEx("Value for protected key \"uid\" must be in range of 1000 to 65535");
+					lua_pushboolean(L, false);
+					return 1;
+				}
+
+				item->setUniqueId(integerValue);
+			}
+			else if (name == Item::ATTRIBUTE_AID) {
+				item->setActionId(integerValue);
+			}
+			else {
+				item->getAttributes().set(name, integerValue);
+			}
+		}
+		break;
+
+	case Type::STRING:
+		if (type == Type::STRING) {
+			typeMatches = true;
+			item->getAttributes().set(name, stringValue);
+		}
+		break;
+	}
+
+	if (!typeMatches) {
+		std::ostringstream stream;
+		stream << "Cannot set " << Attribute::getTypeName(attribute->getType()) << " attribute '" << attribute->getName() << "' to " << Attribute::getTypeName(type) << ".";
+
+		errorEx(stream.str());
+		lua_pushboolean(L, false);
+		return 1;
+	}
 
 	lua_pushboolean(L, true);
 	return 1;
 }
+
 
 int32_t LuaScriptInterface::luaDoItemEraseAttribute(lua_State* L)
 {
@@ -9375,7 +9457,7 @@ int32_t LuaScriptInterface::luaDoItemEraseAttribute(lua_State* L)
 		ret = false;
 	}
 	else if(key != "aid")
-		item->eraseAttribute(key);
+		item->getAttributes().remove(key);
 	else
 		item->resetActionId();
 

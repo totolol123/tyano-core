@@ -39,25 +39,49 @@
 #define SLOTP_HAND SLOTP_LEFT | SLOTP_RIGHT
 
 class ItemKind;
+enum class ItemType : uint8_t;
 
 typedef std::shared_ptr<ItemKind>        ItemKindP;
 typedef std::shared_ptr<const ItemKind>  ItemKindPC;
 typedef std::vector<ItemKindP>           ItemKindVector;
 
+namespace items {
 
-enum ItemTypes_t
-{
-	ITEM_TYPE_NONE = 0,
-	ITEM_TYPE_DEPOT,
-	ITEM_TYPE_MAILBOX,
-	ITEM_TYPE_TRASHHOLDER,
-	ITEM_TYPE_CONTAINER,
-	ITEM_TYPE_DOOR,
-	ITEM_TYPE_MAGICFIELD,
-	ITEM_TYPE_TELEPORT,
-	ITEM_TYPE_BED,
-	ITEM_TYPE_KEY,
-	ITEM_TYPE_LAST
+	class Class;
+
+	typedef std::shared_ptr<Class>  ClassP;
+
+} // namespace items
+
+
+
+namespace std {
+
+	template <>
+	struct hash<ItemType> : function<size_t(const ItemType)> {
+		typedef std::underlying_type<argument_type>::type  underlying_type;
+
+		result_type operator()(const argument_type& type) const {
+			return std::hash<underlying_type>()(static_cast<underlying_type>(type));
+		}
+	};
+
+}
+
+
+
+enum class ItemType : uint8_t {
+	GENERIC = 0,
+	DEPOT,
+	MAILBOX,
+	TRASHHOLDER,
+	CONTAINER,
+	DOOR,
+	MAGICFIELD,
+	TELEPORT,
+	BED,
+	KEY,
+	LAST = KEY
 };
 
 enum FloorChange_t
@@ -108,14 +132,14 @@ class ItemKind {
 		bool isSplash() const {return (group == ITEM_GROUP_SPLASH);}
 		bool isFluidContainer() const {return (group == ITEM_GROUP_FLUID);}
 
-		bool isDoor() const {return (type == ITEM_TYPE_DOOR);}
-		bool isMagicField() const {return (type == ITEM_TYPE_MAGICFIELD);}
-		bool isTeleport() const {return (type == ITEM_TYPE_TELEPORT);}
-		bool isKey() const {return (type == ITEM_TYPE_KEY);}
-		bool isDepot() const {return (type == ITEM_TYPE_DEPOT);}
-		bool isMailbox() const {return (type == ITEM_TYPE_MAILBOX);}
-		bool isTrashHolder() const {return (type == ITEM_TYPE_TRASHHOLDER);}
-		bool isBed() const {return (type == ITEM_TYPE_BED);}
+		bool isDoor() const {return (type == ItemType::DOOR);}
+		bool isMagicField() const {return (type == ItemType::MAGICFIELD);}
+		bool isTeleport() const {return (type == ItemType::TELEPORT);}
+		bool isKey() const {return (type == ItemType::KEY);}
+		bool isDepot() const {return (type == ItemType::DEPOT);}
+		bool isMailbox() const {return (type == ItemType::MAILBOX);}
+		bool isTrashHolder() const {return (type == ItemType::TRASHHOLDER);}
+		bool isBed() const {return (type == ItemType::BED);}
 
 		bool isRune() const {return clientCharges;}
 		bool hasSubType() const {return (isFluidContainer() || isSplash() || stackable || charges);}
@@ -248,9 +272,11 @@ class ItemKind {
 		ShootEffect_t shootType:16;
 		Ammo_t ammoType:3;
 		itemgroup_t group:4;
-		ItemTypes_t type:4;
 		uint16_t slotPosition:12;
 		uint8_t wieldPosition:4;
+
+		items::ClassP _class;
+		ItemType type;
 
 		uint16_t charges, transformUseTo[2], transformToFree, transformEquipTo, transformDeEquipTo,
 			id, clientId, maxItems, speed, maxTextLen, writeOnceItemId;
@@ -311,16 +337,21 @@ public:
 
 private:
 
+	typedef std::unordered_map<ItemType,items::ClassP>  Classes;
+
+
 	void addKind                  (ItemKindP kind, const std::string& fileName);
 	void addRandomization         (uint16_t kindId, int32_t fromId, int32_t toId, int32_t chance, const std::string& fileName);
 	void clear                    ();
 	bool loadKindsFromOtb         ();
 	bool loadKindsFromXml         ();
 	bool loadRandomizationFromXml ();
+	void setupClasses             ();
 
 
 	LOGGER_DECLARATION;
 
+	Classes             _classes;
 	uint8_t             _defaultRandomizationChance;
 	KindIdByClientIdMap _kindIdsByClientId;
 	ItemKindVector      _kinds;

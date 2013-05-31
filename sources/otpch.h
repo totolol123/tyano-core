@@ -15,7 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
 
-#ifndef _OTPCH_H
+#ifdef _OTPCH_H
+#error Do not import otpch.h more than once.
+#endif
+
 #define _OTPCH_H
 
 #include <algorithm>
@@ -100,5 +103,3 @@ extern "C"
 
 #include "global.h"
 #include "otsystem.h"
-
-#endif // _OTPCH_H

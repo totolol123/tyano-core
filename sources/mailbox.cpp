@@ -32,6 +32,17 @@ LOGGER_DEFINITION(Mailbox);
 
 
 
+Mailbox::ClassAttributesP Mailbox::getClassAttributes() {
+	return Item::getClassAttributes();
+}
+
+
+const std::string& Mailbox::getClassName() {
+	static const std::string name("Mailbox");
+	return name;
+}
+
+
 ReturnValue Mailbox::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
 	uint32_t flags) const
 {

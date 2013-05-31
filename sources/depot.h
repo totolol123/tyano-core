@@ -21,11 +21,16 @@
 #include "container.h"
 
 
-class Depot : public Container
-{
+class Depot : public Container {
+
 	public:
 
 		static const std::string ATTRIBUTE_DEPOTID;
+
+
+		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassName();
+
 
 		Depot(const ItemKindPC& kind);
 		virtual ~Depot() {}
@@ -72,7 +77,7 @@ class Depot : public Container
 
 inline uint32_t Depot::getDepotId() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_DEPOTID);
+	const int32_t* v = getAttributes().getInteger(ATTRIBUTE_DEPOTID);
 	if(v)
 		return (uint32_t)*v;
 

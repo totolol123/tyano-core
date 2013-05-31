@@ -86,6 +86,10 @@ class Door : public Item
 
 		static const std::string ATTRIBUTE_DOORID;
 
+
+		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassName();
+
 		Door(const ItemKindPC& kind): Item(kind), house(nullptr), accessList(nullptr) {}
 		virtual ~Door();
 
@@ -95,7 +99,7 @@ class Door : public Item
 		//serialization
 		virtual Attr_ReadValue readAttr(AttrTypes_t attr, PropStream& propStream);
 
-		void setDoorId(uint32_t doorId) {setAttribute(ATTRIBUTE_DOORID, (int32_t)doorId);}
+		void setDoorId(uint32_t doorId) {getAttributes().set(ATTRIBUTE_DOORID, (int32_t)doorId);}
 		uint32_t getDoorId() const;
 
 		House* getHouse() {return house;}
@@ -117,7 +121,7 @@ class Door : public Item
 
 inline uint32_t Door::getDoorId() const
 {
-	const int32_t* v = getIntegerAttribute(ATTRIBUTE_DOORID);
+	const int32_t* v = getAttributes().getInteger(ATTRIBUTE_DOORID);
 	if(v)
 		return (uint32_t)*v;
 

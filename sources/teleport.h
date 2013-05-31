@@ -25,6 +25,10 @@
 class Teleport : public Item, public Cylinder
 {
 	public:
+
+		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassName();
+
 		Teleport(const ItemKindPC& kind): Item(kind) {}
 		virtual ~Teleport() {}
 

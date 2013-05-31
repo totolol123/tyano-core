@@ -2,7 +2,7 @@ AC_PREREQ([2.69])
 AC_INIT([The Forgotten Tyano Server],[1.0],[],[tfts])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([sources/server.h])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AC_LANG([C++])
 
 

@@ -22,6 +22,18 @@
 #include "server.h"
 
 
+
+Teleport::ClassAttributesP Teleport::getClassAttributes() {
+	return Item::getClassAttributes();
+}
+
+
+const std::string& Teleport::getClassName() {
+	static const std::string name("Teleport");
+	return name;
+}
+
+
 Attr_ReadValue Teleport::readAttr(AttrTypes_t attr, PropStream& propStream)
 {
 	if(attr != ATTR_TELE_DEST)

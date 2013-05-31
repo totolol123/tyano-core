@@ -56,6 +56,10 @@ class ContainerIterator
 class Container : public Item, public Cylinder
 {
 	public:
+
+		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassName();
+
 		Container(const ItemKindPC& kind);
 		virtual ~Container();
 		virtual boost::intrusive_ptr<Item> clone() const;

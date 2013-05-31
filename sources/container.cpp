@@ -35,6 +35,7 @@ Container::Container(const ItemKindPC& kind) : Item(kind)
 	totalWeight = 0.0;
 }
 
+
 Container::~Container()
 {
 	for(ItemList::iterator cit = itemlist.begin(); cit != itemlist.end(); ++cit)
@@ -44,6 +45,18 @@ Container::~Container()
 
 	itemlist.clear();
 }
+
+
+Container::ClassAttributesP Container::getClassAttributes() {
+	return Item::getClassAttributes();
+}
+
+
+const std::string& Container::getClassName() {
+	static const std::string name("Container");
+	return name;
+}
+
 
 boost::intrusive_ptr<Item> Container::clone() const
 {
