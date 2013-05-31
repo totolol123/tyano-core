@@ -300,7 +300,7 @@ bool Spawn::findPlayer(const Position& pos)
 	Player* tmpPlayer = nullptr;
 	for(SpectatorList::iterator it = list.begin(); it != list.end(); ++it)
 	{
-		if((tmpPlayer = (*it)->getPlayer()) && !tmpPlayer->hasFlag(PlayerFlag_IgnoredByMonsters))
+		if((tmpPlayer = (*it)->getPlayer()) && !tmpPlayer->hasFlag(PlayerFlag_IgnoredByMonsters) && !tmpPlayer->isGhost())
 			return true;
 	}
 
