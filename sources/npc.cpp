@@ -27,6 +27,8 @@
 
 #include "configmanager.h"
 #include "game.h"
+#include "items.h"
+#include "player.h"
 #include "server.h"
 #include "spawn.h"
 

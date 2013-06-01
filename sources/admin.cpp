@@ -32,6 +32,7 @@
 #include "luascript.h"
 #include "town.h"
 #include "iologindata.h"
+#include "player.h"
 #include "task.h"
 #include "scheduler.h"
 #include "schedulertask.h"

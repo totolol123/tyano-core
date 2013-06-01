@@ -19,6 +19,7 @@
 #define _HOUSE_H
 
 #include "item.h"
+#include "position.h"
 
 class BedItem;
 class Door;

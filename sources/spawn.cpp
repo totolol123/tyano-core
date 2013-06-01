@@ -25,6 +25,7 @@
 #include "configmanager.h"
 #include "game.h"
 #include "monster.h"
+#include "monsters.h"
 #include "scheduler.h"
 #include "schedulertask.h"
 #include "server.h"

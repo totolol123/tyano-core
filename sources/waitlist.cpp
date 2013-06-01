@@ -22,6 +22,7 @@
 #include "configmanager.h"
 #include "game.h"
 #include "server.h"
+#include "tools.h"
 
 
 WaitList::iterator WaitingList::find(const Player* player, uint32_t& slot)

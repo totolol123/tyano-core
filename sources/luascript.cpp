@@ -56,7 +56,9 @@
 #include "vocation.h"
 #include "status.h"
 #include "game.h"
+#include "items.h"
 #include "chat.h"
+#include "npc.h"
 #include "scheduler.h"
 #include "schedulertask.h"
 #include "server.h"
@@ -68,6 +70,7 @@ enum
 	EVENT_ID_LOADING = 1,
 	EVENT_ID_USER = 1000,
 };
+
 
 ScriptEnviroment::AreaMap ScriptEnviroment::m_areaMap;
 uint32_t ScriptEnviroment::m_lastAreaId = 0;
@@ -120,6 +123,16 @@ void ScriptEnviroment::clearAll() {
 	for(ConditionMap::iterator it = m_conditionMap.begin(); it != m_conditionMap.end(); ++it)
 		delete it->second;
 	m_conditionMap.clear();
+}
+
+
+Position ScriptEnviroment::getRealPos() const {
+	return m_realPos;
+}
+
+
+void ScriptEnviroment::setRealPos(const Position& realPos) {
+	m_realPos = realPos;
 }
 
 

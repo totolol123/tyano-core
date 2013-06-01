@@ -20,6 +20,7 @@
 
 #include "cylinder.h"
 #include "item.h"
+#include "position.h"
 
 class Creature;
 class BedItem;
@@ -72,14 +73,6 @@ enum tileflags_t
 	TILESTATE_DYNAMIC_TILE = 1 << 29
 };
 
-enum ZoneType_t
-{
-	ZONE_PROTECTION,
-	ZONE_NOPVP,
-	ZONE_PVP,
-	ZONE_NOLOGOUT,
-	ZONE_NORMAL
-};
 
 class TileItemVector
 {
@@ -381,16 +374,6 @@ inline TileItemVector* Tile::makeItemList()
 		return static_cast<DynamicTile*>(this)->DynamicTile::makeItemList();
 
 	return static_cast<StaticTile*>(this)->StaticTile::makeItemList();
-}
-
-inline StaticTile::StaticTile(uint16_t x, uint16_t y, uint16_t z):
-	Tile(x, y, z), items(nullptr), creatures(nullptr) {}
-
-
-inline DynamicTile::DynamicTile(uint16_t x, uint16_t y, uint16_t z):
-	Tile(x, y, z)
-{
-	m_flags |= TILESTATE_DYNAMIC_TILE;
 }
 
 #endif // _TILE_H

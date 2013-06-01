@@ -20,10 +20,11 @@
 
 #include "baseevents.h"
 #include "const.h"
-#include "luascript.h"
 
 class Action;
 class Container;
+class Creature;
+class Item;
 class Player;
 class Position;
 

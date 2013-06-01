@@ -19,7 +19,6 @@
 #define _COMBAT_H
 
 #include "baseevents.h"
-#include "condition.h"
 #include "item.h"
 
 class Combat;

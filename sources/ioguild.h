@@ -18,7 +18,7 @@
 #ifndef _IOGUILD_H
 #define _IOGUILD_H
 
-#include "enums.h"
+#include "const.h"
 
 class Player;
 

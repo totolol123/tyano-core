@@ -24,7 +24,10 @@
 #include "configmanager.h"
 #include "map.h"
 
+#include "condition.h"
 #include "creature.h"
+#include "creatureevent.h"
+#include "items.h"
 #include "player.h"
 #include "weapons.h"
 #include "vocation.h"

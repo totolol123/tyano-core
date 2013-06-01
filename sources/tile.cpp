@@ -27,6 +27,7 @@
 #include "mailbox.h"
 
 #include "combat.h"
+#include "items.h"
 #include "monster.h"
 #include "movement.h"
 
@@ -1842,6 +1843,13 @@ void Tile::updateTileFlags(Item* item, bool removed)
 }
 
 
+DynamicTile::DynamicTile(uint16_t x, uint16_t y, uint16_t z):
+	Tile(x, y, z)
+{
+	m_flags |= TILESTATE_DYNAMIC_TILE;
+}
+
+
 DynamicTile::~DynamicTile() {
 	for (CreatureVector::iterator it = creatures.begin(); it != creatures.end(); ++it) {
 		(*it)->setParent(nullptr);
@@ -1851,6 +1859,10 @@ DynamicTile::~DynamicTile() {
 		(*it)->setParent(nullptr);
 	}
 }
+
+
+StaticTile::StaticTile(uint16_t x, uint16_t y, uint16_t z):
+	Tile(x, y, z), items(nullptr), creatures(nullptr) {}
 
 
 StaticTile::~StaticTile() {

@@ -18,6 +18,7 @@
 #include "trashholder.h"
 
 #include "game.h"
+#include "player.h"
 #include "server.h"
 #include "spells.h"
 
@@ -84,3 +85,15 @@ void TrashHolder::postRemoveNotification(Creature* actor, Thing* thing, const Cy
 		getParent()->postRemoveNotification(actor, thing, newParent,
 			index, isCompleteRemoval, LINK_PARENT);
 }
+
+
+Cylinder* TrashHolder::getParent() {return Item::getParent();}
+const Cylinder* TrashHolder::getParent() const {return Item::getParent();}
+bool TrashHolder::isRemoved() const {return Item::isRemoved();}
+Position TrashHolder::getPosition() const {return Item::getPosition();}
+Tile* TrashHolder::getTile() {return Item::getTile();}
+const Tile* TrashHolder::getTile() const {return Item::getTile();}
+Item* TrashHolder::getItem() {return this;}
+const Item* TrashHolder::getItem() const {return this;}
+Creature* TrashHolder::getCreature() {return nullptr;}
+const Creature* TrashHolder::getCreature() const {return nullptr;}

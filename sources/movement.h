@@ -19,7 +19,6 @@
 #define _MOVEMENT_H
 
 #include "baseevents.h"
-#include "creature.h"
 
 class Item;
 class MoveEvent;

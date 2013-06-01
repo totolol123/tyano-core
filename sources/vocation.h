@@ -18,7 +18,7 @@
 #ifndef _VOCATION_H
 #define _VOCATION_H
 
-#include "enums.h"
+#include "const.h"
 
 
 enum multiplier_t

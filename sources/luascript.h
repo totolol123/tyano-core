@@ -46,6 +46,7 @@ enum LuaVariantType_t
 	VARIANT_STRING
 };
 
+
 struct LuaVariant
 {
 	LuaVariant()
@@ -88,8 +89,8 @@ class ScriptEnviroment
 		std::string getEventDesc() {return m_eventdesc;}
 		void setEventDesc(const std::string& desc) {m_eventdesc = desc;}
 
-		Position getRealPos() {return m_realPos;}
-		void setRealPos(const Position& realPos) {m_realPos = realPos;}
+		Position getRealPos() const;
+		void setRealPos(const Position& realPos);
 
 		Npc* getNpc() const {return m_curNpc;}
 		void setNpc(Npc* npc) {m_curNpc = npc;}

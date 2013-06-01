@@ -22,6 +22,7 @@
 #include "fileloader.h"
 #include "game.h"
 #include "creature.h"
+#include "player.h"
 #include "combat.h"
 #include "server.h"
 

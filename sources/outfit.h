@@ -18,7 +18,7 @@
 #ifndef _OUTFIT_H
 #define _OUTFIT_H
 
-#include "enums.h"
+#include "const.h"
 
 #define OUTFITS_MAX_NUMBER 25
 

@@ -19,9 +19,6 @@
 #define _ITEMS_H
 
 #include "const.h"
-#include "enums.h"
-#include "itemloader.h"
-#include "position.h"
 
 #define SLOTP_WHEREEVER 0xFFFFFFFF
 #define SLOTP_HEAD 1 << 0
@@ -68,39 +65,6 @@ namespace std {
 
 }
 
-
-
-enum class ItemType : uint8_t {
-	GENERIC = 0,
-	DEPOT,
-	MAILBOX,
-	TRASHHOLDER,
-	CONTAINER,
-	DOOR,
-	MAGICFIELD,
-	TELEPORT,
-	BED,
-	KEY,
-	LAST = KEY
-};
-
-enum FloorChange_t
-{
-	CHANGE_PRE_FIRST = 0,
-	CHANGE_DOWN = CHANGE_PRE_FIRST,
-	CHANGE_FIRST = 1,
-	CHANGE_NORTH = CHANGE_FIRST,
-	CHANGE_EAST = 2,
-	CHANGE_SOUTH = 3,
-	CHANGE_WEST = 4,
-	CHANGE_FIRST_EX = 5,
-	CHANGE_NORTH_EX = CHANGE_FIRST_EX,
-	CHANGE_EAST_EX = 6,
-	CHANGE_SOUTH_EX = 7,
-	CHANGE_WEST_EX = 8,
-	CHANGE_NONE = 9,
-	CHANGE_LAST = CHANGE_NONE
-};
 
 class Abilities
 {

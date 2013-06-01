@@ -44,6 +44,7 @@
 #include "protocolold.h"
 #endif
 
+#include "condition.h"
 #include "configmanager.h"
 #include "game.h"
 #include "chat.h"

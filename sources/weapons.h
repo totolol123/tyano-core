@@ -18,9 +18,8 @@
 #ifndef _WEAPONS_H
 #define _WEAPONS_H
 
-#include "baseevents.h"
 #include "combat.h"
-#include "luascript.h"
+#include "baseevents.h"
 
 class Item;
 class Tile;

@@ -21,8 +21,10 @@
 
 #include "fileloader.h"
 #include "iomap.h"
+#include "items.h"
 #include "player.h"
 #include "server.h"
+#include "tools.h"
 
 
 LOGGER_DEFINITION(Container);
@@ -278,6 +280,19 @@ void Container::onRemoveContainerItem(uint32_t index, Item* item)
 			player->onRemoveContainerItem(this, index, item);
 	}
 }
+
+
+Cylinder* Container::getParent() {return Thing::getParent();}
+const Cylinder* Container::getParent() const {return Thing::getParent();}
+bool Container::isRemoved() const {return Thing::isRemoved();}
+Position Container::getPosition() const {return Thing::getPosition();}
+Tile* Container::getTile() {return Thing::getTile();}
+const Tile* Container::getTile() const {return Thing::getTile();}
+Item* Container::getItem() {return this;}
+const Item* Container::getItem() const {return this;}
+Creature* Container::getCreature() {return nullptr;}
+const Creature* Container::getCreature() const {return nullptr;}
+
 
 ReturnValue Container::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
 	uint32_t flags) const

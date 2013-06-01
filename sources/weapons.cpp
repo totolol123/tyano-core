@@ -19,6 +19,8 @@
 
 #include "game.h"
 #include "configmanager.h"
+#include "items.h"
+#include "player.h"
 #include "server.h"
 #include "tools.h"
 #include "vocation.h"

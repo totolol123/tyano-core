@@ -36,8 +36,11 @@
 
 #include "actions.h"
 #include "configmanager.h"
+#include "creature.h"
 #include "game.h"
+#include "items.h"
 #include "movement.h"
+#include "player.h"
 #include "raids.h"
 #include "server.h"
 
@@ -117,6 +120,11 @@ Item::ClassAttributesP Item::getClassAttributes() {
 const std::string& Item::getClassName() {
 	static const std::string name("Generic");
 	return name;
+}
+
+
+uint16_t Item::getId() const {
+	return kind->id;
 }
 
 

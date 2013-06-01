@@ -14,9 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
-#include "otpch.h"
 
+#include "otpch.h"
 #include "beds.h"
+
+#include "condition.h"
 #include "house.h"
 #include "player.h"
 #include "fileloader.h"
@@ -24,9 +26,11 @@
 
 #include "game.h"
 #include "configmanager.h"
+#include "items.h"
 #include "server.h"
 #include "scheduler.h"
 #include "schedulertask.h"
+#include "tools.h"
 
 
 

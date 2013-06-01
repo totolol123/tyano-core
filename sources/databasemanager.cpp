@@ -15,7 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
 #include "otpch.h"
-#include "enums.h"
+
+#include "const.h"
 
 #include "databasemanager.h"
 #include "databasemysql.h"

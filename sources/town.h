@@ -20,7 +20,6 @@
 
 #include "position.h"
 
-
 class Town;
 
 typedef std::unique_ptr<Town>  TownP;

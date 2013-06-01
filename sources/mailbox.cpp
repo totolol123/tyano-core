@@ -26,6 +26,7 @@
 #include "configmanager.h"
 #include "game.h"
 #include "server.h"
+#include "tools.h"
 
 
 LOGGER_DEFINITION(Mailbox);
@@ -151,3 +152,15 @@ bool Mailbox::getRecipient(Item* item, std::string& name, uint32_t& depotId)
 	trimString(townString);
 	return getDepotId(townString, depotId);
 }
+
+
+Cylinder* Mailbox::getParent() {return Item::getParent();}
+const Cylinder* Mailbox::getParent() const {return Item::getParent();}
+bool Mailbox::isRemoved() const {return Item::isRemoved();}
+Position Mailbox::getPosition() const {return Item::getPosition();}
+Tile* Mailbox::getTile() {return Item::getTile();}
+const Tile* Mailbox::getTile() const {return Item::getTile();}
+Item* Mailbox::getItem() {return this;}
+const Item* Mailbox::getItem() const {return this;}
+Creature* Mailbox::getCreature() {return nullptr;}
+const Creature* Mailbox::getCreature() const {return nullptr;}

@@ -27,9 +27,12 @@
 #include "spells.h"
 #include "combat.h"
 
+#include "condition.h"
 #include "configmanager.h"
 #include "game.h"
+#include "items.h"
 #include "party.h"
+#include "player.h"
 #include "server.h"
 
 

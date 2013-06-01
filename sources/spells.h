@@ -19,7 +19,6 @@
 #define _SPELLS_H
 
 #include "actions.h"
-#include "creature.h"
 #include "talkaction.h"
 
 class BaseSpell;

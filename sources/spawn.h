@@ -18,10 +18,10 @@
 #ifndef _SPAWN_H
 #define _SPAWN_H
 
-#include "monsters.h"
 #include "position.h"
 
 class Monster;
+class MonsterType;
 class Npc;
 class Spawn;
 

@@ -31,6 +31,7 @@
 #include "combat.h"
 #include "tile.h"
 #include "monster.h"
+#include "npc.h"
 #include "database.h"
 #include "iologindata.h"
 #include "ioban.h"
@@ -55,7 +56,10 @@
 #include "spawn.h"
 
 #include "vocation.h"
+#include "condition.h"
+#include "creatureevent.h"
 #include "group.h"
+#include "player.h"
 #include "scheduler.h"
 #include "schedulertask.h"
 #include "server.h"
@@ -682,6 +686,17 @@ Creature* Game::getCreatureByName(std::string s)
 
 	return nullptr; //just in case the creature doesnt exist
 }
+
+
+Map* Game::getMap() {
+	return map;
+}
+
+
+const Map* Game::getMap() const {
+	return map;
+}
+
 
 Player* Game::getPlayerByName(std::string s)
 {

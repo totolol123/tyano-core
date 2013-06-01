@@ -18,21 +18,12 @@
 #ifndef _POSITION_H
 #define _POSITION_H
 
-enum Direction
-{
-	NORTH = 0,
-	EAST = 1,
-	SOUTH = 2,
-	WEST = 3,
-	SOUTHWEST = 4,
-	SOUTHEAST = 5,
-	NORTHWEST = 6,
-	NORTHEAST = 7
-};
+#include "const.h"
 
 typedef std::pair<int32_t, int32_t> PositionPair;
 typedef std::vector<PositionPair> PairVector;
 typedef std::vector<Direction> DirVector;
+
 
 class Position
 {

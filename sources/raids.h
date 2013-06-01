@@ -19,7 +19,6 @@
 #define _RAIDS_H
 
 #include "baseevents.h"
-#include "luascript.h"
 
 enum class FileType;
 class      Raid;

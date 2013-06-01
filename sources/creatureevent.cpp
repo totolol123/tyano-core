@@ -21,6 +21,7 @@
 
 #include "monster.h"
 #include "player.h"
+#include "tile.h"
 
 
 LOGGER_DEFINITION(CreatureEvents);

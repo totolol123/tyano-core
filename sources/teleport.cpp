@@ -17,6 +17,7 @@
 #include "otpch.h"
 #include "teleport.h"
 
+#include "creature.h"
 #include "fileloader.h"
 #include "game.h"
 #include "server.h"

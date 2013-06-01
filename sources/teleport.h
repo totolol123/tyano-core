@@ -20,6 +20,7 @@
 
 #include "cylinder.h"
 #include "item.h"
+#include "position.h"
 
 
 class Teleport : public Item, public Cylinder

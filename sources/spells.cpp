@@ -24,10 +24,14 @@
 #include "housetile.h"
 #include "combat.h"
 
+#include "condition.h"
+#include "creatureevent.h"
+#include "items.h"
 #include "monster.h"
 #include "monsters.h"
 #include "configmanager.h"
 #include "game.h"
+#include "player.h"
 #include "server.h"
 
 

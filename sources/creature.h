@@ -18,73 +18,31 @@
 #ifndef _CREATURE_H
 #define _CREATURE_H
 
-#include "condition.h"
-#include "creatureevent.h"
-#include "map.h"
+#include "position.h"
 #include "templates.h"
 #include "thing.h"
-#include "tile.h"
 
+class  Condition;
 class  Container;
+class  CreatureEvent;
 struct DeathEntry;
 class  Item;
+class  ItemKind;
 class  Monster;
 class  Npc;
 class  Player;
 class  Tile;
 
+typedef std::list<Condition*>                       ConditionList;
+typedef std::shared_ptr<CreatureEvent>              CreatureEventP;
 typedef std::list<CreatureEventP>                   CreatureEventList;
 typedef std::list<boost::intrusive_ptr<Creature>>   CreatureList;
 typedef std::vector<boost::intrusive_ptr<Creature>> CreatureVector;
 typedef std::vector<DeathEntry>                     DeathList;
-typedef std::list<Condition*>                       ConditionList;
+typedef std::shared_ptr<ItemKind>                   ItemKindP;
+typedef std::shared_ptr<const ItemKind>             ItemKindPC;
 typedef std::map<uint32_t, std::string>             StorageMap;
 
-
-enum slots_t
-{
-	SLOT_PRE_FIRST = 0,
-	SLOT_WHEREEVER = SLOT_PRE_FIRST,
-	SLOT_FIRST = 1,
-	SLOT_HEAD = SLOT_FIRST,
-	SLOT_NECKLACE = 2,
-	SLOT_BACKPACK = 3,
-	SLOT_ARMOR = 4,
-	SLOT_RIGHT = 5,
-	SLOT_LEFT = 6,
-	SLOT_LEGS = 7,
-	SLOT_FEET = 8,
-	SLOT_RING = 9,
-	SLOT_AMMO = 10,
-	SLOT_DEPOT = 11,
-	SLOT_LAST = SLOT_DEPOT,
-	SLOT_HAND = 12,
-	SLOT_TWO_HAND = SLOT_HAND
-};
-
-enum lootDrop_t
-{
-	LOOT_DROP_FULL = 0,
-	LOOT_DROP_PREVENT,
-	LOOT_DROP_NONE
-};
-
-enum killflags_t
-{
-	KILLFLAG_NONE = 0,
-	KILLFLAG_LASTHIT = 1 << 0,
-	KILLFLAG_JUSTIFY = 1 << 1,
-	KILLFLAG_UNJUSTIFIED = 1 << 2
-};
-
-enum Visible_t
-{
-	VISIBLE_NONE = 0,
-	VISIBLE_APPEAR = 1,
-	VISIBLE_DISAPPEAR = 2,
-	VISIBLE_GHOST_APPEAR = 3,
-	VISIBLE_GHOST_DISAPPEAR = 4
-};
 
 struct FindPathParams
 {
@@ -129,10 +87,6 @@ struct DeathLessThan
 };
 
 
-#define EVENT_CREATURECOUNT 1
-#define EVENT_CREATURE_THINK_INTERVAL 100
-#define EVENT_CHECK_CREATURE_INTERVAL (EVENT_CREATURE_THINK_INTERVAL / EVENT_CREATURECOUNT)
-
 class FrozenPathingConditionCall
 {
 	public:
@@ -148,7 +102,7 @@ class FrozenPathingConditionCall
 		Position targetPos;
 };
 
-class Creature : public AutoId, virtual public Thing
+class Creature : public AutoId, public Thing
 {
 	protected:
 		Creature();
@@ -249,7 +203,7 @@ class Creature : public AutoId, virtual public Thing
 		virtual bool isGhost() const {return false;}
 		virtual bool isWalkable() const {return false;}
 
-		ZoneType_t getZone() const {return getTile()->getZone();}
+		ZoneType_t getZone() const;
 
 		//walk functions
 		bool startAutoWalk(std::list<Direction>& listDir);

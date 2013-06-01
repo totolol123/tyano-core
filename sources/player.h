@@ -20,7 +20,6 @@
 
 #include "container.h"
 #include "creature.h"
-#include "npc.h"
 
 class Depot;
 class Group;
@@ -35,84 +34,6 @@ class Vocation;
 class Weapon;
 
 typedef std::map<uint32_t,Outfit> OutfitMap;
-
-
-enum skillsid_t
-{
-	SKILL_LEVEL = 0,
-	SKILL_TRIES = 1,
-	SKILL_PERCENT = 2
-};
-
-enum playerinfo_t
-{
-	PLAYERINFO_LEVEL,
-	PLAYERINFO_LEVELPERCENT,
-	PLAYERINFO_HEALTH,
-	PLAYERINFO_MAXHEALTH,
-	PLAYERINFO_MANA,
-	PLAYERINFO_MAXMANA,
-	PLAYERINFO_MAGICLEVEL,
-	PLAYERINFO_MAGICLEVELPERCENT,
-	PLAYERINFO_SOUL,
-};
-
-enum freeslot_t
-{
-	SLOT_TYPE_NONE,
-	SLOT_TYPE_INVENTORY,
-	SLOT_TYPE_CONTAINER
-};
-
-enum chaseMode_t
-{
-	CHASEMODE_STANDSTILL,
-	CHASEMODE_FOLLOW,
-};
-
-enum fightMode_t
-{
-	FIGHTMODE_ATTACK,
-	FIGHTMODE_BALANCED,
-	FIGHTMODE_DEFENSE
-};
-
-enum secureMode_t
-{
-	SECUREMODE_ON,
-	SECUREMODE_OFF
-};
-
-enum tradestate_t
-{
-	TRADE_NONE,
-	TRADE_INITIATED,
-	TRADE_ACCEPT,
-	TRADE_ACKNOWLEDGE,
-	TRADE_TRANSFER
-};
-
-enum AccountManager_t
-{
-	MANAGER_NONE,
-	MANAGER_NEW,
-	MANAGER_ACCOUNT,
-	MANAGER_NAMELOCK
-};
-
-enum GamemasterCondition_t
-{
-	GAMEMASTER_INVISIBLE = 0,
-	GAMEMASTER_IGNORE = 1,
-	GAMEMASTER_TELEPORT = 2
-};
-
-enum Exhaust_t
-{
-    EXHAUST_COMBAT = 1,
-    EXHAUST_HEALING = 2
-};   
-
 typedef std::set<uint32_t> VIPListSet;
 typedef std::vector<std::pair<uint32_t, Container*> > ContainerVector;
 typedef std::map<uint32_t, std::pair<boost::intrusive_ptr<Depot>, bool> > DepotMap;

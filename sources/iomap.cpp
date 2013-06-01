@@ -26,6 +26,7 @@
 #include "house.h"
 #include "housetile.h"
 #include "item.h"
+#include "items.h"
 #include "container.h"
 #include "depot.h"
 #include "spawn.h"

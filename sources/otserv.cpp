@@ -48,6 +48,7 @@
 #include "task.h"
 #include "group.h"
 
+#include "items.h"
 #include "monsters.h"
 #include "scheduler.h"
 #include "server.h"

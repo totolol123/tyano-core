@@ -18,10 +18,10 @@
 #ifndef _BASEEVENTS_H
 #define _BASEEVENTS_H
 
+#include "luascript.h"
 #include "tools.h"
 
 class Event;
-class LuaScriptInterface;
 
 typedef std::shared_ptr<Event> EventP;
 

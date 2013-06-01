@@ -18,12 +18,13 @@
 #ifndef _MONSTERS_H
 #define _MONSTERS_H
 
-#include "condition.h"
+#include "const.h"
 
 #define MAX_LOOTCHANCE 100000
 #define MAX_STATICWALK 100
 
 class  BaseSpell;
+class  ConditionDamage;
 class  Container;
 class  Item;
 struct LootBlock;

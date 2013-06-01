@@ -25,6 +25,7 @@
 
 #include "configmanager.h"
 #include "game.h"
+#include "player.h"
 #include "server.h"
 
 

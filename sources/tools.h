@@ -19,8 +19,8 @@
 #define _TOOLS_H
 
 #include "const.h"
-#include "enums.h"
-#include "position.h"
+
+class Position;
 
 
 extern const std::string EMPTY_STRING;
@@ -29,22 +29,6 @@ typedef std::vector<int32_t> IntegerVec;
 
 typedef boost::tokenizer<boost::char_separator<char> > tokenizer;
 typedef std::map<int32_t, bool> VocationMap;
-
-enum DistributionType_t
-{
-	DISTRO_UNIFORM,
-	DISTRO_SQUARE,
-	DISTRO_NORMAL
-};
-
-
-enum class FileType {
-	CONFIG,
-	LOG,
-	MOD,
-	OTHER,
-	XML,
-};
 
 
 std::string transformToMD5(std::string plainText, bool upperCase);

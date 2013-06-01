@@ -19,7 +19,6 @@
 #define _GLOBALEVENT_H
 
 #include "baseevents.h"
-#include "luascript.h"
 
 #define GLOBAL_THINK_INTERVAL 1000
 

@@ -22,6 +22,7 @@
 
 #include "container.h"
 #include "creature.h"
+#include "items.h"
 #include "player.h"
 #include "server.h"
 

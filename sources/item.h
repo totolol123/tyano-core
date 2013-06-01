@@ -22,7 +22,6 @@
 #include "attributes/Scheme.hpp"
 #include "attributes/Values.hpp"
 #include "const.h"
-#include "items.h"
 #include "thing.h"
 
 class  BedItem;
@@ -42,6 +41,9 @@ class  PropWriteStream;
 class  Raid;
 class  Teleport;
 class  TrashHolder;
+
+typedef std::shared_ptr<ItemKind>        ItemKindP;
+typedef std::shared_ptr<const ItemKind>  ItemKindPC;
 
 
 enum ITEMPROPERTY
@@ -130,7 +132,7 @@ struct TeleportDest
 };
 #pragma pack()
 
-class Item : virtual public Thing {
+class Item : public Thing {
 
 	public:
 
@@ -209,7 +211,7 @@ class Item : virtual public Thing {
 		virtual BedItem* getBed() {return nullptr;}
 		virtual const BedItem* getBed() const {return nullptr;}
 
-		uint16_t getId() const {return kind->id;}
+		uint16_t getId() const;
 		uint16_t getClientID() const;
 
 		static std::string getDescription(const ItemKindPC& kind, int32_t lookDistance, const Item* item = nullptr, uint16_t subType = 0, bool addArticle = true);

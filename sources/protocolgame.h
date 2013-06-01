@@ -18,17 +18,18 @@
 #ifndef _PROTOCOLGAME_H
 #define _PROTOCOLGAME_H
 
-#include "creature.h"
-#include "enums.h"
-#include "position.h"
+#include "const.h"
 #include "protocol.h"
 
 class Connection;
 class Container;
+class Creature;
 class Game;
 class House;
+class Item;
 class NetworkMessage;
 class Player;
+class Position;
 class Quest;
 class Tile;
 

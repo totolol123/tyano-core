@@ -22,6 +22,7 @@
 
 #include "vocation.h"
 #include "configmanager.h"
+#include "position.h"
 #include "server.h"
 
 

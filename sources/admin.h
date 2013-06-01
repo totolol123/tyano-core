@@ -76,6 +76,7 @@
 #include "luascript.h"
 #include "protocol.h"
 
+class      Item;
 enum class LogType : uint8_t;
 class      RSA;
 

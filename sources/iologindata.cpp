@@ -26,6 +26,8 @@
 #include "house.h"
 
 #include "account.h"
+#include "condition.h"
+#include "creatureevent.h"
 #include "depot.h"
 #include "fileloader.h"
 #include "ioguild.h"
@@ -34,15 +36,10 @@
 #include "database.h"
 #include "configmanager.h"
 #include "outfit.h"
+#include "player.h"
 #include "game.h"
 #include "group.h"
 #include "server.h"
-
-
-#ifndef __GNUC__
-#pragma warning( disable : 4005)
-#pragma warning( disable : 4996)
-#endif
 
 
 LOGGER_DEFINITION(IOLoginData);

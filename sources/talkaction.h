@@ -19,7 +19,6 @@
 #define _TALKACTION_H
 
 #include "baseevents.h"
-#include "luascript.h"
 
 class TalkAction;
 

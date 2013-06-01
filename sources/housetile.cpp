@@ -17,9 +17,11 @@
 #include "otpch.h"
 #include "housetile.h"
 
+#include "creature.h"
 #include "house.h"
 #include "game.h"
 #include "configmanager.h"
+#include "player.h"
 #include "server.h"
 
 

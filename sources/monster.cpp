@@ -24,8 +24,10 @@
 #include "combat.h"
 
 #include "configmanager.h"
+#include "creature.h"
 #include "dispatcher.h"
 #include "game.h"
+#include "player.h"
 #include "raids.h"
 #include "task.h"
 #include "server.h"
@@ -1408,3 +1410,31 @@ void Monster::getPathSearchParams(const Creature* creature, FindPathParams& fpp)
 	else
 		fpp.fullPathSearch = !canUseAttack(getPosition(), creature);
 }
+
+
+
+const std::string& Monster::getName() const {return mType->name;}
+const std::string& Monster::getNameDescription() const {return mType->nameDescription;}
+std::string Monster::getDescription(int32_t lookDistance) const {return mType->nameDescription + ".";}
+
+RaceType_t Monster::getRace() const {return mType->race;}
+int32_t Monster::getArmor() const {return mType->armor;}
+int32_t Monster::getDefense() const {return mType->defense;}
+MonsterType* Monster::getMonsterType() const {return mType;}
+bool Monster::isPushable() const {return mType->pushable && (baseSpeed > 0);}
+bool Monster::isAttackable() const {return mType->isAttackable;}
+
+bool Monster::canPushItems() const {return mType->canPushItems;}
+bool Monster::canPushCreatures() const {return mType->canPushCreatures;}
+bool Monster::isHostile() const {return mType->isHostile;}
+bool Monster::isWalkable() const {return mType->isWalkable;}
+bool Monster::canSeeInvisibility() const {return Creature::isImmune(CONDITION_INVISIBLE);}
+uint32_t Monster::getManaCost() const {return mType->manaCost;}
+
+bool Monster::isFleeing() const {return getHealth() <= mType->runAwayHealth;}
+
+uint64_t Monster::getLostExperience() const {return ((skillLoss ? mType->experience : 0));}
+uint32_t Monster::getDamageImmunities() const {return mType->damageImmunities;}
+uint32_t Monster::getConditionImmunities() const {return mType->conditionImmunities;}
+uint16_t Monster::getLookCorpse() {return mType->lookCorpse;}
+uint16_t Monster::getLookCorpse() const {return mType->lookCorpse;}

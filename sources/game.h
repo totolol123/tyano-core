@@ -18,14 +18,16 @@
 #ifndef _GAME_H
 #define _GAME_H
 
-#include "player.h"
+#include "map.h"
+#include "templates.h"
 #include "tile.h"
 
-class CombatInfo;
-class Monster;
-class Npc;
-class ReferenceCounted;
-class ServiceManager;
+class  CombatInfo;
+struct FindPathParams;
+class  Monster;
+class  Npc;
+class  ReferenceCounted;
+class  ServiceManager;
 
 typedef std::vector<boost::intrusive_ptr<Creature>>     CreatureVector;
 typedef std::vector<Player*>                            PlayerVector;
@@ -593,8 +595,8 @@ class Game
 		void setGlobalSaveMessage(int16_t key, bool value) {globalSaveMessage[key] = value;}
 		bool getGlobalSaveMessage(int16_t key) const {return globalSaveMessage[key];}
 
-		Map* getMap() {return map;}
-		const Map* getMap() const {return map;}
+		Map* getMap();
+		const Map* getMap() const;
 
 		int32_t getLightHour() {return lightHour;}
 		void startDecay(Item* item);

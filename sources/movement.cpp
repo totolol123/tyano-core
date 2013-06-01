@@ -27,6 +27,7 @@
 #include "vocation.h"
 
 #include "combat.h"
+#include "condition.h"
 #include "game.h"
 #include "server.h"
 

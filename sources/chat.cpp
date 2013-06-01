@@ -21,9 +21,12 @@
 #include "ioguild.h"
 #include "iologindata.h"
 
+#include "condition.h"
 #include "configmanager.h"
+#include "creatureevent.h"
 #include "game.h"
 #include "server.h"
+#include "tools.h"
 
 
 uint16_t ChatChannel::staticFlags = CHANNELFLAG_ENABLED | CHANNELFLAG_ACTIVE;

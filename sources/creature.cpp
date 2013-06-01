@@ -27,8 +27,10 @@
 #include "container.h"
 
 #include "configmanager.h"
+#include "creatureevent.h"
 #include "dispatcher.h"
 #include "game.h"
+#include "items.h"
 #include "scheduler.h"
 #include "schedulertask.h"
 #include "server.h"
@@ -1384,6 +1386,12 @@ CreatureEventList Creature::getCreatureEvents(CreatureEventType_t type)
 
 	return retList;
 }
+
+
+ZoneType_t Creature::getZone() const {
+	return _tile->getZone();
+}
+
 
 FrozenPathingConditionCall::FrozenPathingConditionCall(const Position& _targetPos)
 {

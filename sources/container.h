@@ -99,16 +99,16 @@ class Container : public Item, public Cylinder
 		ItemList::const_reverse_iterator getReversedEnd() const {return itemlist.rend();}
 
 		//cylinder implementations
-		virtual Cylinder* getParent() {return Thing::getParent();}
-		virtual const Cylinder* getParent() const {return Thing::getParent();}
-		virtual bool isRemoved() const {return Thing::isRemoved();}
-		virtual Position getPosition() const {return Thing::getPosition();}
-		virtual Tile* getTile() {return Thing::getTile();}
-		virtual const Tile* getTile() const {return Thing::getTile();}
-		virtual Item* getItem() {return this;}
-		virtual const Item* getItem() const {return this;}
-		virtual Creature* getCreature() {return nullptr;}
-		virtual const Creature* getCreature() const {return nullptr;}
+		virtual Cylinder* getParent();
+		virtual const Cylinder* getParent() const;
+		virtual bool isRemoved() const;
+		virtual Position getPosition() const;
+		virtual Tile* getTile();
+		virtual const Tile* getTile() const;
+		virtual Item* getItem();
+		virtual const Item* getItem() const;
+		virtual Creature* getCreature();
+		virtual const Creature* getCreature() const;
 
 		virtual ReturnValue __queryAdd(int32_t index, const Thing* thing, uint32_t count,
 			uint32_t flags) const;
