@@ -29,6 +29,12 @@ TrashHolder::ClassAttributesP TrashHolder::getClassAttributes() {
 }
 
 
+const std::string& TrashHolder::getClassId() {
+	static const std::string id("trashHolder");
+	return id;
+}
+
+
 const std::string& TrashHolder::getClassName() {
 	static const std::string name("Trash Holder");
 	return name;

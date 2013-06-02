@@ -54,6 +54,12 @@ Container::ClassAttributesP Container::getClassAttributes() {
 }
 
 
+const std::string& Container::getClassId() {
+	static const std::string id("container");
+	return id;
+}
+
+
 const std::string& Container::getClassName() {
 	static const std::string name("Container");
 	return name;

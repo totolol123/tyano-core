@@ -21,10 +21,11 @@
 #include "attributes/Attribute.hpp"
 #include "attributes/Scheme.hpp"
 
+using namespace ts;
+using namespace ts::attributes;
 
-LOGGER_DEFINITION(attributes::Values);
 
-using namespace attributes;
+LOGGER_DEFINITION(ts::attributes::Values);
 
 
 

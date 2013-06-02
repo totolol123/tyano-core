@@ -18,7 +18,8 @@
 #include "otpch.h"
 #include "attributes/Attribute.hpp"
 
-using namespace attributes;
+using namespace ts;
+using namespace ts::attributes;
 
 
 Attribute::Attribute(const std::string& name, Type type)

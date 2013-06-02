@@ -16,8 +16,25 @@ server_SOURCES = sources/otpch.h.gch \
                  sources/attributes/Attribute.cpp \
                  sources/attributes/Scheme.cpp \
                  sources/attributes/Values.cpp \
+                 sources/combat/Combat.cpp \
+                 sources/creatures/Player.cpp \
                  sources/items/Class.cpp \
+                 sources/items/Common.cpp \
                  sources/items/Key.cpp \
+                 sources/items/Kind.cpp \
+                 sources/items/kind/Bed.cpp \
+                 sources/items/kind/Common.cpp \
+                 sources/items/kind/Container.cpp \
+                 sources/items/kind/Depot.cpp \
+                 sources/items/kind/Door.cpp \
+                 sources/items/kind/Key.cpp \
+                 sources/items/kind/MagicField.cpp \
+                 sources/items/kind/Mailbox.cpp \
+                 sources/items/kind/Teleport.cpp \
+                 sources/items/kind/TrashHolder.cpp \
+                 sources/items/kind/Weapon.cpp \
+                 sources/utility/Utility.cpp \
+                 sources/xml/Xml.cpp \
                  sources/items.cpp \
                  sources/account.cpp \
                  sources/actions.cpp \

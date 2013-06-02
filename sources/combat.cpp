@@ -1391,6 +1391,12 @@ MagicField::ClassAttributesP MagicField::getClassAttributes() {
 }
 
 
+const std::string& MagicField::getClassId() {
+	static const std::string id("magicField");
+	return id;
+}
+
+
 const std::string& MagicField::getClassName() {
 	static const std::string name("Magic Field");
 	return name;

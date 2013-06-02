@@ -58,6 +58,7 @@ class Container : public Item, public Cylinder
 	public:
 
 		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassId();
 		static const std::string& getClassName();
 
 		Container(const ItemKindPC& kind);

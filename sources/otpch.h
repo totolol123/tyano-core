@@ -40,6 +40,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <tr2/type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -75,6 +76,8 @@
 #include <boost/foreach.hpp>
 #include <boost/function.hpp>
 #include <boost/intrusive_ptr.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/numeric/conversion/cast.hpp>
 #include <boost/regex.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>

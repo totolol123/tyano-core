@@ -38,6 +38,12 @@ Mailbox::ClassAttributesP Mailbox::getClassAttributes() {
 }
 
 
+const std::string& Mailbox::getClassId() {
+	static const std::string id("mailbox");
+	return id;
+}
+
+
 const std::string& Mailbox::getClassName() {
 	static const std::string name("Mailbox");
 	return name;

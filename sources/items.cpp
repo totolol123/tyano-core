@@ -33,7 +33,8 @@
 #include "trashholder.h"
 #include "weapons.h"
 
-using namespace items;
+using namespace ts;
+using namespace ts::items;
 
 
 ItemKind::ItemKind() :
@@ -86,7 +87,7 @@ ItemKind::ItemKind() :
 		group(ITEM_GROUP_NONE),
 		slotPosition(SLOTP_HAND | SLOTP_AMMO),
 		wieldPosition(SLOT_HAND),
-		type(ItemType::GENERIC),
+		type(ItemType::COMMON),
 		charges(0),
 		transformUseTo {0, 0},
 		transformToFree(0),
@@ -1382,13 +1383,9 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 									if(readXMLInteger(fieldAttributesNode, "value", intValue))
 									{
 										damage = -intValue;
-										if(start > 0)
-										{
-											std::list<int32_t> damageList;
-											ConditionDamage::generateDamageList(damage, start, damageList);
-
-											for(std::list<int32_t>::iterator it = damageList.begin(); it != damageList.end(); ++it)
-												conditionDamage->addDamage(1, ticks, -*it);
+										if (start > 0) {
+											for (auto roundDamage : ConditionDamage::generateDamageVector(damage, start))
+												conditionDamage->addDamage(1, ticks, -roundDamage);
 
 											start = 0;
 										}
@@ -1501,8 +1498,9 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 			}
 			else if(tmpStrValue == "partnerdirection")
 			{
-				if(readXMLString(node, "value", strValue))
-					kind->bedPartnerDir = getDirection(strValue);
+				Direction direction;
+				if(readXMLString(node, "value", strValue) && (getDirection(strValue, direction) || getDeprecatedDirection(strValue, direction)))
+					kind->bedPartnerDir = direction;
 			}
 			else if(tmpStrValue == "maletransformto")
 			{
@@ -1994,16 +1992,16 @@ bool Items::reload() {
 
 
 void Items::setupClasses() {
-	_classes[ItemType::BED] = makeClass<BedItem>();
-	_classes[ItemType::CONTAINER] = makeClass<Container>();
-	_classes[ItemType::DEPOT] = makeClass<Depot>();
-	_classes[ItemType::DOOR] = makeClass<Door>();
-	_classes[ItemType::MAGICFIELD] = makeClass<MagicField>();
-	_classes[ItemType::MAILBOX] = makeClass<Mailbox>();
-	_classes[ItemType::GENERIC] = makeClass<Item>();
-	_classes[ItemType::TELEPORT] = makeClass<Teleport>();
-	_classes[ItemType::TRASHHOLDER] = makeClass<TrashHolder>();
-	_classes[ItemType::KEY] = makeClass<Key>();
+//	_classes[ItemType::BED] = makeClass<BedItem>();
+//	_classes[ItemType::CONTAINER] = makeClass<Container>();
+//	_classes[ItemType::DEPOT] = makeClass<Depot>();
+//	_classes[ItemType::DOOR] = makeClass<Door>();
+//	_classes[ItemType::MAGICFIELD] = makeClass<MagicField>();
+//	_classes[ItemType::MAILBOX] = makeClass<Mailbox>();
+//	_classes[ItemType::COMMON] = makeClass<Common>();
+//	_classes[ItemType::TELEPORT] = makeClass<Teleport>();
+//	_classes[ItemType::TRASHHOLDER] = makeClass<TrashHolder>();
+//	_classes[ItemType::KEY] = makeClass<Key>();
 }
 
 

@@ -64,6 +64,8 @@
 #include "server.h"
 #include "task.h"
 
+using namespace ts;
+
 
 enum
 {

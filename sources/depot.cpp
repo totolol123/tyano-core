@@ -20,6 +20,8 @@
 #include "fileloader.h"
 #include "tools.h"
 
+using namespace ts;
+
 
 const std::string Depot::ATTRIBUTE_DEPOTID("depotid");
 
@@ -39,6 +41,12 @@ Depot::ClassAttributesP Depot::getClassAttributes() {
 	attributes->emplace(ATTRIBUTE_DEPOTID, Type::INTEGER);
 
 	return attributes;
+}
+
+
+const std::string& Depot::getClassId() {
+	static const std::string id("depot");
+	return id;
 }
 
 

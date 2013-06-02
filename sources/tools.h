@@ -84,7 +84,9 @@ float box_muller(float m, float s);
 Skulls_t getSkull(std::string strValue);
 PartyShields_t getPartyShield(std::string strValue);
 
-Direction getDirection(std::string string);
+bool getDirection(const std::string& string, Direction& target);
+bool getDeprecatedDirection(const std::string& string, Direction& target);
+std::string getDirectionNames();
 Direction getDirectionTo(Position pos1, Position pos2, bool extended = true);
 Direction getReverseDirection(Direction dir);
 Position getNextPosition(Direction direction, Position pos);
@@ -95,11 +97,16 @@ std::string formatTime(int32_t hours, int32_t minutes);
 std::string convertIPAddress(uint32_t ip);
 
 MagicEffect_t getMagicEffect(const std::string& strValue);
+std::string getMagicEffectNames();
 ShootEffect_t getShootType(const std::string& strValue);
+std::string getShootEffectNames();
 Ammo_t getAmmoType(const std::string& strValue);
+std::string getAmmoTypeNames();
 AmmoAction_t getAmmoAction(const std::string& strValue);
+std::string getAmmoConsumptionNames();
 CombatType_t getCombatType(const std::string& strValue);
 FluidTypes_t getFluidType(const std::string& strValue);
+std::string getFluidNames();
 skills_t getSkillId(const std::string& strValue);
 
 std::string getCombatName(CombatType_t combatType);

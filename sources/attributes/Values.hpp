@@ -18,6 +18,7 @@
 #ifndef _ATTRIBUTES_VALUES_HPP
 #define _ATTRIBUTES_VALUES_HPP
 
+namespace ts {
 namespace attributes {
 
 	class      Attribute;
@@ -80,5 +81,6 @@ namespace attributes {
 	};
 
 } // namespace attributes
+} // namespace ts
 
 #endif // _ATTRIBUTES_VALUES_HPP

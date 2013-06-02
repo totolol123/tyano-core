@@ -369,6 +369,7 @@ class MagicField : public Item
 	public:
 
 		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassId();
 		static const std::string& getClassName();
 
 		MagicField(const ItemKindPC& kind) : Item(kind) {createTime = OTSYS_TIME();}

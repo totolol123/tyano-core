@@ -688,26 +688,82 @@ PartyShields_t getPartyShield(std::string strValue)
 	return SHIELD_NONE;
 }
 
-Direction getDirection(std::string string)
-{
-	if(string == "north" || string == "n" || string == "0")
-		return NORTH;
-	else if(string == "east" || string == "e" || string == "1")
-		return EAST;
-	else if(string == "south" || string == "s" || string == "2")
-		return SOUTH;
-	else if(string == "west" || string == "w" || string == "3")
-		return WEST;
-	else if(string == "southwest" || string == "south west" || string == "south-west" || string == "sw" || string == "4")
-		return SOUTHWEST;
-	else if(string == "southeast" || string == "south east" || string == "south-east" || string == "se" || string == "5")
-		return SOUTHEAST;
-	else if(string == "northwest" || string == "north west" || string == "north-west" || string == "nw" || string == "6")
-		return NORTHWEST;
-	else if(string == "northeast" || string == "north east" || string == "north-east" || string == "ne" || string == "7")
-		return NORTHEAST;
+bool getDirection(const std::string& string, Direction& target) {
+	if (string == "east") {
+		target = EAST;
+		return true;
+	}
+	if (string == "north") {
+		target = NORTH;
+		return true;
+	}
+	if (string == "northeast") {
+		target = NORTHEAST;
+		return true;
+	}
+	if (string == "northwest") {
+		target = NORTHWEST;
+		return true;
+	}
+	if (string == "south") {
+		target = SOUTH;
+		return true;
+	}
+	if (string == "southeast") {
+		target = SOUTHEAST;
+		return true;
+	}
+	if (string == "southwest") {
+		target = SOUTHWEST;
+		return true;
+	}
+	if (string == "west") {
+		target = WEST;
+		return true;
+	}
 
-	return SOUTH;
+	return false;
+}
+
+bool getDeprecatedDirection(const std::string& string, Direction& target) {
+	if (string == "e" || string == "1") {
+		target = EAST;
+		return true;
+	}
+	if (string == "n" || string == "0") {
+		target = NORTH;
+		return true;
+	}
+	if (string == "north east" || string == "north-east" || string == "ne" || string == "7") {
+		target = NORTHEAST;
+		return true;
+	}
+	if (string == "north west" || string == "north-west" || string == "nw" || string == "6") {
+		target = NORTHWEST;
+		return true;
+	}
+	if (string == "s" || string == "2") {
+		target = SOUTH;
+		return true;
+	}
+	if (string == "south east" || string == "south-east" || string == "se" || string == "5") {
+		target = SOUTHEAST;
+		return true;
+	}
+	if (string == "south west" || string == "south-west" || string == "sw" || string == "4") {
+		target = SOUTHWEST;
+		return true;
+	}
+	if (string == "w" || string == "3") {
+		target = WEST;
+		return true;
+	}
+
+	return false;
+}
+
+std::string getDirectionNames() {
+	return "east, north, northeast, northwest, south, southeast, southwest or west";
 }
 
 Direction getDirectionTo(Position pos1, Position pos2, bool extended/* = true*/)
@@ -852,123 +908,122 @@ struct SkillIdNames
 
 MagicEffectNames magicEffectNames[] =
 {
-	{"redspark",		MAGIC_EFFECT_DRAW_BLOOD},
-	{"bluebubble",		MAGIC_EFFECT_LOSE_ENERGY},
-	{"poff",		MAGIC_EFFECT_POFF},
-	{"yellowspark",		MAGIC_EFFECT_BLOCKHIT},
-	{"explosionarea",	MAGIC_EFFECT_EXPLOSION_AREA},
-	{"explosion",		MAGIC_EFFECT_EXPLOSION_DAMAGE},
-	{"firearea",		MAGIC_EFFECT_FIRE_AREA},
-	{"yellowbubble",	MAGIC_EFFECT_YELLOW_RINGS},
-	{"greenbubble",		MAGIC_EFFECT_POISON_RINGS},
-	{"blackspark",		MAGIC_EFFECT_HIT_AREA},
-	{"teleport",		MAGIC_EFFECT_TELEPORT},
-	{"energy",		MAGIC_EFFECT_ENERGY_DAMAGE},
-	{"blueshimmer",		MAGIC_EFFECT_WRAPS_BLUE},
-	{"redshimmer",		MAGIC_EFFECT_WRAPS_RED},
-	{"greenshimmer",	MAGIC_EFFECT_WRAPS_GREEN},
-	{"fire",		MAGIC_EFFECT_HITBY_FIRE},
-	{"greenspark",		MAGIC_EFFECT_POISON},
-	{"mortarea",		MAGIC_EFFECT_MORT_AREA},
-	{"greennote",		MAGIC_EFFECT_SOUND_GREEN},
-	{"rednote",		MAGIC_EFFECT_SOUND_RED},
-	{"poison",		MAGIC_EFFECT_POISON_AREA},
-	{"yellownote",		MAGIC_EFFECT_SOUND_YELLOW},
-	{"purplenote",		MAGIC_EFFECT_SOUND_PURPLE},
-	{"bluenote",		MAGIC_EFFECT_SOUND_BLUE},
-	{"whitenote",		MAGIC_EFFECT_SOUND_WHITE},
-	{"bubbles",		MAGIC_EFFECT_BUBBLES},
-	{"dice",		MAGIC_EFFECT_CRAPS},
-	{"giftwraps",		MAGIC_EFFECT_GIFT_WRAPS},
-	{"yellowfirework",	MAGIC_EFFECT_FIREWORK_YELLOW},
-	{"redfirework",		MAGIC_EFFECT_FIREWORK_RED},
-	{"bluefirework",	MAGIC_EFFECT_FIREWORK_BLUE},
-	{"stun",		MAGIC_EFFECT_STUN},
-	{"sleep",		MAGIC_EFFECT_SLEEP},
-	{"watercreature",	MAGIC_EFFECT_WATERCREATURE},
-	{"groundshaker",	MAGIC_EFFECT_GROUNDSHAKER},
-	{"hearts",		MAGIC_EFFECT_HEARTS},
-	{"fireattack",		MAGIC_EFFECT_FIREATTACK},
-	{"energyarea",		MAGIC_EFFECT_ENERGY_AREA},
-	{"smallclouds",		MAGIC_EFFECT_SMALLCLOUDS},
-	{"holydamage",		MAGIC_EFFECT_HOLYDAMAGE},
+	{"assassin",		MAGIC_EFFECT_ASSASSIN},
+	{"bats",			MAGIC_EFFECT_BATS},
 	{"bigclouds",		MAGIC_EFFECT_BIGCLOUDS},
-	{"icearea",		MAGIC_EFFECT_ICEAREA},
-	{"icetornado",		MAGIC_EFFECT_ICETORNADO},
-	{"iceattack",		MAGIC_EFFECT_ICEATTACK},
-	{"stones",		MAGIC_EFFECT_STONES},
-	{"smallplants",		MAGIC_EFFECT_SMALLPLANTS},
-	{"carniphila",		MAGIC_EFFECT_CARNIPHILA},
-	{"purpleenergy",	MAGIC_EFFECT_PURPLEENERGY},
-	{"yellowenergy",	MAGIC_EFFECT_YELLOWENERGY},
-	{"holyarea",		MAGIC_EFFECT_HOLYAREA},
 	{"bigplants",		MAGIC_EFFECT_BIGPLANTS},
-	{"cake",		MAGIC_EFFECT_CAKE},
+	{"blackspark",		MAGIC_EFFECT_HIT_AREA},
+	{"bloodysteps",		MAGIC_EFFECT_BLOODYSTEPS},
+	{"bluebubble",		MAGIC_EFFECT_LOSE_ENERGY},
+	{"bluefirework",	MAGIC_EFFECT_FIREWORK_BLUE},
+	{"bluenote",		MAGIC_EFFECT_SOUND_BLUE},
+	{"blueshimmer",		MAGIC_EFFECT_WRAPS_BLUE},
+	{"bubbles",			MAGIC_EFFECT_BUBBLES},
+	{"cake",			MAGIC_EFFECT_CAKE},
+	{"carniphila",		MAGIC_EFFECT_CARNIPHILA},
+	{"dice",			MAGIC_EFFECT_CRAPS},
+	{"dragonhead",		MAGIC_EFFECT_DRAGONHEAD},
+	{"energy",			MAGIC_EFFECT_ENERGY_DAMAGE},
+	{"energyarea",		MAGIC_EFFECT_ENERGY_AREA},
+	{"explosion",		MAGIC_EFFECT_EXPLOSION_DAMAGE},
+	{"explosionarea",	MAGIC_EFFECT_EXPLOSION_AREA},
+	{"fire",			MAGIC_EFFECT_HITBY_FIRE},
+	{"firearea",		MAGIC_EFFECT_FIRE_AREA},
+	{"fireattack",		MAGIC_EFFECT_FIREATTACK},
 	{"giantice",		MAGIC_EFFECT_GIANTICE},
-	{"watersplash",		MAGIC_EFFECT_WATERSPLASH},
-	{"plantattack",		MAGIC_EFFECT_PLANTATTACK},
-	{"tutorialarrow",	MAGIC_EFFECT_TUTORIALARROW},
-	{"tutorialsquare",	MAGIC_EFFECT_TUTORIALSQUARE},
-	{"mirrorhorizontal",	MAGIC_EFFECT_MIRRORHORIZONTAL},
+	{"giftwraps",		MAGIC_EFFECT_GIFT_WRAPS},
+	{"greenbubble",		MAGIC_EFFECT_POISON_RINGS},
+	{"greennote",		MAGIC_EFFECT_SOUND_GREEN},
+	{"greenshimmer",	MAGIC_EFFECT_WRAPS_GREEN},
+	{"greenspark",		MAGIC_EFFECT_POISON},
+	{"groundshaker",	MAGIC_EFFECT_GROUNDSHAKER},
+	{"hearts",			MAGIC_EFFECT_HEARTS},
+	{"holyarea",		MAGIC_EFFECT_HOLYAREA},
+	{"holydamage",		MAGIC_EFFECT_HOLYDAMAGE},
+	{"icearea",			MAGIC_EFFECT_ICEAREA},
+	{"iceattack",		MAGIC_EFFECT_ICEATTACK},
+	{"icetornado",		MAGIC_EFFECT_ICETORNADO},
+	{"insects",			MAGIC_EFFECT_INSECTS},
+	{"mirrorhorizontal",MAGIC_EFFECT_MIRRORHORIZONTAL},
 	{"mirrorvertical",	MAGIC_EFFECT_MIRRORVERTICAL},
+	{"mortarea",		MAGIC_EFFECT_MORT_AREA},
+	{"plantattack",		MAGIC_EFFECT_PLANTATTACK},
+	{"poff",			MAGIC_EFFECT_POFF},
+	{"poison",			MAGIC_EFFECT_POISON_AREA},
+	{"purpleenergy",	MAGIC_EFFECT_PURPLEENERGY},
+	{"purplenote",		MAGIC_EFFECT_SOUND_PURPLE},
+	{"redfirework",		MAGIC_EFFECT_FIREWORK_RED},
+	{"rednote",			MAGIC_EFFECT_SOUND_RED},
+	{"redspark",		MAGIC_EFFECT_DRAW_BLOOD},
+	{"redshimmer",		MAGIC_EFFECT_WRAPS_RED},
 	{"skullhorizontal",	MAGIC_EFFECT_SKULLHORIZONTAL},
 	{"skullvertical",	MAGIC_EFFECT_SKULLVERTICAL},
-	{"assassin",		MAGIC_EFFECT_ASSASSIN},
+	{"sleep",			MAGIC_EFFECT_SLEEP},
+	{"smallclouds",		MAGIC_EFFECT_SMALLCLOUDS},
+	{"smallplants",		MAGIC_EFFECT_SMALLPLANTS},
+	{"smoke",			MAGIC_EFFECT_SMOKE},
 	{"stepshorizontal",	MAGIC_EFFECT_STEPSHORIZONTAL},
-	{"bloodysteps",		MAGIC_EFFECT_BLOODYSTEPS},
 	{"stepsvertical",	MAGIC_EFFECT_STEPSVERTICAL},
+	{"stones",			MAGIC_EFFECT_STONES},
+	{"stun",			MAGIC_EFFECT_STUN},
+	{"teleport",		MAGIC_EFFECT_TELEPORT},
+	{"tutorialarrow",	MAGIC_EFFECT_TUTORIALARROW},
+	{"tutorialsquare",	MAGIC_EFFECT_TUTORIALSQUARE},
+	{"watercreature",	MAGIC_EFFECT_WATERCREATURE},
+	{"watersplash",		MAGIC_EFFECT_WATERSPLASH},
+	{"whitenote",		MAGIC_EFFECT_SOUND_WHITE},
 	{"yalaharighost",	MAGIC_EFFECT_YALAHARIGHOST},
-	{"bats",		MAGIC_EFFECT_BATS},
-	{"smoke",		MAGIC_EFFECT_SMOKE},
-	{"insects",		MAGIC_EFFECT_INSECTS},
-	{"dragonhead",		MAGIC_EFFECT_DRAGONHEAD}
+	{"yellowbubble",	MAGIC_EFFECT_YELLOW_RINGS},
+	{"yellowenergy",	MAGIC_EFFECT_YELLOWENERGY},
+	{"yellowfirework",	MAGIC_EFFECT_FIREWORK_YELLOW},
+	{"yellownote",		MAGIC_EFFECT_SOUND_YELLOW},
+	{"yellowspark",		MAGIC_EFFECT_BLOCKHIT},
 };
 
 ShootTypeNames shootTypeNames[] =
 {
-	{"spear",		SHOOT_EFFECT_SPEAR},
-	{"bolt",		SHOOT_EFFECT_BOLT},
 	{"arrow",		SHOOT_EFFECT_ARROW},
-	{"fire",		SHOOT_EFFECT_FIRE},
-	{"energy",		SHOOT_EFFECT_ENERGY},
-	{"poisonarrow",		SHOOT_EFFECT_POISONARROW},
+	{"bolt",		SHOOT_EFFECT_BOLT},
 	{"burstarrow",		SHOOT_EFFECT_BURSTARROW},
-	{"throwingstar",	SHOOT_EFFECT_THROWINGSTAR},
-	{"throwingknife",	SHOOT_EFFECT_THROWINGKNIFE},
-	{"smallstone",		SHOOT_EFFECT_SMALLSTONE},
+	{"cake",		SHOOT_EFFECT_CAKE},
 	{"death",		SHOOT_EFFECT_DEATH},
-	{"largerock",		SHOOT_EFFECT_LARGEROCK},
-	{"snowball",		SHOOT_EFFECT_SNOWBALL},
-	{"powerbolt",		SHOOT_EFFECT_POWERBOLT},
-	{"poison",		SHOOT_EFFECT_POISONFIELD},
-	{"infernalbolt",	SHOOT_EFFECT_INFERNALBOLT},
-	{"huntingspear",	SHOOT_EFFECT_HUNTINGSPEAR},
+	{"earth",		SHOOT_EFFECT_EARTH},
+	{"eartharrow",		SHOOT_EFFECT_EARTHARROW},
 	{"enchantedspear",	SHOOT_EFFECT_ENCHANTEDSPEAR},
-	{"redstar",		SHOOT_EFFECT_REDSTAR},
+	{"energy",		SHOOT_EFFECT_ENERGY},
+	{"energyball",		SHOOT_EFFECT_ENERGYBALL},
+	{"etherealspear",	SHOOT_EFFECT_ETHEREALSPEAR},
+	{"explosion",		SHOOT_EFFECT_EXPLOSION},
+	{"flamingarrow",	SHOOT_EFFECT_FLAMMINGARROW},
+	{"flasharrow",		SHOOT_EFFECT_FLASHARROW},
+	{"fire",		SHOOT_EFFECT_FIRE},
 	{"greenstar",		SHOOT_EFFECT_GREENSTAR},
-	{"royalspear",		SHOOT_EFFECT_ROYALSPEAR},
-	{"sniperarrow",		SHOOT_EFFECT_SNIPERARROW},
+	{"holy",		SHOOT_EFFECT_HOLY},
+	{"huntingspear",	SHOOT_EFFECT_HUNTINGSPEAR},
+	{"ice",			SHOOT_EFFECT_ICE},
+	{"infernalbolt",	SHOOT_EFFECT_INFERNALBOLT},
+	{"largerock",		SHOOT_EFFECT_LARGEROCK},
 	{"onyxarrow",		SHOOT_EFFECT_ONYXARROW},
 	{"piercingbolt",	SHOOT_EFFECT_PIERCINGBOLT},
-	{"whirlwindsword",	SHOOT_EFFECT_WHIRLWINDSWORD},
+	{"poison",		SHOOT_EFFECT_POISONFIELD},
+	{"poisonarrow",		SHOOT_EFFECT_POISONARROW},
+	{"powerbolt",		SHOOT_EFFECT_POWERBOLT},
+	{"redstar",		SHOOT_EFFECT_REDSTAR},
+	{"royalspear",		SHOOT_EFFECT_ROYALSPEAR},
+	{"shiverarrow",		SHOOT_EFFECT_SHIVERARROW},
+	{"smallearth",		SHOOT_EFFECT_SMALLEARTH},
+	{"smallholy",		SHOOT_EFFECT_SMALLHOLY},
+	{"smallice",		SHOOT_EFFECT_SMALLICE},
+	{"smallstone",		SHOOT_EFFECT_SMALLSTONE},
+	{"sniperarrow",		SHOOT_EFFECT_SNIPERARROW},
+	{"snowball",		SHOOT_EFFECT_SNOWBALL},
+	{"spear",		SHOOT_EFFECT_SPEAR},
+	{"suddendeath",		SHOOT_EFFECT_SUDDENDEATH},
+	{"throwingknife",	SHOOT_EFFECT_THROWINGKNIFE},
+	{"throwingstar",	SHOOT_EFFECT_THROWINGSTAR},
 	{"whirlwindaxe",	SHOOT_EFFECT_WHIRLWINDAXE},
 	{"whirlwindclub",	SHOOT_EFFECT_WHIRLWINDCLUB},
-	{"etherealspear",	SHOOT_EFFECT_ETHEREALSPEAR},
-	{"ice",			SHOOT_EFFECT_ICE},
-	{"earth",		SHOOT_EFFECT_EARTH},
-	{"holy",		SHOOT_EFFECT_HOLY},
-	{"suddendeath",		SHOOT_EFFECT_SUDDENDEATH},
-	{"flasharrow",		SHOOT_EFFECT_FLASHARROW},
-	{"flammingarrow",	SHOOT_EFFECT_FLAMMINGARROW},
-	{"flamingarrow",	SHOOT_EFFECT_FLAMMINGARROW},
-	{"shiverarrow",		SHOOT_EFFECT_SHIVERARROW},
-	{"energyball",		SHOOT_EFFECT_ENERGYBALL},
-	{"smallice",		SHOOT_EFFECT_SMALLICE},
-	{"smallholy",		SHOOT_EFFECT_SMALLHOLY},
-	{"smallearth",		SHOOT_EFFECT_SMALLEARTH},
-	{"eartharrow",		SHOOT_EFFECT_EARTHARROW},
-	{"explosion",		SHOOT_EFFECT_EXPLOSION},
-	{"cake",		SHOOT_EFFECT_CAKE}
+	{"whirlwindsword",	SHOOT_EFFECT_WHIRLWINDSWORD},
 };
 
 CombatTypeNames combatTypeNames[] =
@@ -991,65 +1046,42 @@ CombatTypeNames combatTypeNames[] =
 
 AmmoTypeNames ammoTypeNames[] =
 {
-	{"spear",		AMMO_SPEAR},
-	{"arrow",		AMMO_ARROW},
-	{"poisonarrow",		AMMO_ARROW},
-	{"burstarrow",		AMMO_ARROW},
-	{"bolt",		AMMO_BOLT},
-	{"powerbolt",		AMMO_BOLT},
-	{"smallstone",		AMMO_STONE},
-	{"largerock",		AMMO_STONE},
-	{"throwingstar",	AMMO_THROWINGSTAR},
-	{"throwingknife",	AMMO_THROWINGKNIFE},
-	{"snowball",		AMMO_SNOWBALL},
-	{"huntingspear",	AMMO_SPEAR},
-	{"royalspear",		AMMO_SPEAR},
-	{"enchantedspear",	AMMO_SPEAR},
-	{"sniperarrow",		AMMO_ARROW},
-	{"onyxarrow",		AMMO_ARROW},
-	{"piercingbolt",	AMMO_BOLT},
-	{"infernalbolt",	AMMO_BOLT},
-	{"flasharrow",		AMMO_ARROW},
-	{"flammingarrow",	AMMO_ARROW},
-	{"flamingarrow",	AMMO_ARROW},
-	{"shiverarrow",		AMMO_ARROW},
-	{"eartharrow",		AMMO_ARROW},
-	{"etherealspear",	AMMO_SPEAR}
+	{"arrow",         AMMO_ARROW},
+	{"bolt",          AMMO_BOLT},
+	{"snowball",      AMMO_SNOWBALL},
+	{"spear",         AMMO_SPEAR},
+	{"stone",         AMMO_STONE},
+	{"throwingknife", AMMO_THROWINGKNIFE},
+	{"throwingstar",  AMMO_THROWINGSTAR},
 };
 
 AmmoActionNames ammoActionNames[] =
 {
-	{"move",		AMMOACTION_MOVE},
-	{"moveback",		AMMOACTION_MOVEBACK},
-	{"move back",		AMMOACTION_MOVEBACK},
-	{"removecharge",	AMMOACTION_REMOVECHARGE},
-	{"remove charge",	AMMOACTION_REMOVECHARGE},
-	{"removecount",		AMMOACTION_REMOVECOUNT},
-	{"remove count",	AMMOACTION_REMOVECOUNT}
+	{"move",         AMMOACTION_MOVE},
+	{"moveback",     AMMOACTION_MOVEBACK},
+	{"removecharge", AMMOACTION_REMOVECHARGE},
+	{"removecount",  AMMOACTION_REMOVECOUNT},
 };
 
 FluidTypeNames fluidTypeNames[] =
 {
-	{"none",		FLUID_NONE},
-	{"water",		FLUID_WATER},
-	{"blood",		FLUID_BLOOD},
 	{"beer",		FLUID_BEER},
-	{"slime",		FLUID_SLIME},
-	{"lemonade",		FLUID_LEMONADE},
-	{"milk",		FLUID_MILK},
-	{"mana",		FLUID_MANA},
-	{"life",		FLUID_LIFE},
-	{"oil",			FLUID_OIL},
-	{"urine",		FLUID_URINE},
-	{"coconutmilk",		FLUID_COCONUTMILK},
-	{"coconut milk",	FLUID_COCONUTMILK},
-	{"wine",		FLUID_WINE},
-	{"mud",			FLUID_MUD},
-	{"fruitjuice",		FLUID_FRUITJUICE},
-	{"fruit juice",		FLUID_FRUITJUICE},
+	{"blood",		FLUID_BLOOD},
+	{"coconutmilk",	FLUID_COCONUTMILK},
+	{"fruitjuice",	FLUID_FRUITJUICE},
+	{"lemonade",	FLUID_LEMONADE},
 	{"lava",		FLUID_LAVA},
+	{"life",		FLUID_LIFE},
+	{"mana",		FLUID_MANA},
+	{"milk",		FLUID_MILK},
+	{"mud",			FLUID_MUD},
+	{"oil",			FLUID_OIL},
 	{"rum",			FLUID_RUM},
-	{"swamp",		FLUID_SWAMP}
+	{"slime",		FLUID_SLIME},
+	{"swamp",		FLUID_SWAMP},
+	{"urine",		FLUID_URINE},
+	{"water",		FLUID_WATER},
+	{"wine",		FLUID_WINE},
 };
 
 SkillIdNames skillIdNames[] =
@@ -1073,22 +1105,64 @@ MagicEffect_t getMagicEffect(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(magicEffectNames) / sizeof(MagicEffectNames); ++i)
 	{
-		if(!strcasecmp(strValue.c_str(), magicEffectNames[i].name))
+		if(strValue == magicEffectNames[i].name)
 			return magicEffectNames[i].magicEffect;
 	}
 
 	return MAGIC_EFFECT_UNKNOWN;
 }
 
+std::string getMagicEffectNames() {
+	std::ostringstream stream;
+
+	uint32_t last = (sizeof(magicEffectNames) / sizeof(MagicEffectNames)) - 1;
+	for(uint32_t i = 0; i <= last; ++i)
+	{
+		if (i != 0) {
+			if (last) {
+				stream << " or ";
+			}
+			else {
+				stream << ", ";
+			}
+		}
+
+		stream << shootTypeNames[i].name;
+	}
+
+	return stream.str();
+}
+
 ShootEffect_t getShootType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(shootTypeNames) / sizeof(ShootTypeNames); ++i)
 	{
-		if(!strcasecmp(strValue.c_str(), shootTypeNames[i].name))
+		if(strValue == shootTypeNames[i].name)
 			return shootTypeNames[i].shootType;
 	}
 
 	return SHOOT_EFFECT_UNKNOWN;
+}
+
+std::string getShootEffectNames() {
+	std::ostringstream stream;
+
+	uint32_t last = (sizeof(shootTypeNames) / sizeof(ShootTypeNames)) - 1;
+	for(uint32_t i = 0; i <= last; ++i)
+	{
+		if (i != 0) {
+			if (last) {
+				stream << " or ";
+			}
+			else {
+				stream << ", ";
+			}
+		}
+
+		stream << shootTypeNames[i].name;
+	}
+
+	return stream.str();
 }
 
 CombatType_t getCombatType(const std::string& strValue)
@@ -1106,33 +1180,96 @@ Ammo_t getAmmoType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(ammoTypeNames) / sizeof(AmmoTypeNames); ++i)
 	{
-		if(!strcasecmp(strValue.c_str(), ammoTypeNames[i].name))
+		if(strValue == ammoTypeNames[i].name)
 			return ammoTypeNames[i].ammoType;
 	}
 
 	return AMMO_NONE;
 }
 
+std::string getAmmoTypeNames() {
+	std::ostringstream stream;
+
+	uint32_t last = (sizeof(ammoTypeNames) / sizeof(AmmoTypeNames)) - 1;
+	for(uint32_t i = 0; i <= last; ++i)
+	{
+		if (i != 0) {
+			if (last) {
+				stream << " or ";
+			}
+			else {
+				stream << ", ";
+			}
+		}
+
+		stream << ammoTypeNames[i].name;
+	}
+
+	return stream.str();
+}
+
 AmmoAction_t getAmmoAction(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(ammoActionNames) / sizeof(AmmoActionNames); ++i)
 	{
-		if(!strcasecmp(strValue.c_str(), ammoActionNames[i].name))
+		if(strValue == ammoActionNames[i].name)
 			return ammoActionNames[i].ammoAction;
 	}
 
 	return AMMOACTION_NONE;
 }
 
+std::string getAmmoConsumptionNames() {
+	std::ostringstream stream;
+
+	uint32_t last = (sizeof(ammoActionNames) / sizeof(AmmoActionNames)) - 1;
+	for(uint32_t i = 0; i <= last; ++i)
+	{
+		if (i != 0) {
+			if (last) {
+				stream << " or ";
+			}
+			else {
+				stream << ", ";
+			}
+		}
+
+		stream << ammoActionNames[i].name;
+	}
+
+	return stream.str();
+}
+
 FluidTypes_t getFluidType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(fluidTypeNames) / sizeof(FluidTypeNames); ++i)
 	{
-		if(!strcasecmp(strValue.c_str(), fluidTypeNames[i].name))
+		if(strValue == fluidTypeNames[i].name)
 			return fluidTypeNames[i].fluidType;
 	}
 
 	return FLUID_NONE;
+}
+
+std::string getFluidNames() {
+	std::ostringstream stream;
+
+	uint32_t last = (sizeof(fluidTypeNames) / sizeof(FluidTypeNames)) - 1;
+	for(uint32_t i = 0; i <= last; ++i)
+	{
+		if (i != 0) {
+			if (last) {
+				stream << " or ";
+			}
+			else {
+				stream << ", ";
+			}
+		}
+
+		stream << fluidTypeNames[i].name;
+	}
+
+	return stream.str();
 }
 
 skills_t getSkillId(const std::string& strValue)

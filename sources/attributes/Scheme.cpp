@@ -20,7 +20,8 @@
 
 #include "attributes/Attribute.hpp"
 
-using namespace attributes;
+using namespace ts;
+using namespace ts::attributes;
 
 
 Scheme::Scheme(AttributesP attributes)

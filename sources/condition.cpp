@@ -1068,10 +1068,8 @@ bool ConditionDamage::init()
 	else if(!startDamage)
 		startDamage = std::max((int32_t)1, (int32_t)std::ceil(((float)amount / 20.0)));
 
-	std::list<int32_t> list;
-	ConditionDamage::generateDamageList(amount, startDamage, list);
-	for(std::list<int32_t>::iterator it = list.begin(); it != list.end(); ++it)
-		addDamage(1, tickInterval, -(*it));
+	for (auto damage : generateDamageVector(amount, startDamage))
+		addDamage(1, tickInterval, -damage);
 
 	return !damageList.empty();
 }
@@ -1254,8 +1252,9 @@ Icons_t ConditionDamage::getIcons() const
 	return ICON_NONE;
 }
 
-void ConditionDamage::generateDamageList(int32_t amount, int32_t start, std::list<int32_t>& list)
-{
+std::vector<int32_t> ConditionDamage::generateDamageVector(int32_t amount, int32_t start) {
+	std::vector<int32_t> vector;
+
 	int32_t sum = 0, med = 0;
 	float x1, x2;
 
@@ -1266,13 +1265,15 @@ void ConditionDamage::generateDamageList(int32_t amount, int32_t start, std::lis
 		do
 		{
 			sum += i;
-			list.push_back(i);
+			vector.push_back(i);
 
 			x1 = std::fabs(1.0 - (((float)sum) + i) / med);
 			x2 = std::fabs(1.0 - (((float)sum) / med));
 		}
 		while(x1 < x2);
 	}
+
+	return vector;
 }
 
 ConditionSpeed::ConditionSpeed(ConditionId_t _id, ConditionType_t _type, int32_t _ticks, bool _buff, uint32_t _subId, int32_t changeSpeed):

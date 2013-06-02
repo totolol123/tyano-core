@@ -32,6 +32,8 @@
 #include "schedulertask.h"
 #include "tools.h"
 
+using namespace ts;
+
 
 
 const std::string BedItem::ATTRIBUTE_SLEEPSTART("sleepstart");
@@ -45,6 +47,12 @@ BedItem::ClassAttributesP BedItem::getClassAttributes() {
 	attributes->emplace(ATTRIBUTE_SLEEPSTART, Type::INTEGER);
 
 	return attributes;
+}
+
+
+const std::string& BedItem::getClassId() {
+	static const std::string id("bed");
+	return id;
 }
 
 

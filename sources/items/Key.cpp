@@ -18,11 +18,18 @@
 #include "otpch.h"
 #include "items/Key.hpp"
 
-using namespace items;
+using namespace ts;
+using namespace ts::items;
 
 
 Key::ClassAttributesP Key::getClassAttributes() {
 	return Item::getClassAttributes();
+}
+
+
+const std::string& Key::getClassId() {
+	static const std::string id("key");
+	return id;
 }
 
 

@@ -179,7 +179,7 @@ class ConditionDamage: public Condition
 		ConditionDamage(ConditionId_t _id, ConditionType_t _type, bool _buff, uint32_t _subId);
 		virtual ~ConditionDamage() {}
 
-		static void generateDamageList(int32_t amount, int32_t start, std::list<int32_t>& list);
+		static std::vector<int32_t> generateDamageVector (int32_t amount, int32_t start);
 
 		virtual bool startCondition(Creature* creature);
 		virtual bool executeCondition(Creature* creature, int32_t interval);

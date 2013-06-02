@@ -21,6 +21,7 @@
 #include "item.h"
 
 
+namespace ts {
 namespace items {
 
 	class Key : public Item {
@@ -28,10 +29,12 @@ namespace items {
 	public:
 
 		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassId();
 		static const std::string& getClassName();
 
 	};
 
 } // namespace items
+} // namespace ts
 
 #endif // _ITEMS_KEY_HPP

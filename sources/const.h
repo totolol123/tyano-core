@@ -1402,7 +1402,7 @@ struct lightBlock2
 
 
 enum class ItemType : uint8_t {
-	GENERIC = 0,
+	COMMON = 0,
 	DEPOT,
 	MAILBOX,
 	TRASHHOLDER,

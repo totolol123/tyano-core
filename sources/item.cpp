@@ -44,6 +44,8 @@
 #include "raids.h"
 #include "server.h"
 
+using namespace ts;
+
 
 const std::string Item::ATTRIBUTE_AID("aid");
 const std::string Item::ATTRIBUTE_ARMOR("armor");
@@ -114,12 +116,6 @@ Item::ClassAttributesP Item::getClassAttributes() {
 	attributes->emplace(ATTRIBUTE_WRITER, Type::STRING);
 
 	return attributes;
-}
-
-
-const std::string& Item::getClassName() {
-	static const std::string name("Generic");
-	return name;
 }
 
 

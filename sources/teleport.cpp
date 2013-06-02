@@ -29,6 +29,12 @@ Teleport::ClassAttributesP Teleport::getClassAttributes() {
 }
 
 
+const std::string& Teleport::getClassId() {
+	static const std::string id("teleport");
+	return id;
+}
+
+
 const std::string& Teleport::getClassName() {
 	static const std::string name("Teleport");
 	return name;

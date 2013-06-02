@@ -36,6 +36,8 @@
 #include "player.h"
 #include "server.h"
 
+using namespace ts;
+
 
 const std::string Door::ATTRIBUTE_DOORID("doorid");
 
@@ -632,6 +634,12 @@ Door::ClassAttributesP Door::getClassAttributes() {
 	attributes->emplace(ATTRIBUTE_DOORID, Type::INTEGER);
 
 	return attributes;
+}
+
+
+const std::string& Door::getClassId() {
+	static const std::string id("door");
+	return id;
 }
 
 

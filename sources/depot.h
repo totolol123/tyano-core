@@ -29,6 +29,7 @@ class Depot : public Container {
 
 
 		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassId();
 		static const std::string& getClassName();
 
 

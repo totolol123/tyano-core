@@ -42,13 +42,18 @@ typedef std::shared_ptr<ItemKind>        ItemKindP;
 typedef std::shared_ptr<const ItemKind>  ItemKindPC;
 typedef std::vector<ItemKindP>           ItemKindVector;
 
+namespace ts {
 namespace items {
 
+	class Kind;
+
+	template<typename T>
 	class Class;
 
-	typedef std::shared_ptr<Class>  ClassP;
+	typedef std::shared_ptr<Class<Kind>>  ClassP;
 
 } // namespace items
+} // namespace ts
 
 
 
@@ -184,6 +189,10 @@ class Condition;
 class ItemKind {
 
 	public:
+
+		typedef ts::items::ClassP  ClassP;
+
+
 		ItemKind();
 		~ItemKind();
 
@@ -335,7 +344,7 @@ class ItemKind {
 		uint16_t slotPosition:12;
 		uint8_t wieldPosition:4;
 
-		items::ClassP _class;
+		ClassP _class;
 		ItemType type;
 
 		uint16_t charges, transformUseTo[2], transformToFree, transformEquipTo, transformDeEquipTo,
@@ -397,7 +406,8 @@ public:
 
 private:
 
-	typedef std::unordered_map<ItemType,items::ClassP>  Classes;
+	typedef ts::items::ClassP                    ClassP;
+	typedef std::unordered_map<ItemType,ClassP>  Classes;
 
 
 	void addKind                  (ItemKindP kind, const std::string& fileName);

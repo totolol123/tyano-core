@@ -32,6 +32,7 @@ class BedItem : public Item
 
 
 		static ClassAttributesP   getClassAttributes();
+		static const std::string& getClassId();
 		static const std::string& getClassName();
 
 		BedItem(const ItemKindPC& kind): Item(kind), house(nullptr) {internalRemoveSleeper();}

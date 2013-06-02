@@ -136,9 +136,9 @@ class Item : public Thing {
 
 	public:
 
-		typedef attributes::Values               Attributes;
-		typedef attributes::Scheme::Attributes   ClassAttributes;
-		typedef attributes::Scheme::AttributesP  ClassAttributesP;
+		typedef ts::attributes::Values               Attributes;
+		typedef ts::attributes::Scheme::Attributes   ClassAttributes;
+		typedef ts::attributes::Scheme::AttributesP  ClassAttributesP;
 
 
 		static const std::string ATTRIBUTE_AID;
@@ -167,8 +167,7 @@ class Item : public Thing {
 		static const std::string ATTRIBUTE_WRITER;
 
 
-		static ClassAttributesP   getClassAttributes();
-		static const std::string& getClassName();
+		static ClassAttributesP getClassAttributes();
 
 		Attributes&       getAttributes ();
 		const Attributes& getAttributes () const;
@@ -377,7 +376,7 @@ class Item : public Thing {
 		LOGGER_DECLARATION;
 
 
-		attributes::Values _attributes;
+		Attributes _attributes;
 
 		ItemKindPC kind;
 
