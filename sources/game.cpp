@@ -192,8 +192,10 @@ void Game::setGameState(GameState_t newState)
 			case GAME_STATE_INIT:
 			{
 				Spawns::getInstance()->startup();
+				LOGi("Loading raids...");
 				Raids::getInstance()->loadFromXml();
 				Raids::getInstance()->startup();
+				LOGi("Loading quests...");
 				Quests::getInstance()->loadFromXml();
 
 				loadGameState();

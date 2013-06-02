@@ -15,3 +15,6 @@ TODO
     - `Item` (i.e. an instance of Bed 543, Container 150, Key 364, etc.)  
               One sub-class per `Kind`.
 - restructure source code (use namespaces, use .hpp instead of .h, etc.)
+- make raids.xml easier to understand and document how it works
+- allow non-ref'd raid monsters and items to disappear when the raid ended
+- instead of regulary cleaning the map - decay the items (including corpses) after a while relative to the time they dropped
