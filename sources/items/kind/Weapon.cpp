@@ -83,7 +83,7 @@ bool Weapon::setParameter(const std::string& name, const std::string& value, xml
 		_setParameter(name, value, _attackSpeed, "attackSpeed");
 	}
 	else if (name == "breakChance" || name == "breakchance") {
-		_setParameter(name, value, _breakChance, INT8_C(0), INT8_C(100), "breakChance");
+		_setParameter(name, value, _breakChance, X_INT8(0), X_INT8(100), "breakChance");
 	}
 	else if (name == "damage") {
 		_setParameter(name, value, _damage);
@@ -175,10 +175,10 @@ bool Weapon::setParameter(const std::string& name, const std::string& value, xml
 		_setParameter(name, value, _damage);
 	}
 	else if (name == "hitChance" || name == "hitchance") {
-		_setParameter(name, value, _hitChance, INT8_C(0), INT8_C(100), "hitChance");
+		_setParameter(name, value, _hitChance, X_INT8(0), X_INT8(100), "hitChance");
 	}
 	else if (name == "maximumHitChance" || name == "maxhitchance") {
-		_setParameter(name, value, _maximumHitChance, INT8_C(0), INT8_C(100), "maximumHitChance");
+		_setParameter(name, value, _maximumHitChance, X_INT8(0), X_INT8(100), "maximumHitChance");
 	}
 	else if (name == "range") {
 		_setParameter(name, value, _range);
