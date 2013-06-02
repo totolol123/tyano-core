@@ -1940,11 +1940,11 @@ void Game::addMoney(Cylinder* cylinder, uint64_t money, uint32_t flags /*= 0*/)
 
 		while (tmp > 0)
 		{
-			boost::intrusive_ptr<Item> remaindItem = Item::CreateItem(it->second, std::min(UINT64_C(100), tmp));
+			boost::intrusive_ptr<Item> remaindItem = Item::CreateItem(it->second, std::min(X_UINT64(100), tmp));
 			if(internalAddItem(nullptr, cylinder, remaindItem.get(), INDEX_WHEREEVER, flags) != RET_NOERROR)
 				internalAddItem(nullptr, cylinder->getTile(), remaindItem.get(), INDEX_WHEREEVER, FLAG_NOLIMIT);
 
-			tmp -= std::min(UINT64_C(100), tmp);
+			tmp -= std::min(X_UINT64(100), tmp);
 		}
 	}
 }

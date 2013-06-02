@@ -21,6 +21,17 @@
 #include "config.h"
 
 
+// Sometimes gcc is a bit stupid and defines for example  INT8_C(x) = x  which resolves to int, not int8_t.
+// That causes the compiler to fail at various template deductions which use fixed-size integer constants.
+#define X_INT8(value)    static_cast<int8_t>(INT8_C(value))
+#define X_INT16(value)   static_cast<int16_t>(INT16_C(value))
+#define X_INT32(value)   static_cast<int32_t>(INT32_C(value))
+#define X_INT64(value)   static_cast<int64_t>(INT64_C(value))
+#define X_UINT8(value)   static_cast<uint8_t>(UINT8_C(value))
+#define X_UINT16(value)  static_cast<uint16_t>(UINT16_C(value))
+#define X_UINT32(value)  static_cast<uint32_t>(UINT32_C(value))
+#define X_UINT64(value)  static_cast<uint64_t>(UINT64_C(value))
+
 #define SOFTWARE_NAME       PACKAGE_NAME
 #define SOFTWARE_VERSION    PACKAGE_VERSION
 #define SOFTWARE_DEVELOPERS "Elf, Talaturen, Dalkon, BeniS, Tryller, Kornholijo and fluidsonic"
