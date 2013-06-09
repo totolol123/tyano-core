@@ -31,9 +31,9 @@ public:
 
 	static UniquePointer create(Duration delay, const Function& function);
 
-	Id        getId   () const;
-	TimePoint getTime () const;
-	void      setId   (Id id);
+	Id   getId   () const;
+	Time getTime () const;
+	void setId   (Id id);
 
 
 private:
@@ -41,8 +41,8 @@ private:
 	SchedulerTask(Duration delay, const Function& function);
 
 
-	Id        _id;
-	TimePoint _time;
+	Id   _id;
+	Time _time;
 
 };
 

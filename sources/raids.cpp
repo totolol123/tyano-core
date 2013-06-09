@@ -23,6 +23,7 @@
 #include "configmanager.h"
 #include "items.h"
 #include "monster.h"
+#include "monsters.h"
 #include "scheduler.h"
 #include "schedulertask.h"
 #include "server.h"
@@ -717,9 +718,20 @@ bool SingleSpawnEvent::configureRaidEvent(xmlNodePtr eventNode)
 	return true;
 }
 
-bool SingleSpawnEvent::executeEvent() const
-{
-	boost::intrusive_ptr<Monster> monster = Monster::createMonster(m_monsterName);
+bool SingleSpawnEvent::executeEvent() const {
+	MonsterType* type = server.monsters().getMonsterType(m_monsterName);
+	if (type == nullptr) {
+		LOGe("[SingleSpawnEvent::executeEvent] Cannot find monster with name '" << m_monsterName << "'.");
+		return false;
+	}
+
+	Raid* raid = nullptr;
+	if (m_raid->usesRef() && m_ref) {
+		raid = m_raid;
+		raid->addRef();
+	}
+
+	boost::intrusive_ptr<Monster> monster = Monster::create(type, raid);
 	if(!monster)
 	{
 		LOGe("[SingleSpawnEvent::executeEvent] Cannot create monster " << m_monsterName);
@@ -730,12 +742,6 @@ bool SingleSpawnEvent::executeEvent() const
 	{
 		LOGe("[SingleSpawnEvent::executeEvent] Cannot spawn monster " << m_monsterName);
 		return false;
-	}
-
-	if(m_raid->usesRef() && m_ref)
-	{
-		monster->setRaid(m_raid);
-		m_raid->addRef();
 	}
 
 	return true;
@@ -943,10 +949,22 @@ bool AreaSpawnEvent::executeEvent() const
 	for(MonsterSpawnList::const_iterator it = m_spawnList.begin(); it != m_spawnList.end(); it++)
 	{
 		MonsterSpawn* spawn = *it;
+		MonsterType* type = server.monsters().getMonsterType(spawn->name);
+		if (type == nullptr) {
+			LOGe("[AreaSpawnEvent::executeEvent] Cannot find monster with name '" << spawn->name << "'.");
+			return false;
+		}
+
 		uint32_t amount = (uint32_t)random_range(spawn->min, spawn->max);
 		for(uint32_t i = 0; i < amount; ++i)
 		{
-			boost::intrusive_ptr<Monster> monster = Monster::createMonster(spawn->name);
+			Raid* raid = nullptr;
+			if (m_raid->usesRef() && m_ref) {
+				raid = m_raid;
+				raid->addRef();
+			}
+
+			boost::intrusive_ptr<Monster> monster = Monster::create(type, raid);
 			if(!monster)
 			{
 				LOGe("[AreaSpawnEvent::executeEvent] Cannot create monster " << spawn->name);
@@ -958,12 +976,6 @@ bool AreaSpawnEvent::executeEvent() const
 				if(!server.game().placeCreature(monster.get(), Position(random_range(m_fromPos.x, m_toPos.x),
 					random_range(m_fromPos.y, m_toPos.y), random_range(m_fromPos.z, m_toPos.z))))
 					continue;
-
-				if(m_raid->usesRef() && m_ref)
-				{
-					monster->setRaid(m_raid);
-					m_raid->addRef();
-				}
 
 				break;
 			}

@@ -42,7 +42,7 @@ namespace attributes {
 
 	private:
 
-		typedef std::unordered_map<std::reference_wrapper<const std::string>,const Attribute*,std::hash<std::string>,std::equal_to<std::string>>  AttributesByName;
+		typedef std::unordered_map<std::reference_wrapper<const std::string>,const Attribute*>  AttributesByName;
 
 
 		static AttributesByName mapAttributesByName (const Attributes& attributes);

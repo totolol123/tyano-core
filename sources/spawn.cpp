@@ -169,8 +169,8 @@ bool Spawns::parseSpawnNode(xmlNodePtr p, bool checkDuplicate)
 			if(readXMLInteger(tmpNode, "z", intValue))
 				placePos.z /*+*/= intValue;
 
-			Direction direction = NORTH;
-			if(readXMLInteger(tmpNode, "direction", intValue) && direction >= EAST && direction <= WEST)
+			Direction direction = Direction::NORTH;
+			if(readXMLInteger(tmpNode, "direction", intValue) && intValue >= static_cast<uint8_t>(Direction::EAST) && intValue <= static_cast<uint8_t>(Direction::WEST))
 				direction = (Direction)intValue;
 
 			spawn->addMonster(name, placePos, direction, interval);
@@ -195,8 +195,8 @@ bool Spawns::parseSpawnNode(xmlNodePtr p, bool checkDuplicate)
 			if(readXMLInteger(tmpNode, "z", intValue))
 				placePos.z /*+*/= intValue;
 
-			Direction direction = NORTH;
-			if(readXMLInteger(tmpNode, "direction", intValue) && direction >= EAST && direction <= WEST)
+			Direction direction = Direction::NORTH;
+			if(readXMLInteger(tmpNode, "direction", intValue) && intValue >= static_cast<uint8_t>(Direction::EAST) && intValue <= static_cast<uint8_t>(Direction::WEST))
 				direction = (Direction)intValue;
 
 			Npc* npc = Npc::createNpc(name);
@@ -286,7 +286,7 @@ Spawn::~Spawn()
 		if(!(monster = it->second.get()))
 			continue;
 
-		monster->setSpawn(nullptr);
+		monster->removeFromSpawn();
 	}
 
 	spawnedMap.clear();
@@ -310,7 +310,7 @@ bool Spawn::findPlayer(const Position& pos)
 
 bool Spawn::spawnMonster(uint32_t spawnId, MonsterType* mType, const Position& pos, Direction dir, bool startup /*= false*/)
 {
-	boost::intrusive_ptr<Monster> monster = Monster::createMonster(mType);
+	boost::intrusive_ptr<Monster> monster = Monster::create(mType, this);
 	if(!monster)
 		return false;
 
@@ -329,8 +329,6 @@ bool Spawn::spawnMonster(uint32_t spawnId, MonsterType* mType, const Position& p
 			return false;
 		}
 	}
-
-	monster->setSpawn(this);
 
 	monster->setMasterPosition(pos, radius);
 	monster->setDirection(dir);

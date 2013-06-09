@@ -397,7 +397,7 @@ bool Weapon::internalUseWeapon(Player* player, Item* item, Tile* tile) const
 	{
 		LuaVariant var;
 		var.type = VARIANT_TARGETPOSITION;
-		var.pos = tile->getPosition();
+		var.pos = PositionEx(tile->getPosition(), 0);
 		executeUseWeapon(player, var);
 	}
 	else

@@ -93,7 +93,7 @@ class MoveEvents : public BaseEvents<MoveEvent>
 		MoveListMap m_uniqueIdMap;
 		MoveListMap m_actionIdMap;
 
-		typedef std::map<Position, MoveEventList> MovePosListMap;
+		typedef std::unordered_map<Position, MoveEventList> MovePosListMap;
 		MovePosListMap m_positionMap;
 
 		void addEvent(const MoveEventP& moveEvent, int32_t id, MoveListMap& map, bool override);

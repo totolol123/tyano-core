@@ -102,8 +102,6 @@ Cylinder* HouseTile::__queryDestination(int32_t& index, const Thing* thing, Item
 				{
 					LOGe("[HouseTile::__queryDestination] Tile at house entry position for house: " << house->getName() << " (" << house->getId() << ") does not exist.");
 					destTile = server.game().getTile(player->getMasterPosition());
-					if(!destTile)
-						destTile = &(Tile::nullTile);
 				}
 
 				index = -1;

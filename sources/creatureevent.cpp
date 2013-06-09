@@ -969,8 +969,8 @@ uint32_t CreatureEvent::executeDirection(Creature* creature, Direction old, Dire
 			m_interface->pushFunction(m_scriptId);
 
 			lua_pushnumber(L, env->addThing(creature));
-			lua_pushnumber(L, old);
-			lua_pushnumber(L, current);
+			lua_pushnumber(L, static_cast<std::underlying_type<Direction>::type>(old));
+			lua_pushnumber(L, static_cast<std::underlying_type<Direction>::type>(current));
 
 			bool result = m_interface->callFunction(3);
 			m_interface->releaseEnv();

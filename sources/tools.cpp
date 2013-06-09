@@ -355,27 +355,6 @@ float box_muller(float m, float s)
 	return (m + y1 * s);
 }
 
-int32_t random_range(int32_t lowestNumber, int32_t highestNumber, DistributionType_t type /*= DISTRO_UNIFORM*/)
-{
-	if(highestNumber == lowestNumber)
-		return lowestNumber;
-
-	if(lowestNumber > highestNumber)
-		std::swap(lowestNumber, highestNumber);
-
-	switch(type)
-	{
-		case DISTRO_UNIFORM:
-			return (lowestNumber + ((int32_t)rand24b() % (highestNumber - lowestNumber + 1)));
-		case DISTRO_NORMAL:
-			return (lowestNumber + int32_t(float(highestNumber - lowestNumber) * (float)std::min((float)1, std::max((float)0, box_muller(0.5, 0.25)))));
-		default:
-			break;
-	}
-
-	const float randMax = 16777216;
-	return (lowestNumber + int32_t(float(highestNumber - lowestNumber) * float(1.f - sqrt((1.f * rand24b()) / randMax))));
-}
 
 char upchar(char character)
 {
@@ -691,56 +670,56 @@ PartyShields_t getPartyShield(std::string strValue)
 Direction getDirection(std::string string)
 {
 	if(string == "north" || string == "n" || string == "0")
-		return NORTH;
+		return Direction::NORTH;
 	else if(string == "east" || string == "e" || string == "1")
-		return EAST;
+		return Direction::EAST;
 	else if(string == "south" || string == "s" || string == "2")
-		return SOUTH;
+		return Direction::SOUTH;
 	else if(string == "west" || string == "w" || string == "3")
-		return WEST;
+		return Direction::WEST;
 	else if(string == "southwest" || string == "south west" || string == "south-west" || string == "sw" || string == "4")
-		return SOUTHWEST;
+		return Direction::SOUTH_WEST;
 	else if(string == "southeast" || string == "south east" || string == "south-east" || string == "se" || string == "5")
-		return SOUTHEAST;
+		return Direction::SOUTH_EAST;
 	else if(string == "northwest" || string == "north west" || string == "north-west" || string == "nw" || string == "6")
-		return NORTHWEST;
+		return Direction::NORTH_WEST;
 	else if(string == "northeast" || string == "north east" || string == "north-east" || string == "ne" || string == "7")
-		return NORTHEAST;
+		return Direction::NORTH_EAST;
 
-	return SOUTH;
+	return Direction::SOUTH;
 }
 
 Direction getDirectionTo(Position pos1, Position pos2, bool extended/* = true*/)
 {
-	Direction direction = NORTH;
+	Direction direction = Direction::NORTH;
 	if(pos1.x > pos2.x)
 	{
-		direction = WEST;
+		direction = Direction::WEST;
 		if(extended)
 		{
 			if(pos1.y > pos2.y)
-				direction = NORTHWEST;
+				direction = Direction::NORTH_WEST;
 			else if(pos1.y < pos2.y)
-				direction = SOUTHWEST;
+				direction = Direction::SOUTH_WEST;
 		}
 	}
 	else if(pos1.x < pos2.x)
 	{
-		direction = EAST;
+		direction = Direction::EAST;
 		if(extended)
 		{
 			if(pos1.y > pos2.y)
-				direction = NORTHEAST;
+				direction = Direction::NORTH_EAST;
 			else if(pos1.y < pos2.y)
-				direction = SOUTHEAST;
+				direction = Direction::SOUTH_EAST;
 		}
 	}
 	else
 	{
 		if(pos1.y > pos2.y)
-			direction = NORTH;
+			direction = Direction::NORTH;
 		else if(pos1.y < pos2.y)
-			direction = SOUTH;
+			direction = Direction::SOUTH;
 	}
 
 	return direction;
@@ -750,56 +729,56 @@ Direction getReverseDirection(Direction dir)
 {
 	switch(dir)
 	{
-		case NORTH:
-			return SOUTH;
-		case SOUTH:
-			return NORTH;
-		case WEST:
-			return EAST;
-		case EAST:
-			return WEST;
-		case SOUTHWEST:
-			return NORTHEAST;
-		case NORTHWEST:
-			return SOUTHEAST;
-		case NORTHEAST:
-			return SOUTHWEST;
-		case SOUTHEAST:
-			return NORTHWEST;
+		case Direction::NORTH:
+			return Direction::SOUTH;
+		case Direction::SOUTH:
+			return Direction::NORTH;
+		case Direction::WEST:
+			return Direction::EAST;
+		case Direction::EAST:
+			return Direction::WEST;
+		case Direction::SOUTH_WEST:
+			return Direction::NORTH_EAST;
+		case Direction::NORTH_WEST:
+			return Direction::SOUTH_EAST;
+		case Direction::NORTH_EAST:
+			return Direction::SOUTH_WEST;
+		case Direction::SOUTH_EAST:
+			return Direction::NORTH_WEST;
 	}
 
-	return SOUTH;
+	return Direction::SOUTH;
 }
 
 Position getNextPosition(Direction direction, Position pos)
 {
 	switch(direction)
 	{
-		case NORTH:
+		case Direction::NORTH:
 			pos.y--;
 			break;
-		case SOUTH:
+		case Direction::SOUTH:
 			pos.y++;
 			break;
-		case WEST:
+		case Direction::WEST:
 			pos.x--;
 			break;
-		case EAST:
+		case Direction::EAST:
 			pos.x++;
 			break;
-		case SOUTHWEST:
+		case Direction::SOUTH_WEST:
 			pos.x--;
 			pos.y++;
 			break;
-		case NORTHWEST:
+		case Direction::NORTH_WEST:
 			pos.x--;
 			pos.y--;
 			break;
-		case SOUTHEAST:
+		case Direction::SOUTH_EAST:
 			pos.x++;
 			pos.y++;
 			break;
-		case NORTHEAST:
+		case Direction::NORTH_EAST:
 			pos.x++;
 			pos.y--;
 			break;

@@ -58,16 +58,16 @@ namespace attributes {
 
 namespace std {
 
-	template <>
-	struct equal_to<attributes::Attribute> : public function<bool(const attributes::Attribute,const attributes::Attribute)> {
-		result_type operator()(const first_argument_type& a, const second_argument_type& b) const {
+	template<>
+	struct equal_to<attributes::Attribute> : public function<bool(const attributes::Attribute&, const attributes::Attribute&)> {
+		result_type operator()(first_argument_type a, second_argument_type b) const {
 			return equal_to<std::string>()(a.getName(), b.getName());
 		}
 	};
 
-	template <>
-	struct hash<attributes::Attribute> : public function<size_t(const attributes::Attribute)> {
-		result_type operator()(const argument_type& attribute) const {
+	template<>
+	struct hash<attributes::Attribute> : public function<size_t(const attributes::Attribute&)> {
+		result_type operator()(argument_type attribute) const {
 			return hash<std::string>()(attribute.getName());
 		}
 	};

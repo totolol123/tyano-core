@@ -77,7 +77,7 @@ ItemKind::ItemKind() :
 		magicEffect(MAGIC_EFFECT_NONE),
 		fluidSource(FLUID_NONE),
 		weaponType(WEAPON_NONE),
-		bedPartnerDir(NORTH),
+		bedPartnerDir(Direction::NORTH),
 		ammoAction(AMMOACTION_NONE),
 		combatType(COMBAT_NONE),
 		corpseType(RACE_NONE),

@@ -18,12 +18,15 @@
 #ifndef _CREATURE_H
 #define _CREATURE_H
 
+#include "const.h"
 #include "position.h"
+#include "scheduler.h"
 #include "templates.h"
 #include "thing.h"
 
 class  Condition;
 class  Container;
+class  Creature;
 class  CreatureEvent;
 struct DeathEntry;
 class  Item;
@@ -33,15 +36,21 @@ class  Npc;
 class  Player;
 class  Tile;
 
-typedef std::list<Condition*>                       ConditionList;
-typedef std::shared_ptr<CreatureEvent>              CreatureEventP;
-typedef std::list<CreatureEventP>                   CreatureEventList;
-typedef std::list<boost::intrusive_ptr<Creature>>   CreatureList;
-typedef std::vector<boost::intrusive_ptr<Creature>> CreatureVector;
-typedef std::vector<DeathEntry>                     DeathList;
-typedef std::shared_ptr<ItemKind>                   ItemKindP;
-typedef std::shared_ptr<const ItemKind>             ItemKindPC;
-typedef std::map<uint32_t, std::string>             StorageMap;
+typedef std::list<Condition*>                ConditionList;
+typedef boost::intrusive_ptr<Creature>       CreatureP;
+typedef boost::intrusive_ptr<const Creature> CreaturePC;
+typedef std::shared_ptr<CreatureEvent>       CreatureEventP;
+typedef std::list<CreatureEventP>            CreatureEventList;
+typedef std::list<CreatureP>                 CreatureList;
+typedef std::vector<CreatureP>               CreatureVector;
+typedef std::vector<DeathEntry>              DeathList;
+typedef std::shared_ptr<ItemKind>            ItemKindP;
+typedef std::shared_ptr<const ItemKind>      ItemKindPC;
+typedef boost::intrusive_ptr<Monster>        MonsterP;
+typedef std::list<MonsterP>                  MonsterList;
+typedef boost::intrusive_ptr<Player>         PlayerP;
+typedef boost::intrusive_ptr<const Player>   PlayerPC;
+typedef std::map<uint32_t, std::string>      StorageMap;
 
 
 struct FindPathParams
@@ -102,8 +111,68 @@ class FrozenPathingConditionCall
 		Position targetPos;
 };
 
-class Creature : public AutoId, public Thing
-{
+
+class Creature : public AutoId, public Thing {
+
+public:
+
+	        PlayerP    getController           ();
+	        PlayerPC   getController           () const;
+	virtual CreatureP  getDirectOwner          () = 0;
+	virtual CreaturePC getDirectOwner          () const = 0;
+	        CreatureP  getFinalOwner           ();
+	        CreaturePC getFinalOwner           () const;
+			bool       hasController           () const;
+	        bool       hasDirectOwner          () const;
+	        bool       isAlive                 () const;
+	virtual bool       isEnemy                 (const CreaturePC& creature) const = 0;
+    		bool       isMonster               () const;
+    		bool       isNpc                   () const;
+	        bool       isPlayer                () const;
+	        bool       isRemoved               () const;
+	        bool       isRemoving              () const;
+	        bool       isThinking              () const;
+	virtual void       onCreatureAppear        (const CreatureP& creature);
+	virtual void       onCreatureMove          (const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
+			void       killSummons             ();
+	        bool       remove                  ();
+	        void       setDefaultOutfit        (Outfit_t defaultOutfit);
+	    	void       startThinking           (bool forced = false);
+			void       stopThinking            ();
+
+
+protected:
+
+	virtual bool hasSomethingToThinkAbout () const;
+	virtual bool hasToThinkAboutCreature  (const CreaturePC& creature) const;
+	virtual void onMonsterMasterChanged   (const MonsterP& monster, const CreatureP& previousMaster);
+	virtual void onThink                  (Duration elapsedTime);
+	virtual void onThinkingStopped        ();
+
+
+private:
+
+	void think ();
+
+
+	LOGGER_DECLARATION;
+
+	static const Duration THINK_DURATION;
+	static const Duration THINK_INTERVAL;
+
+	Time              _lastThinkTime;
+	bool              _removed;
+	bool              _removing;
+	Duration          _thinkDuration;
+	Scheduler::TaskId _thinkTaskId;
+
+	friend class Monster;
+
+
+
+
+
+
 	protected:
 		Creature();
 
@@ -135,15 +204,13 @@ class Creature : public AutoId, public Thing
 				id = autoId | rangeId();
 		}
 
-		void setRemoved();
-		virtual bool isRemoved() const {return removed;}
 
 		virtual uint32_t rangeId() = 0;
 		virtual void removeList() = 0;
 		virtual void addList() = 0;
 
 		virtual bool canSee(const Position& pos) const;
-		virtual bool canSeeCreature(const Creature* creature) const;
+		virtual bool canSeeCreature(const CreatureP& creature) const;
 		virtual bool canWalkthrough(const Creature* creature) const {return creature->isWalkable() || creature->isGhost();}
 
 		Direction getDirection() const {return direction;}
@@ -229,17 +296,9 @@ class Creature : public AutoId, public Thing
 		virtual BlockType_t blockHit(Creature* attacker, CombatType_t combatType, int32_t& damage,
 			bool checkDefense = false, bool checkArmor = false);
 
-		void setMaster(Creature* creature) {master = creature;}
-		Creature* getMaster() {return master;}
-		const Creature* getMaster() const {return master;}
-		Player* getPlayerMaster() const {return isPlayerSummon() ? master->getPlayer() : nullptr;}
-		bool isSummon() const {return master != nullptr;}
-		bool isPlayerSummon() const {return master && master->getPlayer();}
-
-		virtual void addSummon(Creature* creature);
-		virtual void removeSummon(const Creature* creature);
-		const CreatureList& getSummons() {return summons;}
-		void destroySummons();
+		virtual void addSummon(const MonsterP& creature);
+		virtual void removeSummon(const MonsterP& creature);
+		const MonsterList& getSummons() {return summons;}
 		uint32_t getSummonCount() const {return summons.size();}
 
 		virtual int32_t getArmor() const {return 0;}
@@ -282,9 +341,6 @@ class Creature : public AutoId, public Thing
 		virtual void drainHealth(Creature* attacker, CombatType_t combatType, int32_t damage);
 		virtual void drainMana(Creature* attacker, CombatType_t combatType, int32_t damage);
 
-		virtual bool challengeCreature(Creature* creature) {return false;}
-		virtual bool convinceCreature(Creature* creature) {return false;}
-
 		virtual bool onDeath();
 		virtual double getGainedExperience(Creature* attacker) const {return getDamageRatio(attacker) * (double)getLostExperience();}
 		void addDamagePoints(Creature* attacker, int32_t damagePoints);
@@ -315,13 +371,11 @@ class Creature : public AutoId, public Thing
 		virtual void onBlockHit(BlockType_t blockType) {}
 		virtual void onChangeZone(ZoneType_t zone);
 		virtual void onAttackedCreatureChangeZone(ZoneType_t zone);
-		virtual void onIdleStatus();
 
 		virtual void getCreatureLight(LightInfo& light) const;
 		virtual void setNormalCreatureLight();
 		void setCreatureLight(LightInfo& light) {internalLight = light;}
 
-		virtual void onThink(uint32_t interval);
 		virtual void onAttacking(uint32_t interval);
 		virtual void onWalk();
 		virtual bool getNextStep(Direction& dir, uint32_t& flags);
@@ -332,10 +386,7 @@ class Creature : public AutoId, public Thing
 		virtual void onRemoveTileItem(const Tile* tile, const Position& pos, const ItemKindPC& iType, const Item* item);
 		virtual void onUpdateTile(const Tile* tile, const Position& pos) {}
 
-		virtual void onCreatureAppear(const Creature* creature);
 		virtual void onCreatureDisappear(const Creature* creature, bool isLogout);
-		virtual void onCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
-			const Tile* oldTile, const Position& oldPos, bool teleport);
 
 		virtual void onAttackedCreatureDisappear(bool isLogout) {}
 		virtual void onFollowCreatureDisappear(bool isLogout) {}
@@ -345,10 +396,10 @@ class Creature : public AutoId, public Thing
 			Position* pos = nullptr) {}
 
 		virtual void onCreatureChangeOutfit(const Creature* creature, const Outfit_t& outfit) {}
-		virtual void onCreatureConvinced(const Creature* convincer, const Creature* creature) {}
 		virtual void onCreatureChangeVisible(const Creature* creature, Visible_t visible) {}
 		virtual void onPlacedCreature() {}
-		virtual void onRemovedCreature();
+		virtual bool willRemove();
+		virtual void didRemove();
 
 		virtual WeaponType_t getWeaponType() {return WEAPON_NONE;}
 		virtual bool getCombatValues(int32_t& min, int32_t& max) {return false;}
@@ -385,13 +436,9 @@ class Creature : public AutoId, public Thing
 
 		Tile* _tile;
 		uint32_t id;
-		bool removed;
-		bool isMapLoaded;
 		bool isUpdatingPath;
-		bool checked;
 		StorageMap storageMap;
 
-		int32_t checkVector;
 		int32_t health, healthMax;
 		int32_t mana, manaMax;
 
@@ -417,8 +464,7 @@ class Creature : public AutoId, public Thing
 		LightInfo internalLight;
 
 		//summon variables
-		Creature* master;
-		CreatureList summons;
+		MonsterList summons;
 
 		//follow variables
 		Creature* followCreature;
@@ -469,14 +515,10 @@ class Creature : public AutoId, public Thing
 		virtual void doAttacking(uint32_t interval) {}
 		void internalCreatureDisappear(const Creature* creature, bool isLogout);
 
-
-	private:
-
-		LOGGER_DECLARATION;
-
-		friend class Game;
-		friend class Map;
-		friend class LuaScriptInterface;
 };
+
+
+std::ostream& operator << (std::ostream& stream, const Creature* creature);
+std::ostream& operator << (std::ostream& stream, const Creature& creature);
 
 #endif // _CREATURE_H

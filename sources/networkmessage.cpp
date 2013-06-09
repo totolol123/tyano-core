@@ -23,6 +23,7 @@
 #include "container.h"
 #include "creature.h"
 #include "items.h"
+#include "map.h"
 #include "player.h"
 #include "server.h"
 
@@ -88,11 +89,21 @@ void NetworkMessage::AddPaddingBytes(uint32_t n)
 	m_MsgSize = m_MsgSize + n;
 }
 
-void NetworkMessage::AddPosition(const Position& pos)
-{
+void NetworkMessage::AddPosition(const Position& pos) {
+	assert(pos.x < 65000 && pos.y < 65000 && pos.z <= Map::maxZ);
+
 	AddU16(pos.x);
 	AddU16(pos.y);
 	AddByte(pos.z);
+}
+
+void NetworkMessage::AddPositionEx(const PositionEx& position) {
+	assert(position.x < 65000 && position.y < 65000 && position.z <= Map::maxZ && position.index < 10);
+
+	AddU16(position.x);
+	AddU16(position.y);
+	AddByte(position.z);
+	AddByte(position.index);
 }
 
 void NetworkMessage::AddItem(const Item* item)

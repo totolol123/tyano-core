@@ -23,7 +23,7 @@
 SchedulerTask::SchedulerTask(Duration delay, const Function& function)
 	: Task(function),
 	  _id(0),
-	  _time(TimePoint::clock::now() + delay)
+	  _time(Clock::now() + delay)
 {}
 
 
@@ -42,7 +42,7 @@ SchedulerTask::Id SchedulerTask::getId() const {
 }
 
 
-SchedulerTask::TimePoint SchedulerTask::getTime() const {
+Time SchedulerTask::getTime() const {
 	return _time;
 }
 

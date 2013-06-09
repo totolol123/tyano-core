@@ -83,8 +83,18 @@ typedef std::list<spellBlock_t> SpellList;
 typedef std::vector<voiceBlock_t> VoiceVector;
 typedef std::map<CombatType_t, int32_t> ElementMap;
 
-class MonsterType
-{
+class MonsterType {
+
+public:
+
+	uint8_t     babbleChance;
+	VoiceVector babbleEntries;
+	Duration    babbleInterval;
+	uint8_t     retargetChance;
+	Duration    retargetInterval;
+
+
+
 	public:
 		MonsterType() {reset();}
 		~MonsterType() {reset();}
@@ -105,9 +115,9 @@ class MonsterType
 		LootMessage_t lootMessage;
 
 		int32_t defense, armor, health, healthMax, baseSpeed, lookCorpse, corpseUnique, corpseAction,
-			maxSummons, targetDistance, runAwayHealth, conditionImmunities, damageImmunities,
-			lightLevel, lightColor, changeTargetSpeed, changeTargetChance;
-		uint32_t yellChance, yellSpeedTicks, staticAttackChance, manaCost;
+			maxSummons, runAwayHealth, conditionImmunities, damageImmunities,
+			lightLevel, lightColor;
+		uint32_t staticAttackChance, manaCost, targetDistance;
 		uint64_t experience;
 
 		std::string name, nameDescription;
@@ -117,7 +127,6 @@ class MonsterType
 		ElementMap elementMap;
 		SpellList spellAttackList;
 		SpellList spellDefenseList;
-		VoiceVector voiceVector;
 		StringVector scriptList;
 };
 

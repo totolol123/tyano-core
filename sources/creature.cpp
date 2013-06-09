@@ -35,20 +35,408 @@
 #include "schedulertask.h"
 #include "server.h"
 
+
+const Duration Creature::THINK_DURATION = std::chrono::seconds(1);
+const Duration Creature::THINK_INTERVAL = std::chrono::milliseconds(100);
+
+LOGGER_DEFINITION(Creature);
+
+
+
+void Creature::didRemove() {
+	if (!_removing) {
+		return;
+	}
+
+	removeList();
+
+	_removed = true;
+	_removing = false;
+}
+
+
+PlayerP Creature::getController() {
+	return getFinalOwner()->getPlayer();
+}
+
+
+PlayerPC Creature::getController() const {
+	return getFinalOwner()->getPlayer();
+}
+
+
+CreatureP Creature::getDirectOwner() {
+	return nullptr;
+}
+
+
+CreaturePC Creature::getDirectOwner() const {
+	return nullptr;
+}
+
+
+CreatureP Creature::getFinalOwner() {
+	CreatureP finalOwner;
+	for (CreatureP nextOwner = this; nextOwner != nullptr; nextOwner = nextOwner->getDirectOwner()) {
+		finalOwner = nextOwner;
+	}
+
+	return finalOwner;
+}
+
+
+CreaturePC Creature::getFinalOwner() const {
+	CreaturePC finalOwner;
+	for (CreaturePC nextOwner = this; nextOwner != nullptr; nextOwner = nextOwner->getDirectOwner()) {
+		finalOwner = nextOwner;
+	}
+
+	return finalOwner;
+}
+
+
+bool Creature::hasController() const {
+	return (getController() != nullptr);
+}
+
+
+bool Creature::hasDirectOwner() const {
+	return (getDirectOwner() != nullptr);
+}
+
+
+bool Creature::hasSomethingToThinkAbout() const {
+	if (attackedCreature != nullptr) {
+		return true;
+	}
+
+	if (followCreature != nullptr) {
+		return true;
+	}
+
+	if (!conditions.empty()) {
+		return true;
+	}
+
+	for (const CreatureP& creature : server.game().getSpectators(getPosition())) {
+		if (hasToThinkAboutCreature(creature)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+bool Creature::hasToThinkAboutCreature(const CreaturePC& creature) const {
+	assert(creature != nullptr);
+
+	if (creature == attackedCreature) {
+		return true;
+	}
+	if (creature == followCreature) {
+		return true;
+	}
+
+	return false;
+}
+
+
+bool Creature::isAlive() const {
+	return (!_removed && !_removing && health > 0);
+}
+
+
+bool Creature::isMonster() const {
+	return (getMonster() != nullptr);
+}
+
+
+bool Creature::isNpc() const {
+	return (getNpc() != nullptr);
+}
+
+
+bool Creature::isPlayer() const {
+	return (getPlayer() != nullptr);
+}
+
+
+bool Creature::isRemoved() const {
+	return _removed;
+}
+
+
+bool Creature::isRemoving() const {
+	return _removing;
+}
+
+
+bool Creature::isThinking() const {
+	return (_thinkDuration > Duration::zero());
+}
+
+
+void Creature::killSummons() {
+	auto summons = std::move(this->summons);
+	for (const auto& summon : summons) {
+		summon->changeHealth(-summon->getHealth());
+		summon->release();
+	}
+}
+
+
+void Creature::onCreatureAppear(const CreatureP& creature) {
+	assert(creature != nullptr);
+
+	if (creature == this) {
+		startThinking();
+	}
+	else if (hasToThinkAboutCreature(creature)) {
+		startThinking(true);
+	}
+}
+
+
+void Creature::onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport) {
+	assert(creature != nullptr);
+	assert(originTile != nullptr);
+	assert(destinationTile != nullptr);
+
+	// TODO refactor
+	if (creature == this) {
+		lastStep = OTSYS_TIME();
+		lastStepCost = 1;
+
+		setLastPosition(origin);
+		if(!teleport)
+		{
+			if(origin.z != destination.z || (std::abs(destination.x - origin.x) >= 1 && std::abs(destination.y - origin.y) >= 1))
+				lastStepCost = 2;
+		}
+		else
+			stopEventWalk();
+
+		if(!summons.empty())
+		{
+			MonsterList::iterator cit;
+			std::list<Creature*> despawnList;
+			for(cit = summons.begin(); cit != summons.end(); ++cit)
+			{
+				const Position pos = (*cit)->getPosition();
+				if((std::abs(pos.z - destination.z) > 2) || (std::max(std::abs((
+					destination.x) - pos.x), std::abs((destination.y - 1) - pos.y)) > 30))
+					despawnList.push_back((*cit).get());
+			}
+
+			for(std::list<Creature*>::iterator cit = despawnList.begin(); cit != despawnList.end(); ++cit)
+				server.game().removeCreature(*cit, true);
+		}
+
+		if(destinationTile->getZone() != originTile->getZone())
+			onChangeZone(getZone());
+	}
+
+	if(creature == followCreature || (creature == this && followCreature))
+	{
+		if(hasFollowPath)
+		{
+			isUpdatingPath = true;
+			server.dispatcher().addTask(Task::create(
+				std::bind(&Game::updateCreatureWalk, &server.game(), getID())));
+		}
+
+		if(destination.z != origin.z || !canSee(followCreature->getPosition()))
+			internalCreatureDisappear(followCreature, false);
+	}
+
+	if(creature == attackedCreature || (creature == this && attackedCreature))
+	{
+		if(destination.z == origin.z && canSee(attackedCreature->getPosition()))
+		{
+			if(hasExtraSwing()) //our target is moving lets see if we can get in hit
+				server.dispatcher().addTask(Task::create(
+					std::bind(&Game::checkCreatureAttack, &server.game(), getID())));
+
+			if(destinationTile->getZone() != originTile->getZone())
+				onAttackedCreatureChangeZone(attackedCreature->getZone());
+		}
+		else
+			internalCreatureDisappear(attackedCreature, false);
+	}
+
+	if (creature == this) {
+		startThinking();
+	}
+	else if (canSee(creature->getPosition()) && hasToThinkAboutCreature(creature)) {
+		startThinking(true);
+	}
+}
+
+
+void Creature::onMonsterMasterChanged(const MonsterP& monster, const CreatureP& previousMaster) {
+	assert(monster != nullptr);
+
+	if (monster->getMaster() == this) {
+		addSummon(monster);
+	}
+	else if (previousMaster == this) {
+		removeSummon(monster);
+	}
+
+	if (monster == this || previousMaster == this) {
+		startThinking();
+	}
+	else if (canSee(monster->getPosition()) && hasToThinkAboutCreature(monster)) {
+		startThinking(true);
+	}
+	else if (previousMaster != nullptr && (canSee(previousMaster->getPosition()) && hasToThinkAboutCreature(previousMaster))) {
+		startThinking(true);
+	}
+}
+
+
+void Creature::onThinkingStopped() {
+	healMap.clear();
+	damageMap.clear();
+}
+
+
+bool Creature::remove() {
+	if (isRemoved()) {
+		return true;
+	}
+
+	return server.game().removeCreature(this, true);
+}
+
+
+void Creature::setDefaultOutfit(Outfit_t defaultOutfit) {
+	this->defaultOutfit = defaultOutfit;
+}
+
+
+void Creature::startThinking(bool forced) {
+	if (isThinking()) {
+		return;
+	}
+
+	if (!isAlive()) {
+		return;
+	}
+
+	if (!forced && !hasSomethingToThinkAbout()) {
+		return;
+	}
+
+	_lastThinkTime = Time::clock::now();
+	_thinkDuration = THINK_DURATION;
+
+	server.dispatcher().addTask(Task::create(std::bind(&Creature::think, this)));
+}
+
+
+void Creature::stopThinking() {
+	if (!isThinking()) {
+		return;
+	}
+
+	if (_thinkTaskId != 0) {
+		server.scheduler().cancelTask(_thinkTaskId);
+		_thinkTaskId = 0;
+	}
+
+	_thinkDuration = Duration::zero();
+	onThinkingStopped();
+}
+
+
+void Creature::think() {
+	if (!isThinking()) {
+		return;
+	}
+
+	Time now = Clock::now();
+
+	Duration elapsedTime = now - _lastThinkTime;
+	_lastThinkTime = now;
+	_thinkTaskId = 0;
+
+	if (!isAlive()) {
+		stopThinking();
+		return;
+	}
+
+	onThink(elapsedTime);
+
+	if (!isAlive()) {
+		stopThinking();
+		return;
+	}
+
+	if (_thinkDuration > elapsedTime) {
+		_thinkDuration -= elapsedTime;
+	}
+	else if (hasSomethingToThinkAbout()) {
+		_thinkDuration = THINK_DURATION;
+	}
+	else {
+		stopThinking();
+		return;
+	}
+
+	if (_thinkTaskId == 0) {
+		_thinkTaskId = server.scheduler().addTask(SchedulerTask::create(THINK_INTERVAL, std::bind(&Creature::think, this)));
+	}
+}
+
+
+bool Creature::willRemove() {
+	if (_removed || _removing) {
+		assert(!_removed && !_removing);
+		return false;
+	}
+
+	_removing = true;
+
+	auto summons = std::move(this->summons);
+	for (const auto& summon : summons) {
+		summon->release();
+	}
+
+	return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 boost::recursive_mutex AutoId::lock;
 uint32_t AutoId::count = 1000;
 AutoId::List AutoId::list;
 
 
-LOGGER_DEFINITION(Creature);
-
-
 Creature::Creature()
+	: _removed(false),
+	  _removing(false),
+	  _thinkTaskId(0)
 {
 	id = 0;
 	_tile = nullptr;
-	direction = SOUTH;
-	master = nullptr;
+	direction = Direction::SOUTH;
 	lootDrop = LOOT_DROP_FULL;
 	skillLoss = true;
 	hideName = hideHealth = cannotMove = false;
@@ -71,11 +459,9 @@ Creature::Creature()
 
 	followCreature = nullptr;
 	hasFollowPath = false;
-	removed = false;
 	eventWalk = 0;
 	forceUpdateFollowPath = false;
 	isUpdatingPath = false;
-	checked = false;
 
 	attackedCreature = nullptr;
 	lastHitCreature = 0;
@@ -83,19 +469,20 @@ Creature::Creature()
 	blockCount = 0;
 	blockTicks = 0;
 	walkUpdateTicks = 0;
-	checkVector = -1;
 
 	scriptEventsBitField = 0;
-	onIdleStatus();
 }
 
 Creature::~Creature() {
+	if (_thinkTaskId != 0) {
+		server.scheduler().cancelTask(_thinkTaskId);
+		_thinkTaskId = 0;
+	}
+
 	attackedCreature = nullptr;
 
-	for(CreatureList::iterator cit = summons.begin(); cit != summons.end(); ++cit)
-	{
-		(*cit)->setAttackedCreature(nullptr);
-		(*cit)->setMaster(nullptr);
+	for (const auto& summon : summons) {
+		summon->release();
 	}
 
 	for(ConditionList::iterator it = conditions.begin(); it != conditions.end(); ++it) {
@@ -130,7 +517,7 @@ bool Creature::canSee(const Position& pos) const
 	return canSee(getPosition(), pos, Map::maxViewportX, Map::maxViewportY);
 }
 
-bool Creature::canSeeCreature(const Creature* creature) const
+bool Creature::canSeeCreature(const CreatureP& creature) const
 {
 	return creature == this || (!creature->isGhost() && (!creature->isInvisible() || canSeeInvisibility()));
 }
@@ -159,15 +546,15 @@ int32_t Creature::getWalkDelay() const
 	return 0;
 }
 
-void Creature::onThink(uint32_t interval)
+void Creature::onThink(Duration elapsedTime)
 {
-	if(followCreature && master != followCreature && !canSeeCreature(followCreature))
+	if(followCreature && !canSeeCreature(followCreature))
 		internalCreatureDisappear(followCreature, false);
 
-	if(attackedCreature && master != attackedCreature && !canSeeCreature(attackedCreature))
+	if(attackedCreature && !canSeeCreature(attackedCreature))
 		internalCreatureDisappear(attackedCreature, false);
 
-	blockTicks += interval;
+	blockTicks += std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
 	if(blockTicks >= 1000)
 	{
 		blockCount = std::min((uint32_t)blockCount + 1, (uint32_t)2);
@@ -176,7 +563,7 @@ void Creature::onThink(uint32_t interval)
 
 	if(followCreature)
 	{
-		walkUpdateTicks += interval;
+		walkUpdateTicks += std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
 		if(forceUpdateFollowPath || walkUpdateTicks >= 2000)
 		{
 			walkUpdateTicks = 0;
@@ -191,12 +578,12 @@ void Creature::onThink(uint32_t interval)
 		getPathToFollowCreature();
 	}
 
-	onAttacking(interval);
-	executeConditions(interval);
+	onAttacking(std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count());
+	executeConditions(std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count());
 
 	CreatureEventList thinkEvents = getCreatureEvents(CREATURE_EVENT_THINK);
 	for(CreatureEventList::iterator it = thinkEvents.begin(); it != thinkEvents.end(); ++it)
-		(*it)->executeThink(this, interval);
+		(*it)->executeThink(this, std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count());
 }
 
 void Creature::onAttacking(uint32_t interval)
@@ -252,16 +639,16 @@ void Creature::onWalk(Direction& dir)
 	switch(r)
 	{
 		case 0:
-			dir = NORTH;
+			dir = Direction::NORTH;
 			break;
 		case 1:
-			dir = WEST;
+			dir = Direction::WEST;
 			break;
 		case 3:
-			dir = SOUTH;
+			dir = Direction::SOUTH;
 			break;
 		case 4:
-			dir = EAST;
+			dir = Direction::EAST;
 			break;
 	}
 
@@ -346,38 +733,14 @@ void Creature::onRemoveTileItem(const Tile* tile, const Position& pos, const Ite
 {
 }
 
-void Creature::onCreatureAppear(const Creature* creature)
-{
-}
-
-void Creature::onCreatureDisappear(const Creature* creature, bool isLogout)
-{
-	internalCreatureDisappear(creature, true);
-}
-
-void Creature::onRemovedCreature()
-{
-	setRemoved();
-	removeList();
-	if(master && !master->isRemoved())
-		master->removeSummon(this);
-}
 
 
 void Creature::setParent(Cylinder* cylinder) {
-	assert(!removed);
+	assert(!_removed);
 
 	Thing::setParent(cylinder);
 
 	_tile = dynamic_cast<Tile*>(getParent());
-}
-
-
-void Creature::setRemoved() {
-	assert(!removed);
-	assert(_tile == nullptr);
-
-	removed = true;
 }
 
 
@@ -393,71 +756,13 @@ void Creature::onAttackedCreatureChangeZone(ZoneType_t zone)
 		internalCreatureDisappear(attackedCreature, false);
 }
 
-void Creature::onCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
-	const Tile* oldTile, const Position& oldPos, bool teleport)
+void Creature::onCreatureDisappear(const Creature* creature, bool isLogout)
 {
-	if(creature == this)
-	{
-		lastStep = OTSYS_TIME();
-		lastStepCost = 1;
+	LOGt(this << "::onCreatureDisappear(" << creature << ")");
 
-		setLastPosition(oldPos);
-		if(!teleport)
-		{
-			if(oldPos.z != newPos.z || (std::abs(newPos.x - oldPos.x) >= 1 && std::abs(newPos.y - oldPos.y) >= 1))
-				lastStepCost = 2;
-		}
-		else
-			stopEventWalk();
-
-		if(!summons.empty())
-		{
-			CreatureList::iterator cit;
-			std::list<Creature*> despawnList;
-			for(cit = summons.begin(); cit != summons.end(); ++cit)
-			{
-				const Position pos = (*cit)->getPosition();
-				if((std::abs(pos.z - newPos.z) > 2) || (std::max(std::abs((
-					newPos.x) - pos.x), std::abs((newPos.y - 1) - pos.y)) > 30))
-					despawnList.push_back((*cit).get());
-			}
-
-			for(std::list<Creature*>::iterator cit = despawnList.begin(); cit != despawnList.end(); ++cit)
-				server.game().removeCreature(*cit, true);
-		}
-
-		if(newTile->getZone() != oldTile->getZone())
-			onChangeZone(getZone());
-	}
-
-	if(creature == followCreature || (creature == this && followCreature))
-	{
-		if(hasFollowPath)
-		{
-			isUpdatingPath = true;
-			server.dispatcher().addTask(Task::create(
-				std::bind(&Game::updateCreatureWalk, &server.game(), getID())));
-		}
-
-		if(newPos.z != oldPos.z || !canSee(followCreature->getPosition()))
-			internalCreatureDisappear(followCreature, false);
-	}
-
-	if(creature == attackedCreature || (creature == this && attackedCreature))
-	{
-		if(newPos.z == oldPos.z && canSee(attackedCreature->getPosition()))
-		{
-			if(hasExtraSwing()) //our target is moving lets see if we can get in hit
-				server.dispatcher().addTask(Task::create(
-					std::bind(&Game::checkCreatureAttack, &server.game(), getID())));
-
-			if(newTile->getZone() != oldTile->getZone())
-				onAttackedCreatureChangeZone(attackedCreature->getZone());
-		}
-		else
-			internalCreatureDisappear(attackedCreature, false);
-	}
+	internalCreatureDisappear(creature, true);
 }
+
 
 bool Creature::onDeath()
 {
@@ -494,8 +799,8 @@ bool Creature::onDeath()
 		{
 			if(it->getKillerCreature()->getPlayer())
 				tmp = it->getKillerCreature();
-			else if(it->getKillerCreature()->getPlayerMaster())
-				tmp = it->getKillerCreature()->getMaster();
+			else if(it->getKillerCreature()->getController())
+				tmp = it->getKillerCreature()->getController().get();
 		}
 
 		if(tmp)
@@ -523,8 +828,6 @@ bool Creature::onDeath()
 	}
 
 	dropCorpse(deathList);
-	if(master)
-		master->removeSummon(this);
 
 	return true;
 }
@@ -600,7 +903,7 @@ DeathList Creature::getKillers()
 			continue;
 
 		Creature* mdc = server.game().getCreatureByID(it->first);
-		if(!mdc || mdc == lhc || (lhc && (mdc->getMaster() == lhc || lhc->getMaster() == mdc)))
+		if(!mdc || mdc == lhc || (lhc && (mdc->getDirectOwner() == lhc || lhc->getDirectOwner() == mdc)))
 			continue;
 
 		bool deny = false;
@@ -610,9 +913,9 @@ DeathList Creature::getKillers()
 				continue;
 
 			Creature* tmp = fit->getKillerCreature();
-			if(!(mdc->getName() == tmp->getName() && mdc->getMaster() == tmp->getMaster()) &&
-				(!mdc->getMaster() || (mdc->getMaster() != tmp && mdc->getMaster() != tmp->getMaster()))
-				&& (mdc->getSummonCount() <= 0 || tmp->getMaster() != mdc))
+			if(!(mdc->getName() == tmp->getName() && mdc->getDirectOwner() == tmp->getDirectOwner()) &&
+				(!mdc->getDirectOwner() || (mdc->getDirectOwner() != tmp && mdc->getDirectOwner() != tmp->getDirectOwner()))
+				&& (mdc->getSummonCount() <= 0 || tmp->getDirectOwner() != mdc))
 				continue;
 
 			deny = true;
@@ -643,14 +946,29 @@ boost::intrusive_ptr<Item> Creature::createCorpse(DeathList deathList)
 	return Item::CreateItem(getLookCorpse());
 }
 
-void Creature::changeHealth(int32_t healthChange)
-{
+void Creature::changeHealth (int32_t healthChange) {
+	if (!isAlive()) {
+		return;
+	}
+
+	int32_t newHealth;
+
 	if(healthChange > 0)
-		health += std::min(healthChange, getMaxHealth() - health);
+		newHealth = health + std::min(healthChange, getMaxHealth() - health);
 	else
-		health = std::max((int32_t)0, health + healthChange);
+		newHealth = std::max((int32_t)0, health + healthChange);
+
+	if (newHealth == health) {
+		return;
+	}
+
+	health = newHealth;
 
 	server.game().addCreatureHealth(this);
+
+	if (health == 0) {
+		onDeath();
+	}
 }
 
 void Creature::changeMana(int32_t manaChange)
@@ -800,10 +1118,13 @@ bool Creature::setAttackedCreature(Creature* creature)
 	{
 		onAttackedCreature(attackedCreature);
 		attackedCreature->onAttacked();
-	}
 
-	for(CreatureList::iterator cit = summons.begin(); cit != summons.end(); ++cit)
-		(*cit)->setAttackedCreature(creature);
+		startThinking(true);
+
+		for (const auto& summon : summons) {
+			summon->startThinking();
+		}
+	}
 
 	return true;
 }
@@ -875,6 +1196,11 @@ bool Creature::setFollowCreature(Creature* creature, bool fullPathSearch /*= fal
 	}
 
 	onFollowCreature(creature);
+
+	if (creature != nullptr) {
+		startThinking(true);
+	}
+
 	return true;
 }
 
@@ -930,8 +1256,7 @@ void Creature::addHealPoints(Creature* caster, int32_t healthPoints)
 		healMap[casterId] = CountBlock_t(healthPoints);
 }
 
-void Creature::onAddCondition(ConditionType_t type, bool hadCondition)
-{
+void Creature::onAddCondition(ConditionType_t type, bool hadCondition) {
 	if(type == CONDITION_INVISIBLE)
 	{
 		if(!hadCondition)
@@ -957,6 +1282,11 @@ void Creature::onEndCondition(ConditionType_t type)
 
 void Creature::onTickCondition(ConditionType_t type, int32_t interval, bool& _remove)
 {
+	if (!isAlive()) {
+		_remove = true;
+		return;
+	}
+
 	if(const MagicField* field = getTile()->getFieldItem())
 	{
 		switch(type)
@@ -984,14 +1314,6 @@ void Creature::onCombatRemoveCondition(const Creature* attacker, Condition* cond
 	removeCondition(condition);
 }
 
-void Creature::onIdleStatus()
-{
-	if(getHealth() > 0)
-	{
-		healMap.clear();
-		damageMap.clear();
-	}
-}
 
 void Creature::onAttackedCreatureDrainHealth(Creature* target, int32_t points)
 {
@@ -1025,8 +1347,11 @@ void Creature::onAttackedCreatureKilled(Creature* target)
 bool Creature::onKilledCreature(Creature* target, uint32_t& flags)
 {
 	bool ret = true;
-	if(master)
-		ret = master->onKilledCreature(target, flags);
+
+	CreatureP directOwner = getDirectOwner();
+	if (directOwner != nullptr) {
+		ret = directOwner->onKilledCreature(target, flags);
+	}
 
 	CreatureEventList killEvents = getCreatureEvents(CREATURE_EVENT_KILL);
 	if(!hasBitSet((uint32_t)KILLFLAG_LASTHIT, flags))
@@ -1051,10 +1376,10 @@ void Creature::onGainExperience(double& gainExp, bool fromMonster, bool multipli
 	if(gainExp <= 0)
 		return;
 
-	if(master)
-	{
+	CreatureP directOwner = getDirectOwner();
+	if (directOwner != nullptr) {
 		gainExp = gainExp / 2;
-		master->onGainExperience(gainExp, fromMonster, multiplied);
+		directOwner->onGainExperience(gainExp, fromMonster, multiplied);
 	}
 	else if(!multiplied)
 		gainExp *= server.configManager().getDouble(ConfigManager::RATE_EXPERIENCE);
@@ -1073,10 +1398,10 @@ void Creature::onGainSharedExperience(double& gainExp, bool fromMonster, bool mu
 	if(gainExp <= 0)
 		return;
 
-	if(master)
-	{
+	CreatureP directOwner = getDirectOwner();
+	if (directOwner != nullptr) {
 		gainExp = gainExp / 2;
-		master->onGainSharedExperience(gainExp, fromMonster, multiplied);
+		directOwner->onGainSharedExperience(gainExp, fromMonster, multiplied);
 	}
 	else if(!multiplied)
 		gainExp *= server.configManager().getDouble(ConfigManager::RATE_EXPERIENCE);
@@ -1090,40 +1415,19 @@ void Creature::onGainSharedExperience(double& gainExp, bool fromMonster, bool mu
 	server.game().addAnimatedText(getPosition(), (uint8_t)color, ss.str());
 }
 
-void Creature::addSummon(Creature* creature)
-{
-	creature->setDropLoot(LOOT_DROP_NONE);
-	creature->setLossSkill(false);
 
-	creature->setMaster(this);
+void Creature::addSummon(const MonsterP& creature) {
 	summons.push_back(creature);
 }
 
-void Creature::removeSummon(const Creature* creature)
-{
-	CreatureList::iterator it = std::find(summons.begin(), summons.end(), creature);
-	if(it == summons.end())
-		return;
 
-	(*it)->setMaster(nullptr);
-	server.game().autorelease(*it);
-	summons.erase(it);
-}
-
-void Creature::destroySummons()
-{
-	for(CreatureList::iterator it = summons.begin(); it != summons.end(); ++it)
-	{
-		(*it)->setAttackedCreature(nullptr);
-		(*it)->changeHealth(-(*it)->getHealth());
-
-		(*it)->setMaster(nullptr);
-
-		server.game().autorelease(*it);
+void Creature::removeSummon(const MonsterP& creature) {
+	auto i = std::find(summons.begin(), summons.end(), creature);
+	if (i != summons.end()) {
+		summons.erase(i);
 	}
-
-	summons.clear();
 }
+
 
 bool Creature::addCondition(Condition* condition)
 {
@@ -1141,7 +1445,10 @@ bool Creature::addCondition(Condition* condition)
 	if(condition->startCondition(this))
 	{
 		conditions.push_back(condition);
+
+		startThinking(true);
 		onAddCondition(condition->getType(), hadCondition);
+
 		return true;
 	}
 
@@ -1312,7 +1619,7 @@ std::string Creature::getDescription(int32_t lookDistance) const
 
 int32_t Creature::getStepDuration(Direction dir) const
 {
-	if(dir == NORTHWEST || dir == NORTHEAST || dir == SOUTHWEST || dir == SOUTHEAST)
+	if(dir == Direction::NORTH_WEST || dir == Direction::NORTH_EAST || dir == Direction::SOUTH_WEST || dir == Direction::SOUTH_EAST)
 		return getStepDuration() * 2;
 
 	return getStepDuration();
@@ -1320,7 +1627,7 @@ int32_t Creature::getStepDuration(Direction dir) const
 
 int32_t Creature::getStepDuration() const
 {
-	if(removed)
+	if(_removed || _removing)
 		return 0;
 
 	uint32_t stepSpeed = getStepSpeed();
@@ -1447,3 +1754,20 @@ bool FrozenPathingConditionCall::operator()(const Position& startPos, const Posi
 
 	return false;
 }
+
+
+
+std::ostream& operator << (std::ostream& stream, const Creature* creature) {
+	if (creature != nullptr) {
+		return stream << *creature;
+	}
+	else {
+		return stream << "Creature(null)";
+	}
+}
+
+
+std::ostream& operator << (std::ostream& stream, const Creature& creature) {
+	return stream << "Creature('" << creature.getName() << "', " << creature.getID() << ")";
+}
+

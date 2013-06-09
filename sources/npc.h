@@ -345,12 +345,11 @@ class Npc : public Creature
 		Npc(const std::string& _name);
 		bool loaded;
 
-		virtual void onCreatureAppear(const Creature* creature);
+		virtual void onCreatureAppear(const CreatureP& creature);
 		virtual void onCreatureDisappear(const Creature* creature, bool isLogout);
-		virtual void onCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
-			const Tile* oldTile, const Position& oldPos, bool teleport);
+		virtual void onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
 		virtual void onCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos = nullptr);
-		virtual void onThink(uint32_t interval);
+		virtual void onThink(Duration interval);
 
 		bool isImmune(CombatType_t type) const {return true;}
 		bool isImmune(ConditionType_t type) const {return true;}
@@ -420,6 +419,16 @@ class Npc : public Creature
 
 		NpcEventsHandler* m_npcEventHandler;
 		static NpcScriptInterface* m_interface;
+
+
+	public:
+
+		virtual CreatureP  getDirectOwner ();
+		virtual CreaturePC getDirectOwner () const;
+		virtual bool       isEnemy        (const CreaturePC& creature) const;
+
+
+	private:
 
 		friend class Npcs;
 		friend class NpcScriptInterface;

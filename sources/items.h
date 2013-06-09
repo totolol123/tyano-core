@@ -325,7 +325,7 @@ class ItemKind {
 		MagicEffect_t magicEffect:16;
 		FluidTypes_t fluidSource:5;
 		WeaponType_t weaponType:4;
-		Direction bedPartnerDir:3;
+		Direction bedPartnerDir;
 		AmmoAction_t ammoAction:3;
 		CombatType_t combatType:12;
 		RaceType_t corpseType:3;

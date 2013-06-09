@@ -234,26 +234,26 @@ class CombatArea
 		MatrixArea* getArea(const Position& centerPos, const Position& targetPos) const
 		{
 			int32_t dx = targetPos.x - centerPos.x, dy = targetPos.y - centerPos.y;
-			Direction dir = NORTH;
+			Direction dir = Direction::NORTH;
 			if(dx < 0)
-				dir = WEST;
+				dir = Direction::WEST;
 			else if(dx > 0)
-				dir = EAST;
+				dir = Direction::EAST;
 			else if(dy < 0)
-				dir = NORTH;
+				dir = Direction::NORTH;
 			else
-				dir = SOUTH;
+				dir = Direction::SOUTH;
 
 			if(hasExtArea)
 			{
 				if(dx < 0 && dy < 0)
-					dir = NORTHWEST;
+					dir = Direction::NORTH_WEST;
 				else if(dx > 0 && dy < 0)
-					dir = NORTHEAST;
+					dir = Direction::NORTH_EAST;
 				else if(dx < 0 && dy > 0)
-					dir = SOUTHWEST;
+					dir = Direction::SOUTH_WEST;
 				else if(dx > 0 && dy > 0)
-					dir = SOUTHEAST;
+					dir = Direction::SOUTH_EAST;
 			}
 
 			CombatAreas::const_iterator it = areas.find(dir);

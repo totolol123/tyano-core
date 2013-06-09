@@ -385,7 +385,6 @@ class Player : public Creature, public Cylinder
 		virtual void onBlockHit(BlockType_t blockType);
 		virtual void onChangeZone(ZoneType_t zone);
 		virtual void onAttackedCreatureChangeZone(ZoneType_t zone);
-		virtual void onIdleStatus();
 		virtual void onPlacedCreature();
 
 		virtual void getCreatureLight(LightInfo& light) const;
@@ -407,22 +406,22 @@ class Player : public Creature, public Cylinder
 
 		//tile
 		//send methods
-		void sendAddTileItem(const Tile* tile, const Position& pos, const Item* item);
+		void sendAddTileItem(const Tile* tile, const Position& pos, const Item* item, const char* callSource);
 		void sendUpdateTileItem(const Tile* tile, const Position& pos, const Item* oldItem, const Item* newItem);
-		void sendRemoveTileItem(const Tile* tile, const Position& pos, uint32_t stackpos, const Item* item);
+		void sendRemoveTileItem(const Tile* tile, const Position& pos, uint32_t stackpos, const Item* item, const char* callSource);
 		void sendUpdateTile(const Tile* tile, const Position& pos);
 
 		void sendChannelMessage(std::string author, std::string text, SpeakClasses type, uint8_t channel);
-		void sendCreatureAppear(const Creature* creature);
-		void sendCreatureDisappear(const Creature* creature, uint32_t stackpos);
+		void sendCreatureAppear(const Creature* creature, const char* callSource);
+		void sendCreatureDisappear(const Creature* creature, uint32_t stackpos, const char* callSource);
 		void sendCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
-			const Tile* oldTile, const Position& oldPos, uint32_t oldStackpos, bool teleport);
+				const Tile* oldTile, const Position& oldPos, uint32_t oldStackpos, bool teleport, const char* callSource);
 
 		void sendCreatureTurn(const Creature* creature);
 		void sendCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos = nullptr);
 		void sendCreatureSquare(const Creature* creature, SquareColor_t color);
 		void sendCreatureChangeOutfit(const Creature* creature, const Outfit_t& outfit);
-		void sendCreatureChangeVisible(const Creature* creature, Visible_t visible);
+		void sendCreatureChangeVisible(const Creature* creature, Visible_t visible, const char* callSource);
 		void sendCreatureLight(const Creature* creature);
 		void sendCreatureShield(const Creature* creature);
 
@@ -443,10 +442,9 @@ class Player : public Creature, public Cylinder
 		virtual void onRemoveTileItem(const Tile* tile, const Position& pos,
 			const ItemKindPC& iType, const Item* item);
 
-		virtual void onCreatureAppear(const Creature* creature);
+		virtual void onCreatureAppear(const CreatureP& creature);
 		virtual void onCreatureDisappear(const Creature* creature, bool isLogout);
-		virtual void onCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
-			const Tile* oldTile, const Position& oldPos, bool teleport);
+		virtual void onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
 
 		virtual void onAttackedCreatureDisappear(bool isLogout);
 		virtual void onFollowCreatureDisappear(bool isLogout);
@@ -524,7 +522,8 @@ class Player : public Creature, public Cylinder
 		void sendCritical() const;
 
 		void receivePing() {lastPong = OTSYS_TIME();}
-		virtual void onThink(uint32_t interval);
+		virtual void onThink(Duration interval);
+		virtual void onThinkingStopped();
 		uint32_t getAttackSpeed();
 
 		virtual void postAddNotification(Creature* actor, Thing* thing, const Cylinder* oldParent,
@@ -558,6 +557,7 @@ class Player : public Creature, public Cylinder
 		Container transferContainer;
 
 	private:
+
 		void checkTradeState(const Item* item);
 
 		bool gainExperience(double& gainExp, bool fromMonster);
@@ -741,6 +741,17 @@ class Player : public Creature, public Cylinder
 		PartyList invitePartyList;
 		OutfitMap outfits;
 		LearnedInstantSpellList learnedInstantSpellList;
+
+
+
+	public:
+
+		virtual CreatureP  getDirectOwner ();
+		virtual CreaturePC getDirectOwner () const;
+		virtual bool       isEnemy        (const CreaturePC& creature) const;
+
+
+	private:
 
 		friend class Game;
 		friend class LuaScriptInterface;

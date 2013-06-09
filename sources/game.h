@@ -315,8 +315,6 @@ class Game
 		  */
 		bool removeCreature(Creature* creature, bool isLogout = true);
 
-		void addCreatureCheck(Creature* creature);
-		void removeCreatureCheck(Creature* creature);
 
 		uint32_t getPlayersOnline();
 		uint32_t getMonstersOnline();
@@ -558,7 +556,6 @@ class Game
 		void checkCreatureWalk(uint32_t creatureId);
 		void updateCreatureWalk(uint32_t creatureId);
 		void checkCreatureAttack(uint32_t creatureId);
-		void checkCreatures();
 		void checkLight();
 
 		bool combatBlockHit(CombatType_t combatType, Creature* attacker, Creature* target,
@@ -624,10 +621,6 @@ class Game
 		AutoList<Creature> autoList;
 		RuleViolationsMap ruleViolations;
 
-		size_t checkCreatureLastIndex;
-		CreatureVector checkCreatureVectors[EVENT_CREATURECOUNT];
-		CreatureVector toAddCheckCreatureVector;
-
 		void clear();
 		void checkDecay();
 		void internalDecayItem(Item* item);
@@ -652,7 +645,7 @@ class Game
 		std::string lastMotd;
 		int32_t lastMotdId;
 		uint32_t playersRecord;
-		uint32_t checkLightEvent, checkCreatureEvent, checkDecayEvent, saveEvent;
+		uint32_t checkLightEvent, checkDecayEvent, saveEvent;
 		bool globalSaveMessage[3];
 
 		RefreshTiles refreshTiles;

@@ -338,9 +338,9 @@ bool CombatSpell::castSpell(Creature* creature)
 		LuaVariant var;
 		var.type = VARIANT_POSITION;
 		if(needDirection)
-			var.pos = Spells::getCasterPosition(creature, creature->getDirection());
+			var.pos = PositionEx(Spells::getCasterPosition(creature, creature->getDirection()), 0);
 		else
-			var.pos = creature->getPosition();
+			var.pos = PositionEx(creature->getPosition(), 0);
 
 		return executeCastSpell(creature, var);
 	}
@@ -368,11 +368,11 @@ bool CombatSpell::castSpell(Creature* creature, Creature* target)
 			var.type = VARIANT_POSITION;
 
 			if(needTarget)
-				var.pos = target->getPosition();
+				var.pos = PositionEx(target->getPosition(), 0);
 			else if(needDirection)
-				var.pos = Spells::getCasterPosition(creature, creature->getDirection());
+				var.pos = PositionEx(Spells::getCasterPosition(creature, creature->getDirection()), 0);
 			else
-				var.pos = creature->getPosition();
+				var.pos = PositionEx(creature->getPosition(), 0);
 		}
 		else
 		{
@@ -1156,7 +1156,7 @@ bool InstantSpell::playerCastInstant(Player* player, const std::string& param)
 		else
 		{
 			var.type = VARIANT_POSITION;
-			var.pos = Spells::getCasterPosition(player, player->getDirection());
+			var.pos = PositionEx(Spells::getCasterPosition(player, player->getDirection()), 0);
 			if(!playerInstantSpellCheck(player, var.pos))
 				return false;
 		}
@@ -1172,9 +1172,9 @@ bool InstantSpell::playerCastInstant(Player* player, const std::string& param)
 	{
 		var.type = VARIANT_POSITION;
 		if(needDirection)
-			var.pos = Spells::getCasterPosition(player, player->getDirection());
+			var.pos = PositionEx(Spells::getCasterPosition(player, player->getDirection()), 0);
 		else
-			var.pos = player->getPosition();
+			var.pos = PositionEx(player->getPosition(), 0);
 
 		if(!playerInstantSpellCheck(player, var.pos))
 			return false;
@@ -1220,12 +1220,12 @@ bool InstantSpell::castSpell(Creature* creature)
 	if(needDirection)
 	{
 		var.type = VARIANT_POSITION;
-		var.pos = Spells::getCasterPosition(creature, creature->getDirection());
+		var.pos = PositionEx(Spells::getCasterPosition(creature, creature->getDirection()), 0);
 	}
 	else
 	{
 		var.type = VARIANT_POSITION;
-		var.pos = creature->getPosition();
+		var.pos = PositionEx(creature->getPosition(), 0);
 	}
 
 	return internalCastSpell(creature, var);
@@ -1668,10 +1668,10 @@ bool ConjureSpell::ConjureFood(const ConjureSpell* spell, Creature* creature, co
 		ITEM_ROLL
 	};
 
-	if(internalConjureItem(player, foodType[random_range(0, (sizeof(foodType) / sizeof(uint32_t)) - 1)], 1) == RET_NOERROR)
+	if(internalConjureItem(player, foodType[random_range<size_t>(0, (sizeof(foodType) / sizeof(uint32_t)) - 1)], 1) == RET_NOERROR)
 	{
 		if(random_range(0, 100) > 50)
-			internalConjureItem(player, foodType[random_range(0, (sizeof(foodType) / sizeof(uint32_t)) - 1)], 1);
+			internalConjureItem(player, foodType[random_range<size_t>(0, (sizeof(foodType) / sizeof(uint32_t)) - 1)], 1);
 
 		spell->postCastSpell(player);
 		server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_WRAPS_GREEN);
@@ -1856,7 +1856,7 @@ bool RuneSpell::Convince(const RuneSpell* spell, Creature* creature, Item* item,
 		return false;
 	}
 
-	if(!convinceCreature->convinceCreature(creature))
+	if(!creature->getMonster() || !creature->getMonster()->convince(creature))
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
 		server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);

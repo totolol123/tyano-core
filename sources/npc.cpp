@@ -34,6 +34,26 @@
 
 
 LOGGER_DEFINITION(Npcs);
+
+
+
+
+CreatureP Npc::getDirectOwner() {
+	return nullptr;
+}
+
+
+CreaturePC Npc::getDirectOwner() const {
+	return nullptr;
+}
+
+
+bool Npc::isEnemy(const CreaturePC& creature) const {
+	return false;
+}
+
+
+
  
  
 AutoList<Npc> Npc::autoList;
@@ -1068,7 +1088,7 @@ bool Npc::canSee(const Position& pos) const
 	return Creature::canSee(getPosition(), pos, Map::maxClientViewportX, Map::maxClientViewportY);
 }
 
-void Npc::onCreatureAppear(const Creature* creature)
+void Npc::onCreatureAppear(const CreatureP& creature)
 {
 	Creature::onCreatureAppear(creature);
 	if(creature == this && walkTicks > 0)
@@ -1077,7 +1097,7 @@ void Npc::onCreatureAppear(const Creature* creature)
 	if(creature == this)
 	{
 		if(m_npcEventHandler)
-			m_npcEventHandler->onCreatureAppear(creature);
+			m_npcEventHandler->onCreatureAppear(creature.get());
 
 		return;
 	}
@@ -1086,7 +1106,7 @@ void Npc::onCreatureAppear(const Creature* creature)
 	if(Player* player = const_cast<Player*>(creature->getPlayer()))
 	{
 		if(m_npcEventHandler)
-			m_npcEventHandler->onCreatureAppear(creature);
+			m_npcEventHandler->onCreatureAppear(creature.get());
 
 		NpcState* npcState = getState(player);
 		if(npcState && canSee(player->getPosition()))
@@ -1116,35 +1136,34 @@ void Npc::onCreatureDisappear(const Creature* creature, bool isLogout)
 	}
 }
 
-void Npc::onCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
-		const Tile* oldTile, const Position& oldPos, bool teleport)
+void Npc::onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport)
 {
-	Creature::onCreatureMove(creature, newTile, newPos, oldTile, oldPos, teleport);
+	Creature::onCreatureMove(creature, origin, originTile, destination, destinationTile, teleport);
 	if(creature == this)
 	{
 		if(m_npcEventHandler)
-			m_npcEventHandler->onCreatureMove(creature, oldPos, newPos);
+			m_npcEventHandler->onCreatureMove(creature.get(), origin, destination);
 	}
 	else if(Player* player = const_cast<Player*>(creature->getPlayer()))
 	{
 		if(m_npcEventHandler)
-			m_npcEventHandler->onCreatureMove(creature, oldPos, newPos);
+			m_npcEventHandler->onCreatureMove(creature.get(), origin, destination);
 
 		NpcState* npcState = getState(player);
 		if(npcState)
 		{
-			bool canSeeNewPos = canSee(newPos), canSeeOldPos = canSee(oldPos);
-			if(canSeeNewPos && !canSeeOldPos)
+			bool canSeedestination = canSee(destination), canSeeorigin = canSee(origin);
+			if(canSeedestination && !canSeeorigin)
 			{
 				npcState->respondToCreature = player->getID();
 				onPlayerEnter(player, npcState);
 			}
-			else if(!canSeeNewPos && canSeeOldPos)
+			else if(!canSeedestination && canSeeorigin)
 			{
 				npcState->respondToCreature = player->getID();
 				onPlayerLeave(player, npcState);
 			}
-			else if(canSeeNewPos && canSeeOldPos)
+			else if(canSeedestination && canSeeorigin)
 			{
 				npcState->respondToCreature = player->getID();
 				const NpcResponse* response = getResponse(player, npcState, EVENT_PLAYER_MOVE);
@@ -1207,7 +1226,7 @@ void Npc::onPlayerLeave(Player* player, NpcState* state)
 	executeResponse(player, state, response);
 }
 
-void Npc::onThink(uint32_t interval)
+void Npc::onThink(Duration interval)
 {
 	Creature::onThink(interval);
 	if(m_npcEventHandler)
@@ -1960,23 +1979,23 @@ bool Npc::getRandomStep(Direction& dir)
 {
 	std::vector<Direction> dirList;
 	const Position& creaturePos = getPosition();
-	if(canWalkTo(creaturePos, NORTH))
-		dirList.push_back(NORTH);
+	if(canWalkTo(creaturePos, Direction::NORTH))
+		dirList.push_back(Direction::NORTH);
 
-	if(canWalkTo(creaturePos, SOUTH))
-		dirList.push_back(SOUTH);
+	if(canWalkTo(creaturePos, Direction::SOUTH))
+		dirList.push_back(Direction::SOUTH);
 
-	if(canWalkTo(creaturePos, EAST))
-		dirList.push_back(EAST);
+	if(canWalkTo(creaturePos, Direction::EAST))
+		dirList.push_back(Direction::EAST);
 
-	if(canWalkTo(creaturePos, WEST))
-		dirList.push_back(WEST);
+	if(canWalkTo(creaturePos, Direction::WEST))
+		dirList.push_back(Direction::WEST);
 
 	if(dirList.empty())
 		return false;
 
 	std::random_shuffle(dirList.begin(), dirList.end());
-	dir = dirList[random_range(0, dirList.size() - 1)];
+	dir = dirList[random_range<uint32_t>(0, dirList.size() - 1)];
 	return true;
 }
 
@@ -1996,16 +2015,16 @@ void Npc::setCreatureFocus(Creature* creature)
 	if(dx != 0)
 		tan = dy / dx;
 
-	Direction dir = SOUTH;
+	Direction dir = Direction::SOUTH;
 	if(std::abs(tan) < 1)
 	{
 		if(dx > 0)
-			dir = WEST;
+			dir = Direction::WEST;
 		else
-			dir = EAST;
+			dir = Direction::EAST;
 	}
 	else if(dy > 0)
-		dir = NORTH;
+		dir = Direction::NORTH;
 
 	focusCreature = creature->getID();
 	server.game().internalCreatureTurn(this, dir);
@@ -2380,7 +2399,7 @@ const NpcResponse* Npc::getResponse(const Player* player, NpcEvent_t eventType)
 	if(result.empty())
 		return nullptr;
 
-	return result[random_range(0, result.size() - 1)];
+	return result[random_range<uint32_t>(0, result.size() - 1)];
 }
 
 const NpcResponse* Npc::getResponse(const Player* player, NpcState* npcState, NpcEvent_t eventType)

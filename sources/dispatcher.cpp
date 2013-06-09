@@ -103,7 +103,7 @@ Dispatcher::State Dispatcher::getState() {
 
 
 void Dispatcher::runTask(const Task& task, Game& game, OutputMessagePool* messagePool) const {
-	if (task.getExpiration() < Task::TimePoint::clock::now()) {
+	if (task.getExpiration() < Clock::now()) {
 		return;
 	}
 

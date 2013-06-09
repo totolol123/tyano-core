@@ -1151,10 +1151,33 @@ void LuaScriptInterface::popPosition(lua_State* L, PositionEx& position)
 		position.x = getField(L, "x");
 		position.y = getField(L, "y");
 		position.z = getField(L, "z");
-		position.stackpos = getField(L, "stackpos");
+
+		int64_t stackpos = getField(L, "stackpos");
+		if (stackpos < 0) {
+			stackpos = 255;
+		}
+		else if (stackpos > 254) {
+			stackpos = 254;
+		}
+
+		position.index = static_cast<uint8_t>(getField(L, "stackpos"));
 	}
 	else
 		position = PositionEx();
+
+	lua_pop(L, 1); //table
+}
+
+void LuaScriptInterface::popPosition(lua_State* L, Position& position)
+{
+	if(!lua_isboolean(L, -1))
+	{
+		position.x = getField(L, "x");
+		position.y = getField(L, "y");
+		position.z = getField(L, "z");
+	}
+	else
+		position = Position();
 
 	lua_pop(L, 1); //table
 }
@@ -1780,12 +1803,6 @@ void LuaScriptInterface::registerFunctions()
 
 	//doConvinceCreature(cid, target)
 	lua_register(m_luaState, "doConvinceCreature", LuaScriptInterface::luaDoConvinceCreature);
-
-	//getMonsterTargetList(cid)
-	lua_register(m_luaState, "getMonsterTargetList", LuaScriptInterface::luaGetMonsterTargetList);
-
-	//getMonsterFriendList(cid)
-	lua_register(m_luaState, "getMonsterFriendList", LuaScriptInterface::luaGetMonsterFriendList);
 
 	//doMonsterSetTarget(cid, target)
 	lua_register(m_luaState, "doMonsterSetTarget", LuaScriptInterface::luaDoMonsterSetTarget);
@@ -3258,7 +3275,7 @@ int32_t LuaScriptInterface::luaDoSendDefaultCancel(lua_State* L)
 int32_t LuaScriptInterface::luaGetSearchString(lua_State* L)
 {
 	//getSearchString(fromPosition, toPosition[, fromIsCreature = false[, toIsCreature = false]])
-	PositionEx toPos, fromPos;
+	Position toPos, fromPos;
 	bool toIsCreature = false, fromIsCreature = false;
 
 	int32_t params = lua_gettop(L);
@@ -3292,7 +3309,7 @@ int32_t LuaScriptInterface::luaGetClosestFreeTile(lua_State* L)
 	if(params > 2)
 		extended = popNumber(L);
 
-	PositionEx pos;
+	Position pos;
 	popPosition(L, pos);
 
 	ScriptEnviroment* env = getEnv();
@@ -3439,7 +3456,7 @@ int32_t LuaScriptInterface::luaDoSendMagicEffect(lua_State* L)
 	}
 
 	uint32_t type = popNumber(L);
-	PositionEx pos;
+	Position pos;
 
 	popPosition(L, pos);
 	if(pos.x == 0xFFFF)
@@ -3466,7 +3483,7 @@ int32_t LuaScriptInterface::luaDoSendDistanceShoot(lua_State* L)
 	}
 
 	uint32_t type = popNumber(L);
-	PositionEx toPos, fromPos;
+	Position toPos, fromPos;
 
 	popPosition(L, toPos);
 	popPosition(L, fromPos);
@@ -3995,7 +4012,7 @@ int32_t LuaScriptInterface::luaDoSendAnimatedText(lua_State* L)
 	uint32_t color = popNumber(L);
 	std::string text = popString(L);
 
-	PositionEx pos;
+	Position pos;
 	popPosition(L, pos);
 	if(pos.x == 0xFFFF)
 		pos = env->getRealPos();
@@ -4197,7 +4214,7 @@ int32_t LuaScriptInterface::luaGetThingFromPos(lua_State* L)
 	Thing* thing = nullptr;
 	if(Tile* tile = server.game().getMap()->getTile(pos))
 	{
-		if(pos.stackpos == 255)
+		if(pos.index == 255)
 		{
 			if(!(thing = tile->getTopCreature()))
 			{
@@ -4206,12 +4223,12 @@ int32_t LuaScriptInterface::luaGetThingFromPos(lua_State* L)
 					thing = item;
 			}
 		}
-		else if(pos.stackpos == 254)
+		else if(pos.index == 254)
 			thing = tile->getFieldItem();
-		else if(pos.stackpos == 253)
+		else if(pos.index == 253)
 			thing = tile->getTopCreature();
 		else
-			thing = tile->__getThing(pos.stackpos);
+			thing = tile->__getThing(pos.index);
 
 		if(thing)
 			pushThing(L, thing, env->addThing(thing));
@@ -4356,7 +4373,7 @@ int32_t LuaScriptInterface::luaGetTileThingByPos(lua_State* L)
 	Tile* tile = server.game().getTile(pos.x, pos.y, pos.z);
 	if(!tile)
 	{
-		if(pos.stackpos == -1)
+		if(pos.index == 255)
 		{
 			lua_pushnumber(L, -1);
 			return 1;
@@ -4368,13 +4385,13 @@ int32_t LuaScriptInterface::luaGetTileThingByPos(lua_State* L)
 		}
 	}
 
-	if(pos.stackpos == -1)
+	if(pos.index == 255)
 	{
 		lua_pushnumber(L, tile->getThingCount());
 		return 1;
 	}
 
-	Thing* thing = tile->__getThing(pos.stackpos);
+	Thing* thing = tile->__getThing(pos.index);
 	if(!thing)
 	{
 		pushThing(L, nullptr, 0);
@@ -4705,7 +4722,7 @@ int32_t LuaScriptInterface::luaDoCreateMonster(lua_State* L)
 	popPosition(L, pos);
 
 	std::string name = popString(L);
-	boost::intrusive_ptr<Monster> monster = Monster::createMonster(name.c_str());
+	boost::intrusive_ptr<Monster> monster = Monster::create(name.c_str());
 	if(!monster)
 	{
 		if(displayError)
@@ -6256,14 +6273,14 @@ int32_t LuaScriptInterface::luaDoChallengeCreature(lua_State* L)
 	}
 
 	Creature* target = env->getCreatureByUID(targetCid);
-	if(!target)
+	if(!target || !target->getMonster())
 	{
-		errorEx(getError(LUA_ERROR_CREATURE_NOT_FOUND));
+		errorEx(getError(LUA_ERROR_MONSTER_NOT_FOUND));
 		lua_pushboolean(L, false);
 		return 1;
 	}
 
-	target->challengeCreature(creature);
+	target->getMonster()->challenge(creature);
 	lua_pushboolean(L, true);
 	return 1;
 }
@@ -6301,91 +6318,15 @@ int32_t LuaScriptInterface::luaDoConvinceCreature(lua_State* L)
 	}
 
 	Creature* target = env->getCreatureByUID(cid);
-	if(!target)
+	if(!target || !target->getMonster())
 	{
-		errorEx(getError(LUA_ERROR_CREATURE_NOT_FOUND));
+		errorEx(getError(LUA_ERROR_MONSTER_NOT_FOUND));
 		lua_pushboolean(L, false);
 		return 1;
 	}
 
-	target->convinceCreature(creature);
+	target->getMonster()->convince(creature);
 	lua_pushboolean(L, true);
-	return 1;
-}
-
-int32_t LuaScriptInterface::luaGetMonsterTargetList(lua_State* L)
-{
-	//getMonsterTargetList(cid)
-	ScriptEnviroment* env = getEnv();
-	Creature* creature = env->getCreatureByUID(popNumber(L));
-	if(!creature)
-	{
-		errorEx(getError(LUA_ERROR_CREATURE_NOT_FOUND));
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	Monster* monster = creature->getMonster();
-	if(!monster)
-	{
-		errorEx(getError(LUA_ERROR_CREATURE_NOT_FOUND));
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	const CreatureList& targetList = monster->getTargetList();
-	CreatureList::const_iterator it = targetList.begin();
-
-	lua_newtable(L);
-	for(uint32_t i = 1; it != targetList.end(); ++it, ++i)
-	{
-		if(monster->isTarget((*it).get()))
-		{
-			lua_pushnumber(L, i);
-			lua_pushnumber(L, env->addThing((*it).get()));
-			pushTable(L);
-		}
-	}
-
-	return 1;
-}
-
-int32_t LuaScriptInterface::luaGetMonsterFriendList(lua_State* L)
-{
-	//getMonsterFriendList(cid)
-	ScriptEnviroment* env = getEnv();
-	Creature* creature = env->getCreatureByUID(popNumber(L));
-	if(!creature)
-	{
-		errorEx(getError(LUA_ERROR_CREATURE_NOT_FOUND));
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	Monster* monster = creature->getMonster();
-	if(!monster)
-	{
-		errorEx(getError(LUA_ERROR_CREATURE_NOT_FOUND));
-		lua_pushboolean(L, false);
-		return 1;
-	}
-
-	Creature* friendCreature;
-	const CreatureList& friendList = monster->getFriendList();
-	CreatureList::const_iterator it = friendList.begin();
-
-	lua_newtable(L);
-	for(uint32_t i = 1; it != friendList.end(); ++it, ++i)
-	{
-		friendCreature = (*it).get();
-		if(!friendCreature->isRemoved() && friendCreature->getPosition().z == monster->getPosition().z)
-		{
-			lua_pushnumber(L, i);
-			lua_pushnumber(L, env->addThing((*it).get()));
-			pushTable(L);
-		}
-	}
-
 	return 1;
 }
 
@@ -6419,8 +6360,8 @@ int32_t LuaScriptInterface::luaDoMonsterSetTarget(lua_State* L)
 		return 1;
 	}
 
-	if(!monster->isSummon())
-		lua_pushboolean(L, monster->selectTarget(target));
+	if(!monster->hasMaster())
+		lua_pushboolean(L, monster->target(target));
 	else
 		lua_pushboolean(L, false);
 
@@ -6447,8 +6388,8 @@ int32_t LuaScriptInterface::luaDoMonsterChangeTarget(lua_State* L)
 		return 1;
 	}
 
-	if(!monster->isSummon())
-		monster->searchTarget(TARGETSEARCH_RANDOM);
+	if(!monster->hasMaster())
+		monster->targetRandomEnemy();
 
 	lua_pushboolean(L, true);
 	return 1;
@@ -6804,7 +6745,7 @@ int32_t LuaScriptInterface::luaVariantToPosition(lua_State* L)
 	if(var.type == VARIANT_POSITION || var.type == VARIANT_TARGETPOSITION)
 		pos = var.pos;
 
-	pushPosition(L, pos, pos.stackpos);
+	pushPosition(L, pos, pos.index);
 	return 1;
 }
 
@@ -7054,7 +6995,21 @@ int32_t LuaScriptInterface::luaDoMoveCreature(lua_State* L)
 {
 	//doMoveCreature(cid, direction)
 	uint32_t direction = popNumber(L);
-	if(direction > NORTHEAST)
+
+	bool validDirection = false;
+	switch (static_cast<Direction>(direction)) {
+	case Direction::EAST:
+	case Direction::NORTH:
+	case Direction::NORTH_EAST:
+	case Direction::NORTH_WEST:
+	case Direction::SOUTH:
+	case Direction::SOUTH_EAST:
+	case Direction::SOUTH_WEST:
+	case Direction::WEST:
+		validDirection = true;
+	}
+
+	if (!validDirection)
 	{
 		lua_pushboolean(L, false);
 		return 1;
@@ -7639,7 +7594,7 @@ int32_t LuaScriptInterface::luaDoCreatureChangeOutfit(lua_State* L)
 		if(Player* player = creature->getPlayer())
 			player->changeOutfit(outfit, false);
 		else
-			creature->defaultOutfit = outfit;
+			creature->setDefaultOutfit(outfit);
 
 		if(!creature->hasCondition(CONDITION_OUTFIT, 1))
 			server.game().internalCreatureChangeOutfit(creature, outfit);
@@ -7891,7 +7846,7 @@ int32_t LuaScriptInterface::luaDoCreatureSetLookDir(lua_State* L)
 	ScriptEnviroment* env = getEnv();
 	if(Creature* creature = env->getCreatureByUID(popNumber(L)))
 	{
-		if(dir < NORTH || dir > WEST)
+		if(dir > Direction::WEST)
 		{
 			lua_pushboolean(L, false);
 			return 1;
@@ -8333,7 +8288,7 @@ int32_t LuaScriptInterface::luaGetCreatureLookDirection(lua_State* L)
 	ScriptEnviroment* env = getEnv();
 
 	if(Creature* creature = env->getCreatureByUID(popNumber(L)))
-		lua_pushnumber(L, creature->getDirection());
+		lua_pushnumber(L, static_cast<std::underlying_type<Direction>::type>(creature->getDirection()));
 	else
 	{
 		errorEx(getError(LUA_ERROR_CREATURE_NOT_FOUND));
@@ -8685,7 +8640,7 @@ int32_t LuaScriptInterface::luaGetCreatureMaster(lua_State* L)
 		return 1;
 	}
 
-	Creature* master = creature->getMaster();
+	Creature* master = creature->getDirectOwner().get();
 	lua_pushnumber(L, master ? env->addThing(master) : cid);
 	return 1;
 }
@@ -8703,8 +8658,8 @@ int32_t LuaScriptInterface::luaGetCreatureSummons(lua_State* L)
 		return 1;
 	}
 
-	const CreatureList& summons = creature->getSummons();
-	CreatureList::const_iterator it = summons.begin();
+	const MonsterList& summons = creature->getSummons();
+	MonsterList::const_iterator it = summons.begin();
 
 	lua_newtable(L);
 	for(uint32_t i = 1; it != summons.end(); ++it, ++i)

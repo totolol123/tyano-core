@@ -618,8 +618,6 @@
 	getMonsterAttackSpells(name) //TODO
 	getMonsterLootList(name) //TODO
 	getMonsterSummonList(name) //TODO
-	getMonsterTargetList(cid) //TODO
-	getMonsterFriendList(cid) //TODO
 	getPlayerByNameWildcard(name~[, ret = false]) //TODO
 	getPlayerLossSkill(cid) //TODO
 	getPlayerLossPercent(cid, lossType) //TODO

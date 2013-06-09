@@ -84,7 +84,7 @@ Game::Game()
 	lightLevel = LIGHT_LEVEL_DAY;
 	lightState = LIGHT_STATE_DAY;
 
-	lastMotdId = lastHighscoreCheck = lastBucket = checkCreatureLastIndex = checkLightEvent = checkCreatureEvent = checkDecayEvent = saveEvent = 0;
+	lastMotdId = lastHighscoreCheck = lastBucket = checkLightEvent = checkDecayEvent = saveEvent = 0;
 }
 
 Game::~Game()
@@ -117,8 +117,6 @@ void Game::start(ServiceManager* servicer)
 {
 	checkDecayEvent = server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(EVENT_DECAYINTERVAL),
 		std::bind(&Game::checkDecay, this)));
-	checkCreatureEvent = server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(EVENT_CREATURE_THINK_INTERVAL),
-		std::bind(&Game::checkCreatures, this)));
 	checkLightEvent = server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(EVENT_LIGHTINTERVAL),
 		std::bind(&Game::checkLight, this)));
 
@@ -901,7 +899,7 @@ bool Game::placeCreature(Creature* creature, const Position& pos, bool extendedP
 	for(it = list.begin(); it != list.end(); ++it)
 	{
 		if((tmpPlayer = (*it)->getPlayer()))
-			tmpPlayer->sendCreatureAppear(creature);
+			tmpPlayer->sendCreatureAppear(creature, BOOST_CURRENT_FUNCTION);
 	}
 
 	for(it = list.begin(); it != list.end(); ++it)
@@ -909,7 +907,6 @@ bool Game::placeCreature(Creature* creature, const Position& pos, bool extendedP
 
 	creature->setLastPosition(pos);
 	creature->getParent()->postAddNotification(nullptr, creature, nullptr, creature->getParent()->__getIndexOfThing(creature));
-	addCreatureCheck(creature);
 
 	creature->onPlacedCreature();
 	return true;
@@ -917,16 +914,20 @@ bool Game::placeCreature(Creature* creature, const Position& pos, bool extendedP
 
 ReturnValue Game::placeSummon(Creature* creature, const std::string& name)
 {
-	boost::intrusive_ptr<Monster> monster = Monster::createMonster(name);
+	boost::intrusive_ptr<Monster> monster = Monster::create(name);
 	if(!monster)
 		return RET_NOTPOSSIBLE;
 
 	// Place the monster
-	creature->addSummon(monster.get());
+	if (!monster->convince(creature, true)) {
+		return RET_NOTPOSSIBLE;
+	}
+
 	if(placeCreature(monster.get(), creature->getPosition(), true))
 		return RET_NOERROR;
 
-	creature->removeSummon(monster.get());
+	monster->release();
+
 	return RET_NOTENOUGHROOM;
 }
 
@@ -934,6 +935,8 @@ bool Game::removeCreature(Creature* creature, bool isLogout /*= true*/)
 {
 	if(creature->isRemoved())
 		return false;
+
+	creature->willRemove();
 
 	Tile* tile = creature->getTile();
 	if (tile != nullptr) {
@@ -963,7 +966,7 @@ bool Game::removeCreature(Creature* creature, bool isLogout /*= true*/)
 			if(!(player = (*it)->getPlayer()) || !player->canSeeCreature(creature))
 				continue;
 
-			player->sendCreatureDisappear(creature, oldStackPosVector[i]);
+			player->sendCreatureDisappear(creature, oldStackPosVector[i], BOOST_CURRENT_FUNCTION);
 			++i;
 		}
 
@@ -977,13 +980,9 @@ bool Game::removeCreature(Creature* creature, bool isLogout /*= true*/)
 		assert(creature->getParent() == nullptr);
 	}
 
-	creature->onRemovedCreature();
+	creature->didRemove();
 
 	autoList.erase(creature->getID());
-
-	removeCreatureCheck(creature);
-	for(CreatureList::iterator it = creature->summons.begin(); it != creature->summons.end(); ++it)
-		removeCreature((*it).get());
 
 	return true;
 }
@@ -999,7 +998,7 @@ bool Game::playerMoveThing(uint32_t playerId, const Position& fromPos,
 	if(fromPos.x == 0xFFFF)
 	{
 		if(fromPos.y & 0x40)
-			fromIndex = static_cast<uint8_t>(fromPos.z);
+			fromIndex = fromPos.z;
 		else
 			fromIndex = static_cast<uint8_t>(fromPos.y);
 	}
@@ -1164,7 +1163,7 @@ ReturnValue Game::internalMoveCreature(Creature* creature, Direction direction, 
 	Cylinder* toTile = nullptr;
 
 	Position destPos = getNextPosition(direction, currentPos);
-	if(direction < SOUTHWEST && creature->getPlayer())
+	if(direction < Direction::SOUTH_WEST && creature->getPlayer())
 	{
 		Tile* tmpTile = nullptr;
 		if(currentPos.z != 8 && creature->getTile()->hasHeight(3)) //try go up
@@ -1256,7 +1255,7 @@ bool Game::playerMoveItem(uint32_t playerId, const Position& fromPos,
 	if(fromPos.x == 0xFFFF)
 	{
 		if(fromPos.y & 0x40)
-			fromIndex = static_cast<uint8_t>(fromPos.z);
+			fromIndex = fromPos.z;
 		else
 			fromIndex = static_cast<uint8_t>(fromPos.y);
 	}
@@ -3370,6 +3369,14 @@ bool Game::playerLookAt(uint32_t playerId, const Position& pos, uint16_t spriteI
 		ss << std::endl << "Position: [X: " << thingPos.x << "] [Y: " << thingPos.y << "] [Z: " << thingPos.z << "].";
 
 	player->sendTextMessage(MSG_INFO_DESCR, ss.str());
+
+	if (Item* item = thing->getItem()) {
+		if (item->isReadable() && item->getKind()->allowDistRead && !item->getText().empty()) {
+			player->setWriteItem(nullptr);
+			player->sendTextWindow(item, 0, false);
+		}
+	}
+
 	return true;
 }
 
@@ -3952,7 +3959,6 @@ void Game::checkCreatureWalk(uint32_t creatureId)
 	if(creature && creature->getHealth() > 0)
 	{
 		creature->onWalk();
-		cleanup();
 	}
 }
 
@@ -3970,60 +3976,7 @@ void Game::checkCreatureAttack(uint32_t creatureId)
 		creature->onAttacking(0);
 }
 
-void Game::addCreatureCheck(Creature* creature)
-{
-	if(creature->isRemoved())
-		return;
 
-	creature->checked = true;
-	if(creature->checkVector >= 0) //already in a vector, or about to be added
-		return;
-
-	toAddCheckCreatureVector.push_back(creature);
-	creature->checkVector = random_range(0, EVENT_CREATURECOUNT - 1);
-}
-
-void Game::removeCreatureCheck(Creature* creature)
-{
-	if(creature->checkVector == -1) //not in any vector
-		return;
-
-	creature->checked = false;
-}
-
-void Game::checkCreatures()
-{
-	server.scheduler().addTask(SchedulerTask::create(
-			std::chrono::milliseconds(EVENT_CHECK_CREATURE_INTERVAL), std::bind(&Game::checkCreatures, this)));
-	checkCreatureLastIndex++;
-	if(checkCreatureLastIndex == EVENT_CREATURECOUNT)
-		checkCreatureLastIndex = 0;
-
-	CreatureVector::iterator it;
-	for(it = toAddCheckCreatureVector.begin(); it != toAddCheckCreatureVector.end(); ++it)
-		checkCreatureVectors[(*it)->checkVector].push_back(*it);
-
-	toAddCheckCreatureVector.clear();
-	CreatureVector& checkCreatureVector = checkCreatureVectors[checkCreatureLastIndex];
-	for(it = checkCreatureVector.begin(); it != checkCreatureVector.end();)
-	{
-		if((*it)->checked)
-		{
-			if((*it)->getHealth() > 0 || !(*it)->onDeath())
-				(*it)->onThink(EVENT_CREATURE_THINK_INTERVAL);
-
-			++it;
-		}
-		else
-		{
-			(*it)->checkVector = -1;
-			autorelease(*it);
-			it = checkCreatureVector.erase(it);
-		}
-	}
-
-	cleanup();
-}
 
 void Game::changeSpeed(Creature* creature, int32_t varSpeedDelta)
 {
@@ -4078,6 +4031,10 @@ void Game::internalCreatureChangeOutfit(Creature* creature, const Outfit_t& outf
 
 void Game::internalCreatureChangeVisible(Creature* creature, Visible_t visible)
 {
+	if (creature->isRemoved()) {
+		return;
+	}
+
 	const SpectatorList& list = getSpectators(creature->getPosition());
 	SpectatorList::const_iterator it;
 
@@ -4086,7 +4043,7 @@ void Game::internalCreatureChangeVisible(Creature* creature, Visible_t visible)
 	for(it = list.begin(); it != list.end(); ++it)
 	{
 		if((tmpPlayer = (*it)->getPlayer()))
-			tmpPlayer->sendCreatureChangeVisible(creature, visible);
+			tmpPlayer->sendCreatureChangeVisible(creature, visible, BOOST_CURRENT_FUNCTION);
 	}
 
 	//event method
@@ -4204,7 +4161,7 @@ bool Game::combatChangeHealth(CombatType_t combatType, Creature* attacker, Creat
 	}
 	else
 	{
-		const SpectatorList& list = getSpectators(targetPos);
+		SpectatorList list = getSpectators(targetPos);
 		if(!target->isAttackable() || Combat::canDoCombat(attacker, target) != RET_NOERROR)
 		{
 			addMagicEffect(list, targetPos, MAGIC_EFFECT_POFF);
@@ -4559,13 +4516,23 @@ void Game::internalDecayItem(Item* item)
 
 void Game::checkDecay()
 {
+	int64_t startTime = OTSYS_TIME();
+
 	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(EVENT_DECAYINTERVAL),
 		std::bind(&Game::checkDecay, this)));
 
 	size_t bucket = (lastBucket + 1) % EVENT_DECAYBUCKETS;
-	for(ItemList::iterator it = decayItems[bucket].begin(); it != decayItems[bucket].end();)
+	lastBucket = bucket;
+
+	ItemList& items = decayItems[bucket];
+	if (items.empty()) {
+		return;
+	}
+
+	for(ItemList::iterator it = items.begin(); it != items.end();)
 	{
 		Item* item = (*it).get();
+
 		int32_t decreaseTime = EVENT_DECAYINTERVAL * EVENT_DECAYBUCKETS;
 		if(item->getDuration() - decreaseTime < 0)
 			decreaseTime = item->getDuration();
@@ -4602,8 +4569,12 @@ void Game::checkDecay()
 			++it;
 	}
 
-	lastBucket = bucket;
 	cleanup();
+
+	double duration = static_cast<double>(OTSYS_TIME() - startTime) / 1000.0;
+	if (duration > 0.5) {
+		LOGw("Decaying items took too long with " << duration << " seconds!");
+	}
 }
 
 void Game::checkLight()
@@ -5185,6 +5156,9 @@ bool Game::broadcastMessage(const std::string& text, MessageClasses type)
 
 Position Game::getClosestFreeTile(Creature* creature, Position pos, bool extended/* = false*/, bool ignoreHouse/* = true*/)
 {
+	typedef std::pair<int32_t, int32_t> PositionPair;
+	typedef std::vector<PositionPair> PairVector;
+
 	PairVector relList;
 	relList.push_back(PositionPair(0, 0));
 	relList.push_back(PositionPair(-1, -1));

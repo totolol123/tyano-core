@@ -251,14 +251,13 @@ bool Map::checkSightLine(const Position& origin, const Position& destination) co
 	int32_t max = dx;
 	int32_t dir = 0;
 
-	if (dy > max) {
-		max = dy;
-		dir = 1;
-	}
-
 	if (dz > max) {
 		max = dz;
 		dir = 2;
+	}
+	else if (dy > max) {
+		max = dy;
+		dir = 1;
 	}
 
 	switch (dir) {
@@ -271,14 +270,23 @@ bool Map::checkSightLine(const Position& origin, const Position& destination) co
 			std::swap(dx, dy);
 			break;
 
-		case 2:
+		case 2: {
 			//x -> z
 			//y -> y
 			//z -> x
-			std::swap(start.x, start.z);
-			std::swap(end.x, end.z);
+			uint16_t temp;
+
+			temp = start.x;
+			start.x = start.z;
+			start.z = temp;
+
+			temp = end.x;
+			end.x = end.z;
+			end.z = temp;
+
 			std::swap(dx, dz);
 			break;
+		}
 
 		default:
 			//x -> x
@@ -519,28 +527,28 @@ bool Map::getPathMatching(const Creature* creature, std::list<Direction>& direct
 
 		found = found->parent;
 		if (dx == 1 && dy == 1) {
-			directions.push_front(NORTHWEST);
+			directions.push_front(Direction::NORTH_WEST);
 		}
 		else if (dx == -1 && dy == 1) {
-			directions.push_front(NORTHEAST);
+			directions.push_front(Direction::NORTH_EAST);
 		}
 		else if (dx == 1 && dy == -1) {
-			directions.push_front(SOUTHWEST);
+			directions.push_front(Direction::SOUTH_WEST);
 		}
 		else if (dx == -1 && dy == -1) {
-			directions.push_front(SOUTHEAST);
+			directions.push_front(Direction::SOUTH_EAST);
 		}
 		else if (dx == 1) {
-			directions.push_front(WEST);
+			directions.push_front(Direction::WEST);
 		}
 		else if (dx == -1) {
-			directions.push_front(EAST);
+			directions.push_front(Direction::EAST);
 		}
 		else if (dy == 1) {
-			directions.push_front(NORTH);
+			directions.push_front(Direction::NORTH);
 		}
 		else if (dy == -1) {
-			directions.push_front(SOUTH);
+			directions.push_front(Direction::SOUTH);
 		}
 	}
 
@@ -683,28 +691,28 @@ bool Map::getPathTo(const Creature* creature, const Position& destination, std::
 
 		found = found->parent;
 		if (dx == -1 && dy == -1) {
-			directions.push_back(NORTHWEST);
+			directions.push_back(Direction::NORTH_WEST);
 		}
 		else if (dx == 1 && dy == -1) {
-			directions.push_back(NORTHEAST);
+			directions.push_back(Direction::NORTH_EAST);
 		}
 		else if (dx == -1 && dy == 1) {
-			directions.push_back(SOUTHWEST);
+			directions.push_back(Direction::SOUTH_WEST);
 		}
 		else if (dx == 1 && dy == 1) {
-			directions.push_back(SOUTHEAST);
+			directions.push_back(Direction::SOUTH_EAST);
 		}
 		else if (dx == -1) {
-			directions.push_back(WEST);
+			directions.push_back(Direction::WEST);
 		}
 		else if (dx == 1) {
-			directions.push_back(EAST);
+			directions.push_back(Direction::EAST);
 		}
 		else if (dy == -1) {
-			directions.push_back(NORTH);
+			directions.push_back(Direction::NORTH);
 		}
 		else if (dy == 1) {
-			directions.push_back(SOUTH);
+			directions.push_back(Direction::SOUTH);
 		}
 	}
 
@@ -742,9 +750,9 @@ void Map::getSpectators(SpectatorList& spectators, const Position& center, bool 
 		int32_t deltaZ = std::abs(static_cast<int32_t>(center.z) - static_cast<int32_t>(z));
 
 		uint16_t minX = static_cast<uint16_t>(std::max(0, std::min(basicMinX + deltaZ, static_cast<int32_t>(Map::maxX))));
-		uint16_t maxX = static_cast<uint16_t>(std::max(0, std::min(basicMaxX - deltaZ, static_cast<int32_t>(Map::maxX))));
+		uint16_t maxX = static_cast<uint16_t>(std::max(0, std::min(basicMaxX + deltaZ, static_cast<int32_t>(Map::maxX))));
 		uint16_t minY = static_cast<uint16_t>(std::max(0, std::min(basicMinY + deltaZ, static_cast<int32_t>(Map::maxY))));
-		uint16_t maxY = static_cast<uint16_t>(std::max(0, std::min(basicMaxY - deltaZ, static_cast<int32_t>(Map::maxY))));
+		uint16_t maxY = static_cast<uint16_t>(std::max(0, std::min(basicMaxY + deltaZ, static_cast<int32_t>(Map::maxY))));
 
 		if (maxX < minX || maxY < minY) {
 			continue;
@@ -805,14 +813,6 @@ void Map::getSpectators(SpectatorList& spectators, const Position& center, bool 
 		if (isUnderground(center.z)) {
 			minZ = static_cast<uint16_t>(std::max(static_cast<int32_t>(center.z) - 2, 0));
 			maxZ = static_cast<uint16_t>(std::min(static_cast<uint32_t>(center.z) + 2, static_cast<uint32_t>(Map::maxZ)));
-		}
-		else if (center.z == 6) {
-			minZ = 0;
-			maxZ = 8;
-		}
-		else if (center.z == 7) {
-			minZ = 0;
-			maxZ = 9;
 		}
 		else {
 			minZ = 0;
@@ -960,6 +960,10 @@ void Map::onCreatureMoved(Creature* creature, const Tile* fromTile, const Tile* 
 
 
 bool Map::placeCreature(const Position& center, Creature* creature, bool extendedRangeInSight /*= false*/, bool ignoreObstacles /*= false*/) {
+	// TODO refactor
+	typedef std::pair<int32_t, int32_t> PositionPair;
+	typedef std::vector<PositionPair> PairVector;
+
 	bool placeInProtectionZone = false;
 	bool tileIsValid = false;
 

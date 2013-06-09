@@ -275,6 +275,12 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 					uint32_t tileflags = 0;
 
 					uint16_t px = base_x + tileCoord->_x, py = base_y + tileCoord->_y, pz = base_z;
+					if (!Position::isValid(px, py, pz)) {
+						LOGe("Map contains tile at invalid position " << px << "/" << py << "/" << pz << ".");
+						nodeTile = f.getNextNode(nodeTile, type);
+						continue;
+					}
+
 					House* house = nullptr;
 					if(type == OTBM_HOUSETILE)
 					{
