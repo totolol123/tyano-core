@@ -310,7 +310,7 @@ class Item : public Thing {
 		bool hasSubType() const;
 		bool hasCharges() const;
 
-		bool canDecay();
+		bool canDecay(bool ignoreRemoved = false);
 		virtual bool canRemove() const;
 		virtual bool canTransform() const;
 		bool canWriteText() const;

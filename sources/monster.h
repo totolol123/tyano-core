@@ -36,19 +36,85 @@ enum TargetSearchType_t
 };
 
 
-class Monster : public Creature
-{
+class Monster : public Creature {
+
+public:
+
+	static MonsterP create (MonsterType* type);
+	static MonsterP create (MonsterType* type, Raid* raid);
+	static MonsterP create (MonsterType* type, Spawn* spawn);
+	static MonsterP create (const std::string& name);
+
+	virtual ~Monster();
+
+            bool       canBeChallengedBy  (const CreatureP& convincer) const;
+            bool       canBeConvincedBy   (const CreatureP& convincer, bool forced = false) const;
+    virtual bool       canSeeCreature     (const CreatureP& creature) const;
+            bool       challenge          (const CreatureP& challenger);
+    virtual bool       convince           (const CreatureP& convincer, bool forced = false);
+	virtual CreatureP  getDirectOwner     ();
+	virtual CreaturePC getDirectOwner     () const;
+            CreatureP  getMaster          () const;
+            bool       hasMaster          () const;
+            bool       hasRaid            () const;
+            bool       hasSpawn           () const;
+	virtual bool       isEnemy            (const CreaturePC& creature) const;
+	        void       release            ();
+            void       removeFromRaid     ();
+            void       removeFromSpawn    ();
+            bool       target             (const CreatureP& creature);
+            bool       targetClosestEnemy ();
+            bool       targetRandomEnemy  ();
+    virtual bool       willRemove         ();
+
+
+protected:
+
+    virtual bool hasSomethingToThinkAbout () const;
+	virtual bool hasToThinkAboutCreature  (const CreaturePC& creature) const;
+	virtual void onThink                  (Duration elapsedTime);
+
+
+private:
+
+	void babble                 ();
+	void follow                 (const CreatureP& creature);
+	bool isMasterInRange        () const;
+	void notifyMasterChanged    (const CreatureP& previousMaster);
+	void retarget               ();
+	void setMaster              (const CreatureP& master);
+	void setRetargetDelay       (Duration retargetDelay);
+	bool shouldBeRemoved        () const;
+	bool shouldTeleportToMaster () const;
+	bool teleportToMaster       ();
+	void updateBabbling         (Duration elapsedTime);
+	void updateFollowing        ();
+	void updateMovement         ();
+	void updateRelationship     ();
+	void updateRetargeting      (Duration elapsedTime);
+	void updateTarget           ();
+
+
+	LOGGER_DECLARATION;
+
+	Duration     _babbleDelay;
+	CreatureP    _master;
+	Raid*        _raid;
+	Duration     _retargetDelay;
+	Spawn*       _spawn;
+	MonsterType* _type;
+
+
+
+
+
+
+
 	private:
-		Monster(MonsterType* _mType);
+		Monster(MonsterType* _mType, Raid* raid, Spawn* spawn);
 
 	public:
-#ifdef __ENABLE_SERVER_DIAGNOSTIC__
-		static uint32_t monsterCount;
-#endif
-		virtual ~Monster();
 
-		static boost::intrusive_ptr<Monster> createMonster(MonsterType* mType);
-		static boost::intrusive_ptr<Monster> createMonster(const std::string& name);
 
 		virtual Monster* getMonster() {return this;}
 		virtual const Monster* getMonster() const {return this;}
@@ -78,27 +144,13 @@ class Monster : public Creature
 		virtual bool canSeeInvisibility() const;
 		uint32_t getManaCost() const;
 
-		void setSpawn(Spawn* _spawn) {spawn = _spawn;}
-		void setRaid(Raid* _raid) {raid = _raid;}
-
 		virtual void onAttackedCreature(Creature* target);
 		virtual void onAttackedCreatureDisappear(bool isLogout);
 		virtual void onAttackedCreatureDrain(Creature* target, int32_t points);
 
-		virtual void onCreatureAppear(const Creature* creature);
-		virtual void onCreatureDisappear(const Creature* creature, bool isLogout);
-		virtual void onCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
-			const Tile* oldTile, const Position& oldPos, bool teleport);
-
 		virtual void drainHealth(Creature* attacker, CombatType_t combatType, int32_t damage);
 		virtual void changeHealth(int32_t healthChange);
 		virtual bool getNextStep(Direction& dir, uint32_t& flags);
-		virtual void onFollowCreatureComplete(const Creature* creature);
-
-		virtual void onThink(uint32_t interval);
-
-		virtual bool challengeCreature(Creature* creature);
-		virtual bool convinceCreature(Creature* creature);
 
 		virtual void setNormalCreatureLight();
 		virtual bool getCombatValues(int32_t& min, int32_t& max);
@@ -106,68 +158,28 @@ class Monster : public Creature
 		virtual void doAttacking(uint32_t interval);
 		virtual bool hasExtraSwing() {return extraMeleeAttack;}
 
-		bool searchTarget(TargetSearchType_t searchType = TARGETSEARCH_DEFAULT);
-		bool selectTarget(Creature* creature);
-
-		const CreatureList& getTargetList() {return targetList;}
-		const CreatureList& getFriendList() {return friendList;}
-
-		bool isTarget(Creature* creature);
 		bool isFleeing() const;
 
 		virtual BlockType_t blockHit(Creature* attacker, CombatType_t combatType, int32_t& damage,
 			bool checkDefense = false, bool checkArmor = false);
 
-	private:
-
-		LOGGER_DECLARATION;
-
-		CreatureList targetList;
-		CreatureList friendList;
-
-		MonsterType* mType;
-
 		int32_t minCombatValue;
 		int32_t maxCombatValue;
 		uint32_t attackTicks;
 		uint32_t targetTicks;
-		uint32_t targetChangeTicks;
 		uint32_t defenseTicks;
 		uint32_t yellTicks;
-		int32_t targetChangeCooldown;
 		bool resetTicks;
-		bool isIdle;
 		bool extraMeleeAttack;
 
-		Spawn* spawn;
-		Raid* raid;
-
-		bool isMasterInRange;
-		bool teleportToMaster;
-
-		virtual void onCreatureEnter(Creature* creature);
-		virtual void onCreatureLeave(Creature* creature);
-		void onCreatureFound(Creature* creature, bool pushFront = false);
 
 		bool doTeleportToMaster();
 		void updateLookDirection();
 
-		void updateTargetList();
-		void clearTargetList();
-		void clearFriendList();
-
 		virtual bool onDeath();
 		virtual boost::intrusive_ptr<Item> createCorpse(DeathList deathList);
-		bool despawn();
-		bool inDespawnRange(const Position& pos);
-
-		void setIdle(bool _idle);
-		void updateIdleStatus();
-		bool getIdleStatus() const {return isIdle;}
-
-		virtual void onAddCondition(ConditionType_t type, bool hadCondition);
-		virtual void onEndCondition(ConditionType_t type);
-		virtual void onCreatureConvinced(const Creature* convincer, const Creature* creature);
+		bool despawn() const;
+		bool inDespawnRange(const Position& pos) const;
 
 		bool canUseAttack(const Position& pos, const Creature* target) const;
 		bool canUseSpell(const Position& pos, const Position& targetPos,
@@ -183,12 +195,8 @@ class Monster : public Creature
 		bool pushCreature(Creature* creature);
 		void pushCreatures(Tile* tile);
 
-		void onThinkTarget(uint32_t interval);
 		void onThinkYell(uint32_t interval);
 		void onThinkDefense(uint32_t interval);
-
-		bool isFriend(const Creature* creature);
-		bool isOpponent(const Creature* creature);
 
 		virtual uint64_t getLostExperience() const;
 		virtual void dropLoot(Container* corpse);

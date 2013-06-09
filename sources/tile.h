@@ -127,7 +127,6 @@ class TileItemVector
 class Tile : public Cylinder
 {
 	public:
-		static Tile& nullTile;
 		Tile(uint16_t x, uint16_t y, uint16_t z);
 		virtual ~Tile();
 

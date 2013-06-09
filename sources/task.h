@@ -23,10 +23,8 @@ class Task {
 
 public:
 
-	typedef std::chrono::milliseconds             Duration;
-	typedef boost::function<void(void)>           Function;
-	typedef std::chrono::steady_clock::time_point TimePoint;
-	typedef std::unique_ptr<Task>                 UniquePointer;
+	typedef boost::function<void(void)>  Function;
+	typedef std::unique_ptr<Task>        UniquePointer;
 
 
 	static UniquePointer create(const Function& function);
@@ -34,8 +32,8 @@ public:
 
 	virtual ~Task();
 
-	TimePoint getExpiration() const;
-	void      setExpiration(TimePoint expiration);
+	Time getExpiration() const;
+	void setExpiration(Time expiration);
 
 	void operator()() const;
 
@@ -48,7 +46,7 @@ protected:
 
 private:
 
-	TimePoint _expiration;
+	Time      _expiration;
 	Function  _function;
 
 };

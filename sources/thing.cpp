@@ -25,6 +25,9 @@
 #include "player.h"
 
 
+LOGGER_DEFINITION(Thing);
+
+
 
 Cylinder* Thing::getTopParent()
 {
@@ -107,11 +110,8 @@ Position Thing::getPosition() const
 	if(const Tile* tile = getTile())
 		return tile->getPosition();
 
-#ifdef __DEBUG_MOVESYS__
-	LOGe("[Thing::getTile] nullptr tile");
-	DEBUG_REPORT
-#endif
-	return Tile::nullTile.getPosition();
+	LOGe("Thing::getPosition() called for thing which is not connected to a container or a tile.");
+	return Position::INVALID;
 }
 
 bool Thing::isRemoved() const

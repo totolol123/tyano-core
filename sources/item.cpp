@@ -1568,9 +1568,9 @@ void Item::setUniqueId(int32_t uid)
 	ScriptEnviroment::addUniqueThing(this);
 }
 
-bool Item::canDecay()
+bool Item::canDecay(bool ignoreRemoved)
 {
-	if(isRemoved())
+	if(!ignoreRemoved && isRemoved())
 		return false;
 
 	if(isLoadedFromMap() && (getUniqueId() || (getActionId() && getContainer())))

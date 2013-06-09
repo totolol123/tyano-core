@@ -28,6 +28,7 @@
 #include "creature.h"
 #include "creatureevent.h"
 #include "items.h"
+#include "monster.h"
 #include "player.h"
 #include "weapons.h"
 #include "vocation.h"
@@ -272,6 +273,8 @@ ReturnValue Combat::canDoCombat(const Creature* attacker, const Creature* target
 	if(!success)
 		return RET_NOTPOSSIBLE;
 
+	const Monster* attackerMonster = attacker->getMonster();
+
 	bool checkZones = false;
 	if(const Player* targetPlayer = target->getPlayer())
 	{
@@ -279,8 +282,8 @@ ReturnValue Combat::canDoCombat(const Creature* attacker, const Creature* target
 			return RET_YOUMAYNOTATTACKTHISPLAYER;
 
 		const Player* attackerPlayer = nullptr;
-		if((attackerPlayer = attacker->getPlayer()) || (attacker->getMaster()
-			&& (attackerPlayer = attacker->getMaster()->getPlayer())))
+		if((attackerPlayer = attacker->getPlayer()) || (attackerMonster != nullptr && attackerMonster->getMaster()
+			&& (attackerPlayer = attackerMonster->getMaster()->getPlayer())))
 		{
 			checkZones = true;
 			if((server.game().getWorldType() == WORLD_TYPE_NO_PVP && !Combat::isInPvpZone(attacker, target)) ||
@@ -297,13 +300,14 @@ ReturnValue Combat::canDoCombat(const Creature* attacker, const Creature* target
 			return RET_YOUMAYNOTATTACKTHISCREATURE;
 
 		const Player* attackerPlayer = nullptr;
-		if((attackerPlayer = attacker->getPlayer()) || (attacker->getMaster()
-			&& (attackerPlayer = attacker->getMaster()->getPlayer())))
+		if((attackerPlayer = attacker->getPlayer()) || (attackerMonster != nullptr && attackerMonster->getMaster()
+			&& (attackerPlayer = attackerMonster->getMaster()->getPlayer())))
 		{
 			if(attackerPlayer->hasFlag(PlayerFlag_CannotAttackMonster))
 				return RET_YOUMAYNOTATTACKTHISCREATURE;
 
-			if(target->getMaster() && target->getMaster()->getPlayer())
+			const Monster* targetMonster = target->getMonster();
+			if(targetMonster != nullptr && targetMonster->getMaster() && targetMonster->getMaster()->getPlayer())
 			{
 				checkZones = true;
 				if(server.game().getWorldType() == WORLD_TYPE_NO_PVP && !Combat::isInPvpZone(attacker, target))
@@ -345,7 +349,8 @@ ReturnValue Combat::canTargetCreature(const Player* player, const Creature* targ
 		if(target->getZone() == ZONE_PROTECTION)
 			return RET_YOUMAYNOTATTACKAPERSONINPROTECTIONZONE;
 
-		if(target->getPlayer() || (target->getMaster() && target->getMaster()->getPlayer()))
+		const Monster* targetMonster = target->getMonster();
+		if(target->getPlayer() || (targetMonster != nullptr && targetMonster->getMaster() && targetMonster->getMaster()->getPlayer()))
 		{
 			if(player->getZone() == ZONE_NOPVP)
 				return RET_ACTIONNOTPERMITTEDINANOPVPZONE;
@@ -621,10 +626,12 @@ void Combat::combatTileEffects(const SpectatorList& list, Creature* caster, Tile
 		Player* player = nullptr;
 		if(caster)
 		{
+			const Monster* casterMonster = caster->getMonster();
+
 			if(caster->getPlayer())
 				player = caster->getPlayer();
-			else if(caster->isPlayerSummon())
-				player = caster->getPlayerMaster();
+			else if(casterMonster != nullptr && casterMonster->hasMaster())
+				player = casterMonster->getMaster()->getPlayer();
 		}
 
 		uint32_t itemId = params.itemId;
@@ -761,7 +768,7 @@ void Combat::CombatFunc(Creature* caster, const Position& pos, const CombatArea*
 		{
 			for(CreatureVector::iterator cit = creatures->begin(), cend = creatures->end(); skip && cit != cend; ++cit)
 			{
-				if(params.targetPlayersOrSummons && !(*cit)->getPlayer() && !(*cit)->isPlayerSummon())
+				if(params.targetPlayersOrSummons && !(*cit)->getPlayer() && !(*cit)->hasController())
 					continue;
 
 				if(params.targetCasterOrTopMost)
@@ -1271,23 +1278,23 @@ void CombatArea::setupArea(const std::list<uint32_t>& list, uint32_t rows)
 {
 	//NORTH
 	MatrixArea* area = createArea(list, rows);
-	areas[NORTH] = area;
+	areas[Direction::NORTH] = area;
 	uint32_t maxOutput = std::max(area->getCols(), area->getRows()) * 2;
 
 	//SOUTH
 	MatrixArea* southArea = new MatrixArea(maxOutput, maxOutput);
 	copyArea(area, southArea, MATRIXOPERATION_ROTATE180);
-	areas[SOUTH] = southArea;
+	areas[Direction::SOUTH] = southArea;
 
 	//EAST
 	MatrixArea* eastArea = new MatrixArea(maxOutput, maxOutput);
 	copyArea(area, eastArea, MATRIXOPERATION_ROTATE90);
-	areas[EAST] = eastArea;
+	areas[Direction::EAST] = eastArea;
 
 	//WEST
 	MatrixArea* westArea = new MatrixArea(maxOutput, maxOutput);
 	copyArea(area, westArea, MATRIXOPERATION_ROTATE270);
-	areas[WEST] = westArea;
+	areas[Direction::WEST] = westArea;
 }
 
 void CombatArea::setupArea(int32_t length, int32_t spread)
@@ -1363,23 +1370,23 @@ void CombatArea::setupExtArea(const std::list<uint32_t>& list, uint32_t rows)
 
 	//NORTH-WEST
 	MatrixArea* area = createArea(list, rows);
-	areas[NORTHWEST] = area;
+	areas[Direction::NORTH_WEST] = area;
 	uint32_t maxOutput = std::max(area->getCols(), area->getRows()) * 2;
 
 	//NORTH-EAST
 	MatrixArea* neArea = new MatrixArea(maxOutput, maxOutput);
 	copyArea(area, neArea, MATRIXOPERATION_MIRROR);
-	areas[NORTHEAST] = neArea;
+	areas[Direction::NORTH_EAST] = neArea;
 
 	//SOUTH-WEST
 	MatrixArea* swArea = new MatrixArea(maxOutput, maxOutput);
 	copyArea(area, swArea, MATRIXOPERATION_FLIP);
-	areas[SOUTHWEST] = swArea;
+	areas[Direction::SOUTH_WEST] = swArea;
 
 	//SOUTH-EAST
 	MatrixArea* seArea = new MatrixArea(maxOutput, maxOutput);
 	copyArea(swArea, seArea, MATRIXOPERATION_MIRROR);
-	areas[SOUTHEAST] = seArea;
+	areas[Direction::SOUTH_EAST] = seArea;
 
 	hasExtArea = true;
 }
@@ -1435,7 +1442,7 @@ void MagicField::onStepInField(Creature* creature, bool purposeful/* = true*/)
 		{
 			bool harmful = true;
 			if((server.game().getWorldType() == WORLD_TYPE_NO_PVP || getTile()->hasFlag(TILESTATE_NOPVPZONE))
-				&& (owner->getPlayer() || owner->isPlayerSummon()))
+				&& (owner->getPlayer() || owner->hasController()))
 				harmful = false;
 			else if(Player* targetPlayer = creature->getPlayer())
 			{

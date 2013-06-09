@@ -54,6 +54,37 @@
 LOGGER_DEFINITION(Player);
 
 
+
+CreatureP Player::getDirectOwner() {
+	return nullptr;
+}
+
+
+CreaturePC Player::getDirectOwner() const {
+	return nullptr;
+}
+
+
+bool Player::isEnemy(const CreaturePC& creature) const {
+	if (creature == nullptr) {
+		assert(creature != nullptr);
+		return false;
+	}
+
+	return creature->isEnemy(this);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 AutoList<Player> Player::autoList;
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 uint32_t Player::playerCount = 0;
@@ -1222,7 +1253,7 @@ void Player::sendHouseWindow(House* house, uint32_t listId) const
 		client->sendHouseWindow(windowTextId, house, listId, text);
 }
 
-void Player::sendCreatureChangeVisible(const Creature* creature, Visible_t visible)
+void Player::sendCreatureChangeVisible(const Creature* creature, Visible_t visible, const char* callSource)
 {
 	if(!client)
 		return;
@@ -1232,9 +1263,9 @@ void Player::sendCreatureChangeVisible(const Creature* creature, Visible_t visib
 		|| (!player && canSeeInvisibility()))
 		sendCreatureChangeOutfit(creature, creature->getCurrentOutfit());
 	else if(visible == VISIBLE_DISAPPEAR || visible == VISIBLE_GHOST_DISAPPEAR)
-		sendCreatureDisappear(creature, creature->getTile()->getClientIndexOfThing(this, creature));
+		sendCreatureDisappear(creature, creature->getTile()->getClientIndexOfThing(this, creature), callSource);
 	else
-		sendCreatureAppear(creature);
+		sendCreatureAppear(creature, callSource);
 }
 
 void Player::sendAddContainerItem(const Container* container, const Item* item)
@@ -1299,7 +1330,7 @@ void Player::onRemoveTileItem(const Tile* tile, const Position& pos, const ItemK
 	}
 }
 
-void Player::onCreatureAppear(const Creature* creature)
+void Player::onCreatureAppear(const CreatureP& creature)
 {
 	Creature::onCreatureAppear(creature);
 	if(creature != this)
@@ -1516,10 +1547,9 @@ void Player::onWalk(Direction& dir)
 	setNextAction(OTSYS_TIME() + getStepDuration(dir));
 }
 
-void Player::onCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
-	const Tile* oldTile, const Position& oldPos, bool teleport)
+void Player::onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport)
 {
-	Creature::onCreatureMove(creature, newTile, newPos, oldTile, oldPos, teleport);
+	Creature::onCreatureMove(creature, origin, originTile, destination, destinationTile, teleport);
 	if(creature != this)
 		return;
 
@@ -1531,7 +1561,7 @@ void Player::onCreatureMove(const Creature* creature, const Tile* newTile, const
 		|| (tradePartner && !Position::areInRange<2,2,0>(tradePartner->getPosition(), getPosition()))))
 		server.game().internalCloseTrade(this);
 
-	if((teleport || oldPos.z != newPos.z) && !hasCustomFlag(PlayerCustomFlag_CanStairhop))
+	if((teleport || origin.z != destination.z) && !hasCustomFlag(PlayerCustomFlag_CanStairhop))
 	{
 		int32_t ticks = server.configManager().getNumber(ConfigManager::STAIRHOP_DELAY);
 		if(ticks > 0)
@@ -1694,9 +1724,9 @@ uint32_t Player::getNextActionTime() const
 	return time;
 }
 
-void Player::onThink(uint32_t interval)
+void Player::onThink(Duration elapsedTime)
 {
-	Creature::onThink(interval);
+	Creature::onThink(elapsedTime);
 	int64_t timeNow = OTSYS_TIME();
 	if(timeNow - lastPing >= 5000)
 	{
@@ -1715,7 +1745,7 @@ void Player::onThink(uint32_t interval)
 			server.game().removeCreature(this, true);
 	}
 
-	messageTicks += interval;
+	messageTicks += std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
 	if(messageTicks >= 1500)
 	{
 		messageTicks = 0;
@@ -2273,7 +2303,6 @@ void Player::dropCorpse(DeathList deathList)
 		sendStats();
 		sendIcons();
 
-		onIdleStatus();
 		server.game().addCreatureHealth(this);
 		server.game().internalTeleport(this, masterPosition, true);
 	}
@@ -2296,8 +2325,8 @@ boost::intrusive_ptr<Item> Player::createCorpse(DeathList deathList)
 	if(deathList[0].isCreatureKill())
 	{
 		ss << deathList[0].getKillerCreature()->getNameDescription();
-		if(deathList[0].getKillerCreature()->getMaster())
-			ss << " summoned by " << deathList[0].getKillerCreature()->getMaster()->getNameDescription();
+		if(deathList[0].getKillerCreature()->hasDirectOwner())
+			ss << " summoned by " << deathList[0].getKillerCreature()->getDirectOwner()->getNameDescription();
 	}
 	else
 		ss << deathList[0].getKillerName();
@@ -2309,8 +2338,8 @@ boost::intrusive_ptr<Item> Player::createCorpse(DeathList deathList)
 			if(deathList[1].isCreatureKill())
 			{
 				ss << " and by " << deathList[1].getKillerCreature()->getNameDescription();
-				if(deathList[1].getKillerCreature()->getMaster())
-					ss << " summoned by " << deathList[1].getKillerCreature()->getMaster()->getNameDescription();
+				if(deathList[1].getKillerCreature()->hasDirectOwner())
+					ss << " summoned by " << deathList[1].getKillerCreature()->getDirectOwner()->getNameDescription();
 			}
 			else
 				ss << " and by " << deathList[1].getKillerName();
@@ -2320,8 +2349,8 @@ boost::intrusive_ptr<Item> Player::createCorpse(DeathList deathList)
 			if(deathList[0].getKillerCreature()->getName() != deathList[1].getKillerCreature()->getName())
 			{
 				ss << " and by " << deathList[1].getKillerCreature()->getNameDescription();
-				if(deathList[1].getKillerCreature()->getMaster())
-					ss << " summoned by " << deathList[1].getKillerCreature()->getMaster()->getNameDescription();
+				if(deathList[1].getKillerCreature()->hasDirectOwner())
+					ss << " summoned by " << deathList[1].getKillerCreature()->getDirectOwner()->getNameDescription();
 			}
 		}
 		else if(asLowerCaseString(deathList[0].getKillerName()) != asLowerCaseString(deathList[1].getKillerName()))
@@ -3490,7 +3519,6 @@ void Player::onEndCondition(ConditionType_t type)
 	Creature::onEndCondition(type);
 	if(type == CONDITION_INFIGHT)
 	{
-		onIdleStatus();
 		clearAttacked();
 
 		pzLocked = false;
@@ -3606,9 +3634,9 @@ bool Player::checkLoginDelay(uint32_t playerId) const
 		ConfigManager::LOGIN_PROTECTION)) && !hasBeenAttacked(playerId));
 }
 
-void Player::onIdleStatus()
+void Player::onThinkingStopped()
 {
-	Creature::onIdleStatus();
+	Creature::onThinkingStopped();
 	if(getParty())
 		getParty()->clearPlayerPoints(this);
 }
@@ -3623,7 +3651,7 @@ void Player::onPlacedCreature()
 void Player::onAttackedCreatureDrain(Creature* target, int32_t points)
 {
 	Creature::onAttackedCreatureDrain(target, points);
-	if(party && target && (!target->getMaster() || !target->getMaster()->getPlayer())
+	if(party && target && (!target->hasController() || !target->getController())
 		&& target->getMonster() && target->getMonster()->isHostile()) //we have fulfilled a requirement for shared experience
 		getParty()->addPlayerDamageMonster(this, points);
 
@@ -3649,8 +3677,8 @@ void Player::onTargetCreatureGainHealth(Creature* target, int32_t points)
 		Player* tmpPlayer = nullptr;
 		if(target->getPlayer())
 			tmpPlayer = target->getPlayer();
-		else if(target->getMaster() && target->getMaster()->getPlayer())
-			tmpPlayer = target->getMaster()->getPlayer();
+		else if(target->hasController())
+			tmpPlayer = target->getController().get();
 
 		if(isPartner(tmpPlayer))
 			getParty()->addPlayerHealedMember(this, points);
@@ -3666,7 +3694,7 @@ bool Player::onKilledCreature(Creature* target, uint32_t& flags)
 		target->setDropLoot(LOOT_DROP_NONE);
 
 	Condition* condition = nullptr;
-	if(target->getMonster() && !target->isPlayerSummon() && !hasFlag(PlayerFlag_HasInfiniteStamina)
+	if(target->getMonster() && !target->hasController() && !hasFlag(PlayerFlag_HasInfiniteStamina)
 		&& (condition = Condition::createCondition(CONDITIONID_DEFAULT, CONDITION_HUNTING,
 		server.configManager().getNumber(ConfigManager::HUNTING_DURATION))))
 		addCondition(condition);
@@ -3779,16 +3807,25 @@ bool Player::isAttackable() const
 
 void Player::changeHealth(int32_t healthChange)
 {
+	int32_t previousHealth = health;
+
 	Creature::changeHealth(healthChange);
-	sendStats();
+
+	if (health != previousHealth) {
+		sendStats();
+	}
 }
 
 void Player::changeMana(int32_t manaChange)
 {
+	int32_t previousMana = mana;
+
 	if(!hasFlag(PlayerFlag_HasInfiniteMana))
 		Creature::changeMana(manaChange);
 
-	sendStats();
+	if (mana != previousMana) {
+		sendStats();
+	}
 }
 
 void Player::changeSoul(int32_t soulChange)
@@ -4030,7 +4067,7 @@ bool Player::addUnjustifiedKill(const Player* attacked)
 		{
 			setSkullEnd(now + server.configManager().getNumber(ConfigManager::BLACK_SKULL_LENGTH), false, SKULL_BLACK);
 			setAttackedCreature(nullptr);
-			destroySummons();
+			killSummons();
 		}
 	}
 
@@ -4980,29 +5017,29 @@ uint16_t Player::getGhostAccess() const {return group ? group->getGhostAccess() 
 void Player::disconnect() {if(client) client->disconnect();}
 
 
-void Player::sendAddTileItem(const Tile* tile, const Position& pos, const Item* item)
-	{if(client) client->sendAddTileItem(tile, pos, tile->getClientIndexOfThing(this, item), item);}
+void Player::sendAddTileItem(const Tile* tile, const Position& pos, const Item* item, const char* callSource)
+	{if(client) client->sendAddTileItem(tile, PositionEx(pos, tile->getClientIndexOfThing(this, item)), item, callSource);}
 void Player::sendUpdateTileItem(const Tile* tile, const Position& pos, const Item* oldItem, const Item* newItem)
-	{if(client) client->sendUpdateTileItem(tile, pos, tile->getClientIndexOfThing(this, oldItem), newItem);}
-void Player::sendRemoveTileItem(const Tile* tile, const Position& pos, uint32_t stackpos, const Item* item)
-	{if(client) client->sendRemoveTileItem(tile, pos, stackpos);}
+	{if(client) client->sendUpdateTileItem(tile, PositionEx(pos, tile->getClientIndexOfThing(this, oldItem)), newItem);}
+void Player::sendRemoveTileItem(const Tile* tile, const Position& pos, uint32_t stackpos, const Item* item, const char* callSource)
+	{if(client) client->sendRemoveTileItem(tile, PositionEx(pos, stackpos), item, callSource);}
 void Player::sendUpdateTile(const Tile* tile, const Position& pos)
 	{if(client) client->sendUpdateTile(tile, pos);}
 
 void Player::sendChannelMessage(std::string author, std::string text, SpeakClasses type, uint8_t channel)
 	{if(client) client->sendChannelMessage(author, text, type, channel);}
-void Player::sendCreatureAppear(const Creature* creature)
-	{if(client) client->sendAddCreature(creature, creature->getPosition(), creature->getTile()->getClientIndexOfThing(
-		this, creature));}
-void Player::sendCreatureDisappear(const Creature* creature, uint32_t stackpos)
-	{if(client) client->sendRemoveCreature(creature, creature->getPosition(), stackpos);}
+void Player::sendCreatureAppear(const Creature* creature, const char* callSource)
+	{if(client) client->sendAddCreature(creature, PositionEx(creature->getPosition(), creature->getTile()->getClientIndexOfThing(
+		this, creature)), callSource);}
+void Player::sendCreatureDisappear(const Creature* creature, uint32_t stackpos, const char* callSource)
+	{if(client) client->sendRemoveCreature(creature, PositionEx(creature->getPosition(), stackpos), callSource);}
 void Player::sendCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
-	const Tile* oldTile, const Position& oldPos, uint32_t oldStackpos, bool teleport)
-	{if(client) client->sendMoveCreature(creature, newTile, newPos, newTile->getClientIndexOfThing(
-		this, creature), oldTile, oldPos, oldStackpos, teleport);}
+	const Tile* oldTile, const Position& oldPos, uint32_t oldStackpos, bool teleport, const char* callSource)
+	{if(client) client->sendMoveCreature(creature, newTile, PositionEx(newPos, newTile->getClientIndexOfThing(
+		this, creature)), oldTile, PositionEx(oldPos, oldStackpos), teleport, callSource);}
 
 void Player::sendCreatureTurn(const Creature* creature)
-	{if(client) client->sendCreatureTurn(creature, creature->getTile()->getClientIndexOfThing(this, creature));}
+	{if(client) client->sendCreatureTurn(creature, PositionEx(creature->getPosition(), creature->getTile()->getClientIndexOfThing(this, creature)));}
 void Player::sendCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos)
 	{if(client) client->sendCreatureSay(creature, type, text, pos);}
 void Player::sendCreatureSquare(const Creature* creature, SquareColor_t color)

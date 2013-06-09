@@ -140,7 +140,7 @@ class ScriptEnviroment
 		void streamVariant(std::stringstream& stream, const std::string& local, const LuaVariant& var);
 		void streamThing(std::stringstream& stream, const std::string& local, Thing* thing, uint32_t id = 0);
 		void streamPosition(std::stringstream& stream, const std::string& local, const PositionEx& position)
-			{streamPosition(stream, local, position, position.stackpos);}
+			{streamPosition(stream, local, position, position.index);}
 		void streamPosition(std::stringstream& stream, const std::string& local, const Position& position, uint32_t stackpos);
 		void streamOutfit(std::stringstream& stream, const std::string& local, const Outfit_t& outfit);
 
@@ -260,13 +260,14 @@ class LuaScriptInterface
 		//push/pop common structures
 		static void pushThing(lua_State* L, Thing* thing, uint32_t id = 0);
 		static void pushVariant(lua_State* L, const LuaVariant& var);
-		static void pushPosition(lua_State* L, const PositionEx& position) {pushPosition(L, position, position.stackpos);}
+		static void pushPosition(lua_State* L, const PositionEx& position) {pushPosition(L, position, position.index);}
 		static void pushPosition(lua_State* L, const Position& position, uint32_t stackpos);
 		static void pushOutfit(lua_State* L, const Outfit_t& outfit);
 		static void pushCallback(lua_State* L, int32_t callback);
 
 		static LuaVariant popVariant(lua_State* L);
 		static void popPosition(lua_State* L, PositionEx& position);
+		static void popPosition(lua_State* L, Position& position);
 		static void popPosition(lua_State* L, Position& position, uint32_t& stackpos);
 		static bool popBoolean(lua_State* L);
 		static int64_t popNumber(lua_State* L);
@@ -331,8 +332,6 @@ class LuaScriptInterface
 		static int32_t luaDoCreateNpc(lua_State* L);
 		static int32_t luaDoSummonMonster(lua_State* L);
 		static int32_t luaDoConvinceCreature(lua_State* L);
-		static int32_t luaGetMonsterTargetList(lua_State* L);
-		static int32_t luaGetMonsterFriendList(lua_State* L);
 		static int32_t luaDoMonsterSetTarget(lua_State* L);
 		static int32_t luaDoMonsterChangeTarget(lua_State* L);
 		static int32_t luaDoAddCondition(lua_State* L);

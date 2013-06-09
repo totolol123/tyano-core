@@ -75,11 +75,33 @@ void trimString(std::string& str);
 std::string parseParams(tokenizer::iterator &it, tokenizer::iterator end);
 
 std::string generateRecoveryKey(int32_t fieldCount, int32_t fieldLength);
-int32_t random_range(int32_t lowest_number, int32_t highest_number, DistributionType_t type = DISTRO_UNIFORM);
 
-int32_t round(float v);
 uint32_t rand24b();
 float box_muller(float m, float s);
+
+template<class T>
+T random_range(T lowestNumber, T highestNumber, DistributionType_t type = DISTRO_UNIFORM) {
+	if(highestNumber == lowestNumber)
+		return lowestNumber;
+
+	if(lowestNumber > highestNumber)
+		std::swap(lowestNumber, highestNumber);
+
+	switch(type)
+	{
+		case DISTRO_UNIFORM:
+			return (lowestNumber + ((int32_t)rand24b() % (highestNumber - lowestNumber + 1)));
+		case DISTRO_NORMAL:
+			return (lowestNumber + int32_t(float(highestNumber - lowestNumber) * (float)std::min((float)1, std::max((float)0, box_muller(0.5, 0.25)))));
+		default:
+			break;
+	}
+
+	const float randMax = 16777216;
+	return (lowestNumber + int32_t(float(highestNumber - lowestNumber) * float(1.f - sqrt((1.f * rand24b()) / randMax))));
+}
+
+int32_t round(float v);
 
 Skulls_t getSkull(std::string strValue);
 PartyShields_t getPartyShield(std::string strValue);

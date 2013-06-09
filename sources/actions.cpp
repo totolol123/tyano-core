@@ -721,13 +721,13 @@ bool Action::executeUse(Player* player, Item* item, const PositionEx& fromPos, c
 
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 			env->streamThing(scriptstream, "item", item, env->addThing(item));
-			env->streamPosition(scriptstream, "fromPosition", fromPos, fromPos.stackpos);
+			env->streamPosition(scriptstream, "fromPosition", fromPos, fromPos.index);
 
-			Thing* thing = server.game().internalGetThing(player, toPos, toPos.stackpos);
+			Thing* thing = server.game().internalGetThing(player, toPos, toPos.index);
 			if(thing && (thing != item || !extendedUse))
 			{
 				env->streamThing(scriptstream, "itemEx", thing, env->addThing(thing));
-				env->streamPosition(scriptstream, "toPosition", toPos, toPos.stackpos);
+				env->streamPosition(scriptstream, "toPosition", toPos, toPos.index);
 			}
 
 			scriptstream << m_scriptData;
@@ -757,18 +757,18 @@ bool Action::executeUse(Player* player, Item* item, const PositionEx& fromPos, c
 
 			lua_pushnumber(L, env->addThing(player));
 			LuaScriptInterface::pushThing(L, item, env->addThing(item));
-			LuaScriptInterface::pushPosition(L, fromPos, fromPos.stackpos);
+			LuaScriptInterface::pushPosition(L, fromPos, fromPos.index);
 
-			Thing* thing = server.game().internalGetThing(player, toPos, toPos.stackpos);
+			Thing* thing = server.game().internalGetThing(player, toPos, toPos.index);
 			if(thing && (thing != item || !extendedUse))
 			{
 				LuaScriptInterface::pushThing(L, thing, env->addThing(thing));
-				LuaScriptInterface::pushPosition(L, toPos, toPos.stackpos);
+				LuaScriptInterface::pushPosition(L, toPos, toPos.index);
 			}
 			else
 			{
 				LuaScriptInterface::pushThing(L, nullptr, 0);
-				LuaScriptInterface::pushPosition(L, fromPos, fromPos.stackpos);
+				LuaScriptInterface::pushPosition(L, fromPos, fromPos.index);
 			}
 
 			bool result = m_interface->callFunction(5);

@@ -174,7 +174,7 @@ void Scheduler::thread() {
 			_signal.wait_until(uniqueLock, _tasks.top()->getTime());
 		}
 
-		if (_state != State::STARTED || _tasks.empty() || _tasks.top()->getTime() > SchedulerTask::TimePoint::clock::now()) {
+		if (_state != State::STARTED || _tasks.empty() || _tasks.top()->getTime() > Clock::now()) {
 			uniqueLock.unlock();
 			continue;
 		}
@@ -193,7 +193,7 @@ void Scheduler::thread() {
 		_pendingTaskIds.erase(i);
 		uniqueLock.unlock();
 
-		task->setExpiration(SchedulerTask::TimePoint::max());
+		task->setExpiration(Time::max());
 		server.dispatcher().addTask(std::move(task));
 	}
 

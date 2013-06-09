@@ -1526,7 +1526,7 @@ void ConditionOutfit::changeOutfit(Creature* creature, int32_t index/* = -1*/)
 		return;
 
 	if(index == -1)
-		index = random_range(0, outfits.size() - 1);
+		index = random_range(0, static_cast<int32_t>(outfits.size()) - 1);
 
 	server.game().internalCreatureChangeOutfit(creature, outfits[index], true);
 }

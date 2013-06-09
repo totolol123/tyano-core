@@ -37,6 +37,9 @@
 #define SOFTWARE_DEVELOPERS "Elf, Talaturen, Dalkon, BeniS, Tryller, Kornholijo and fluidsonic"
 #define SOFTWARE_PROTOCOL   "8.60"
 
+#define X_PROJECT_URL         "https://github.com/fluidsonic/the-forgotten-tyano-server"
+#define X_PROJECT_ISSUES_URL  X_PROJECT_URL "/issues"
+
 // we disable the sendbuffer because as OutputMessagePool works right now it forgets to send small packets
 // unless there is activity on the server causing another send and detecting the timeout!
 #define __NO_PLAYER_SENDBUFFER__  1
@@ -78,15 +81,54 @@ namespace std {
 #endif
 
 
-	template <>
+	template<>
 	struct default_delete<xmlDoc> {
 		void operator()(xmlDocPtr document) const {
 			xmlFreeDoc(document);
 		}
 	};
 
+
+	template<typename T>
+	struct equal_to<reference_wrapper<const T>> : public function<bool(const reference_wrapper<const T>&, const reference_wrapper<const T>&)> {
+		bool operator()(const reference_wrapper<const T>& a, const reference_wrapper<const T>& b) const {
+			return equal_to<T>()(a, b);
+		}
+	};
+
+
+	template<typename T>
+	struct hash<boost::intrusive_ptr<T>> : public function<size_t(const boost::intrusive_ptr<T>&)> {
+		size_t operator()(const boost::intrusive_ptr<T>& pointer) const {
+			return boost::hash<boost::intrusive_ptr<T>>()(pointer);
+		}
+	};
+
+
+	template<typename T>
+	struct hash<const T> {
+		size_t operator()(const T& reference) const {
+			return hash<T>()(reference);
+		}
+	};
+
+
+	template<typename T>
+	struct hash<reference_wrapper<T>> {
+		size_t operator()(const reference_wrapper<T>& reference) const {
+			return hash<T>()(reference);
+		}
+	};
 }
 
-typedef std::unique_ptr<xmlDoc>  xmlDocP;
+typedef std::chrono::steady_clock  Clock;
+typedef Clock::duration            Duration;
+typedef Clock::time_point          Time;
+typedef std::unique_ptr<xmlDoc>    xmlDocP;
+
+
+inline std::ostream& operator << (std::ostream& stream, uint8_t value) {
+	return stream << static_cast<uint_least16_t>(value);
+}
 
 #endif // GLOBAL_H

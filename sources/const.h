@@ -18,6 +18,8 @@
 #ifndef _CONST_H
 #define _CONST_H
 
+enum class Direction : uint8_t;
+
 
 enum DistributionType_t
 {
@@ -898,19 +900,6 @@ enum Visible_t
 	VISIBLE_DISAPPEAR = 2,
 	VISIBLE_GHOST_APPEAR = 3,
 	VISIBLE_GHOST_DISAPPEAR = 4
-};
-
-
-enum Direction
-{
-	NORTH = 0,
-	EAST = 1,
-	SOUTH = 2,
-	WEST = 3,
-	SOUTHWEST = 4,
-	SOUTHEAST = 5,
-	NORTHWEST = 6,
-	NORTHEAST = 7
 };
 
 

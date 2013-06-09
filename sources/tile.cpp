@@ -39,9 +39,6 @@
 LOGGER_DEFINITION(Tile);
 
 
-StaticTile reallyNullTile(0xFFFF, 0xFFFF, 0xFFFF);
-Tile& Tile::nullTile = reallyNullTile;
-
 
 Tile::~Tile() {
 	if (ground != nullptr) {
@@ -383,7 +380,7 @@ void Tile::onAddTileItem(Item* item)
 	for(it = list.begin(); it != list.end(); ++it)
 	{
 		if((tmpPlayer = (*it)->getPlayer()))
-			tmpPlayer->sendAddTileItem(this, cylinderMapPos, item);
+			tmpPlayer->sendAddTileItem(this, cylinderMapPos, item, BOOST_CURRENT_FUNCTION);
 	}
 
 	//event methods
@@ -424,7 +421,7 @@ void Tile::onRemoveTileItem(const SpectatorList& list, std::vector<uint32_t>& ol
 	for(it = list.begin(); it != list.end(); ++it)
 	{
 		if((tmpPlayer = (*it)->getPlayer()))
-			tmpPlayer->sendRemoveTileItem(this, cylinderMapPos, oldStackposVector[i++], item);
+			tmpPlayer->sendRemoveTileItem(this, cylinderMapPos, oldStackposVector[i++], item, BOOST_CURRENT_FUNCTION);
 	}
 
 	//event methods
@@ -490,26 +487,30 @@ void Tile::moveCreature(Creature* actor, Creature* creature, Cylinder* toCylinde
 	if(!teleport)
 	{
 		if(pos.y > newPos.y)
-			creature->setDirection(NORTH);
+			creature->setDirection(Direction::NORTH);
 		else if(pos.y < newPos.y)
-			creature->setDirection(SOUTH);
+			creature->setDirection(Direction::SOUTH);
 		if(pos.x < newPos.x)
-			creature->setDirection(EAST);
+			creature->setDirection(Direction::EAST);
 		else if(pos.x > newPos.x)
-			creature->setDirection(WEST);
+			creature->setDirection(Direction::WEST);
 	}
 
 	//send to client
 	int32_t i = 0;
 	for(it = list.begin(); it != list.end(); ++it)
 	{
-		if((tmpPlayer = (*it)->getPlayer()) && tmpPlayer->canSeeCreature(creature))
-			tmpPlayer->sendCreatureMove(creature, newTile, newPos, this, pos, oldStackposVector[i++], teleport);
+		if((tmpPlayer = (*it)->getPlayer())) {
+			if (tmpPlayer->canSeeCreature(creature)) {
+				tmpPlayer->sendCreatureMove(creature, newTile, newPos, this, pos, oldStackposVector[i], teleport, BOOST_CURRENT_FUNCTION);
+			}
+			++i;
+		}
 	}
 
 	//event method
 	for(it = list.begin(); it != list.end(); ++it)
-		(*it)->onCreatureMove(creature, newTile, newPos, this, pos, teleport);
+		(*it)->onCreatureMove(creature, pos, this, newPos, newTile, teleport);
 
 	postRemoveNotification(actor, creature, toCylinder, oldStackpos, true);
 	newTile->postAddNotification(actor, creature, this, newStackpos);
@@ -542,7 +543,7 @@ ReturnValue Tile::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
 			if(floorChange() || positionChange())
 				return RET_NOTPOSSIBLE;
 
-			if(monster->canPushCreatures() && !monster->isSummon())
+			if(monster->canPushCreatures() && !monster->hasMaster())
 			{
 				if(creatures)
 				{
@@ -554,8 +555,7 @@ ReturnValue Tile::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
 							continue;
 
 						if(!tmp->getMonster() || !tmp->isPushable() ||
-							(tmp->getMonster()->isSummon() &&
-							tmp->getMonster()->isPlayerSummon()))
+							(tmp->getMonster()->hasController()))
 							return RET_NOTPOSSIBLE;
 					}
 				}
@@ -893,7 +893,7 @@ void Tile::__addThing(Creature* actor, int32_t index, Thing* thing)
 		creature->setParent(this);
 
 		CreatureVector* creatures = makeCreatures();
-		creatures->insert(creatures->begin(), creature);
+		creatures->push_back(creature);
 
 		++thingCount;
 		return;
@@ -1359,7 +1359,7 @@ int32_t Tile::getClientIndexOfThing(const Player* player, const Thing* thing) co
 
 	if(const CreatureVector* creatures = getCreatures())
 	{
-		for(CreatureVector::const_reverse_iterator cit = creatures->rbegin(); cit != creatures->rend(); ++cit)
+		for(CreatureVector::const_iterator cit = creatures->begin(); cit != creatures->end(); ++cit)
 		{
 			if((*cit) == thing)
 				return ++n;
@@ -1600,7 +1600,7 @@ void Tile::__internalAddThing(uint32_t index, Thing* thing)
 	{
 		server.game().clearSpectatorCache();
 		CreatureVector* creatures = makeCreatures();
-		creatures->insert(creatures->begin(), creature);
+		creatures->push_back(creature);
 
 		thing->setParent(this);
 		++thingCount;

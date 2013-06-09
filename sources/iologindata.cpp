@@ -1086,9 +1086,9 @@ bool IOLoginData::playerDeath(Player* player, const DeathList& dl)
 		{
 			Creature* creature = it->getKillerCreature();
 			Player* player = creature->getPlayer();
-			if(creature->getMaster())
+			if(creature->getDirectOwner())
 			{
-				player = creature->getPlayerMaster();
+				player = creature->getDirectOwner()->getPlayer();
 				name = creature->getNameDescription();
 			}
 

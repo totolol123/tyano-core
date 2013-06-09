@@ -60,6 +60,9 @@ class Thing : public ReferenceCounted {
 		virtual bool isRemoved() const;
 
 	private:
+
+		LOGGER_DECLARATION;
+
 		Cylinder* parent;
 };
 

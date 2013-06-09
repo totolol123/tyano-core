@@ -21,13 +21,13 @@
 
 
 Task::Task(const Function& function)
-	: _expiration(TimePoint::max()),
+	: _expiration(Time::max()),
 	  _function(function)
 {}
 
 
 Task::Task(Duration duration, const Function& function)
-	: _expiration(TimePoint::clock::now() + duration),
+	: _expiration(Clock::now() + duration),
 	  _function(function)
 {}
 
@@ -46,12 +46,12 @@ Task::UniquePointer Task::create(Duration duration, const Function& function) {
 }
 
 
-Task::TimePoint Task::getExpiration() const {
+Time Task::getExpiration() const {
 	return _expiration;
 }
 
 
-void Task::setExpiration(TimePoint expiration) {
+void Task::setExpiration(Time expiration) {
 	_expiration = expiration;
 }
 

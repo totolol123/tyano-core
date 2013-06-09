@@ -25,6 +25,7 @@ class Creature;
 class NetworkMessage;
 class Player;
 class Position;
+class PositionEx;
 class RSA;
 
 typedef std::shared_ptr<NetworkMessage> NetworkMessage_ptr;
@@ -118,6 +119,7 @@ class NetworkMessage
 
 		// write functions for complex types
 		void AddPosition(const Position &pos);
+		void AddPositionEx(const PositionEx& position);
 		void AddItem(const Item *item);
 		void AddItemId(const Item *item);
 		void AddItemId(uint16_t itemId);

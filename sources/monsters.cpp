@@ -42,8 +42,14 @@ void MonsterType::reset()
 	pushable = isAttackable = isHostile = true;
 
 	outfit.lookHead = outfit.lookBody = outfit.lookLegs = outfit.lookFeet = outfit.lookType = outfit.lookTypeEx = outfit.lookAddons = 0;
-	runAwayHealth = manaCost = lightLevel = lightColor = yellSpeedTicks = yellChance = changeTargetSpeed = changeTargetChance = 0;
+	runAwayHealth = manaCost = lightLevel = lightColor = 0;
 	experience = defense = armor = lookCorpse = corpseUnique = corpseAction = conditionImmunities = damageImmunities = 0;
+
+	babbleChance = 0;
+	babbleInterval = Duration::zero();
+	babbleEntries.clear();
+	retargetChance = 0;
+	retargetInterval = Duration::zero();
 
 	maxSummons = -1;
 	targetDistance = 1;
@@ -77,7 +83,6 @@ void MonsterType::reset()
 	summonList.clear();
 	scriptList.clear();
 
-	voiceVector.clear();
 	lootItems.clear();
 	elementMap.clear();
 }
@@ -1082,12 +1087,12 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 		else if(!xmlStrcmp(p->name, (const xmlChar*)"targetchange"))
 		{
 			if(readXMLInteger(p, "speed", intValue) || readXMLInteger(p, "interval", intValue))
-				mType->changeTargetSpeed = std::max(1, intValue);
+				mType->retargetInterval = std::chrono::milliseconds(std::max(1, intValue));
 			else
 				SHOW_XML_WARNING("Missing targetchange.speed");
 
 			if(readXMLInteger(p, "chance", intValue))
-				mType->changeTargetChance = intValue;
+				mType->retargetChance = intValue;
 			else
 				SHOW_XML_WARNING("Missing targetchange.chance");
 		}
@@ -1299,12 +1304,12 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 		else if(!xmlStrcmp(p->name, (const xmlChar*)"voices"))
 		{
 			if(readXMLInteger(p, "speed", intValue) || readXMLInteger(p, "interval", intValue))
-				mType->yellSpeedTicks = intValue;
+				mType->babbleInterval = std::chrono::milliseconds(intValue);
 			else
 				SHOW_XML_WARNING("Missing voices.speed");
 
 			if(readXMLInteger(p, "chance", intValue))
-				mType->yellChance = intValue;
+				mType->babbleChance = intValue;
 			else
 				SHOW_XML_WARNING("Missing voices.chance");
 
@@ -1325,7 +1330,7 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 					if(readXMLString(tmpNode, "yell", strValue))
 						vb.yellText = booleanString(strValue);
 
-					mType->voiceVector.push_back(vb);
+					mType->babbleEntries.push_back(vb);
 				}
 
 				tmpNode = tmpNode->next;
