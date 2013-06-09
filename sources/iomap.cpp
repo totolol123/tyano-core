@@ -221,6 +221,9 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 		}
 	}
 
+	uint32_t totalDecayingItems = 0;
+	std::map<uint16_t,uint32_t> decayingItems;
+
 	const NodeStruct* nodeMapData = f.getChildNode(nodeMap, type);
 	while(nodeMapData != NO_NODE)
 	{
@@ -359,6 +362,11 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 									return false;
 								}
 
+								if (item->canDecay(true)) {
+									++totalDecayingItems;
+									++decayingItems[item->getId()];
+								}
+
 								if(house && item->isMoveable())
 								{
 									LOGw("[IOMap::loadMap] Movable item in house: " << house->getId() << ", item type: " << item->getId() << ", at position " << px << "/" << py << "/" << pz);
@@ -424,6 +432,11 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 
 								setLastErrorString(ss.str());
 								return false;
+							}
+
+							if (item->canDecay(true)) {
+								++totalDecayingItems;
+								++decayingItems[item->getId()];
 							}
 
 							if(item->unserializeItemNode(f, nodeItem, propStream))
@@ -590,6 +603,20 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 		}
 
 		nodeMapData = f.getNextNode(nodeMapData, type);
+	}
+
+	if (totalDecayingItems > 0) {
+		if (totalDecayingItems <= 100) {
+			LOGi("Your map contains " << totalDecayingItems << " items with limited duration. This may affect the server's performance!");
+		}
+		else {
+			LOGw("Your map contains " << totalDecayingItems << " items with limited duration. This can significantly hurt the server's performance!");
+		}
+
+		for (auto entry : decayingItems) {
+			ItemKindPC kind = server.items()[entry.first];
+			LOGw(std::setw(10) << entry.second << "x " << kind->name << " (" << entry.first << " -> " << kind->decayTo << ")");
+		}
 	}
 
 	return true;
