@@ -19,6 +19,7 @@
 #include "items/kind/Bed.hpp"
 
 #include "items/Class.hpp"
+#include "position.h"
 #include "tools.h"
 
 using namespace ts;
@@ -30,7 +31,7 @@ LOGGER_DEFINITION(ts::items::kind::Bed);
 
 Bed::Bed(const ClassP& clazz)
 	: Kind(std::static_pointer_cast<Kind::ClassT>(clazz)),
-	  _counterpartDirection(NORTH),
+	  _counterpartDirection(Direction::NORTH),
 	  _femaleOccupiedBedId(0),
 	  _freeBedId(0),
 	  _maleOccupiedBedId(0)
