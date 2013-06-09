@@ -29,3 +29,5 @@ TODO
 - update `hasToThinkAboutCreature` to take a monster's targeting distance into account
 - find out what `Map::checkSightLine` does and why it swaps x and z coordinates, which aren't type compatible
 - use least-size integers instead of fixed-size ones
+- fix TODOs written in code comments
+- use `weak_ptr` where it makes sense (e.g. master->summon relationship and damage list to avoid cyclic references)

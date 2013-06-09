@@ -37,6 +37,13 @@ LOGGER_DEFINITION(Monster);
 
 
 
+Monster::~Monster() {
+	if (_raid != nullptr) {
+		_raid->unRef();
+	}
+}
+
+
 void Monster::babble() {
 	if (_type->babbleEntries.empty()) {
 		return;
@@ -736,12 +743,6 @@ Monster::Monster(MonsterType* __type, Raid* raid, Spawn* spawn)
 	{
 		if(!registerCreatureEvent(*it))
 			LOGe("[Monster::Monster] Unknown event name - " << *it);
-	}
-}
-
-Monster::~Monster() {
-	if (_raid != nullptr) {
-		_raid->unRef();
 	}
 }
 

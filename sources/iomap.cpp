@@ -615,7 +615,9 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 
 		for (auto entry : decayingItems) {
 			ItemKindPC kind = server.items()[entry.first];
-			LOGw(std::setw(10) << entry.second << "x " << kind->name << " (" << entry.first << " -> " << kind->decayTo << ")");
+			const std::string& name = (entry.second > 1 && kind->pluralName.length() > 0 ? kind->pluralName : kind->name);
+
+			LOGw(std::setw(10) << entry.second << " " << name << " (" << entry.first << " -> " << kind->decayTo << ")");
 		}
 	}
 

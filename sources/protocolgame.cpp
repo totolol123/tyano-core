@@ -1184,7 +1184,7 @@ ProtocolGame::CreatureValidationResult ProtocolGame::validateRegisteredCreature(
 
 	// creature has moved but we forgot to tell the client!
 	LOGf(std::setfill('-') << std::setw(90) << "");
-	LOGf("\tInternal creature movement data invalid when sending it to the client.");
+	LOGf("\tInternal creature movement data invalid when sending an update to the client.");
 	LOGf("\tI'll try my best to prevent the client from crashing - this should never happen!");
 	LOGf("\tPlease report this to a developer on " << X_PROJECT_ISSUES_URL);
 	LOGf("");

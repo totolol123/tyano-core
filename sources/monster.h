@@ -45,6 +45,8 @@ public:
 	static MonsterP create (MonsterType* type, Spawn* spawn);
 	static MonsterP create (const std::string& name);
 
+	virtual ~Monster();
+
             bool       canBeChallengedBy  (const CreatureP& convincer) const;
             bool       canBeConvincedBy   (const CreatureP& convincer, bool forced = false) const;
     virtual bool       canSeeCreature     (const CreatureP& creature) const;
@@ -112,7 +114,6 @@ private:
 		Monster(MonsterType* _mType, Raid* raid, Spawn* spawn);
 
 	public:
-		virtual ~Monster();
 
 
 		virtual Monster* getMonster() {return this;}
