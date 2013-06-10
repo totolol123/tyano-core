@@ -37,9 +37,7 @@
 #include "server.h"
 
 using namespace ts;
-
-
-const std::string Door::ATTRIBUTE_DOORID("doorid");
+using namespace ts::item;
 
 
 House::House(uint32_t houseId) :
@@ -627,28 +625,6 @@ Door::~Door()
 }
 
 
-Door::ClassAttributesP Door::getClassAttributes() {
-	using attributes::Type;
-
-	auto attributes = Container::getClassAttributes();
-	attributes->emplace(ATTRIBUTE_DOORID, Type::INTEGER);
-
-	return attributes;
-}
-
-
-const std::string& Door::getClassId() {
-	static const std::string id("door");
-	return id;
-}
-
-
-const std::string& Door::getClassName() {
-	static const std::string name("Door");
-	return name;
-}
-
-
 Attr_ReadValue Door::readAttr(AttrTypes_t attr, PropStream& propStream)
 {
 	if(attr != ATTR_HOUSEDOORID)
@@ -1129,4 +1105,15 @@ uint32_t Houses::getHousesCount(uint32_t accountId) {
 	}
 
 	return count;
+}
+
+void Door::setDoorId(uint32_t doorId) {getDynamicAttributes().set(DoorKind::ATTRIBUTE_DOORID, (int32_t)doorId);}
+
+uint32_t Door::getDoorId() const
+{
+	const int32_t* v = getDynamicAttributes().getInteger(DoorKind::ATTRIBUTE_DOORID);
+	if(v)
+		return (uint32_t)*v;
+
+	return 0;
 }

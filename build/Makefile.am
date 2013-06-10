@@ -17,22 +17,22 @@ server_SOURCES = sources/otpch.h.gch \
                  sources/attributes/Scheme.cpp \
                  sources/attributes/Values.cpp \
                  sources/combat/Combat.cpp \
-                 sources/creatures/Player.cpp \
-                 sources/items/Class.cpp \
-                 sources/items/Common.cpp \
-                 sources/items/Key.cpp \
-                 sources/items/Kind.cpp \
-                 sources/items/kind/Bed.cpp \
-                 sources/items/kind/Common.cpp \
-                 sources/items/kind/Container.cpp \
-                 sources/items/kind/Depot.cpp \
-                 sources/items/kind/Door.cpp \
-                 sources/items/kind/Key.cpp \
-                 sources/items/kind/MagicField.cpp \
-                 sources/items/kind/Mailbox.cpp \
-                 sources/items/kind/Teleport.cpp \
-                 sources/items/kind/TrashHolder.cpp \
-                 sources/items/kind/Weapon.cpp \
+                 sources/creature/Player.cpp \
+                 sources/item/BedKind.cpp \
+                 sources/item/Class.cpp \
+                 sources/item/ContainerKind.cpp \
+                 sources/item/DepotKind.cpp \
+                 sources/item/DoorKind.cpp \
+                 sources/item/Key.cpp \
+                 sources/item/KeyKind.cpp \
+                 sources/item/Kind.cpp \
+                 sources/item/MagicFieldKind.cpp \
+                 sources/item/MailboxKind.cpp \
+                 sources/item/Other.cpp \
+                 sources/item/OtherKind.cpp \
+                 sources/item/TeleportKind.cpp \
+                 sources/item/TrashHolderKind.cpp \
+                 sources/item/WeaponKind.cpp \
                  sources/utility/Utility.cpp \
                  sources/xml/Xml.cpp \
                  sources/items.cpp \

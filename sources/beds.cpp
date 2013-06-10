@@ -33,33 +33,16 @@
 #include "tools.h"
 
 using namespace ts;
+using namespace ts::item;
 
 
 
-const std::string BedItem::ATTRIBUTE_SLEEPSTART("sleepstart");
-
-
-
-BedItem::ClassAttributesP BedItem::getClassAttributes() {
-	using attributes::Type;
-
-	auto attributes = Container::getClassAttributes();
-	attributes->emplace(ATTRIBUTE_SLEEPSTART, Type::INTEGER);
-
-	return attributes;
+const BedKind& BedItem::getKind() const {
+	return static_cast<const BedKind&>(Item::getKind());
 }
 
 
-const std::string& BedItem::getClassId() {
-	static const std::string id("bed");
-	return id;
-}
 
-
-const std::string& BedItem::getClassName() {
-	static const std::string name("Bed");
-	return name;
-}
 
 
 Attr_ReadValue BedItem::readAttr(AttrTypes_t attr, PropStream& propStream)
@@ -92,7 +75,7 @@ Attr_ReadValue BedItem::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG(sleepStart))
 				return ATTR_READ_ERROR;
 
-			getAttributes().set(ATTRIBUTE_SLEEPSTART, (int32_t)sleepStart);
+			getDynamicAttributes().set(BedKind::ATTRIBUTE_SLEEPSTART, (int32_t)sleepStart);
 			return ATTR_READ_CONTINUE;
 		}
 
@@ -116,7 +99,7 @@ bool BedItem::serializeAttr(PropWriteStream& propWriteStream) const
 
 BedItem* BedItem::getNextBedItem()
 {
-	if(Tile* tile = server.game().getTile(getNextPosition(getKind()->bedPartnerDir, getPosition())))
+	if(Tile* tile = server.game().getTile(getNextPosition(getKind().getCounterpartDirection(), getPosition())))
 		return tile->getBedItem();
 
 	return nullptr;
@@ -166,8 +149,7 @@ void BedItem::sleep(Player* player)
 		return;
 	}
 
-	if(getKind()->transformToFree)
-	{
+	if (getKind().getFreeBedId() > 0) {
 		wakeUp();
 		server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 		return;
@@ -210,7 +192,7 @@ void BedItem::wakeUp()
 
 void BedItem::regeneratePlayer(Player* player) const
 {
-	const int32_t* sleepStart = getAttributes().getInteger(ATTRIBUTE_SLEEPSTART);
+	const int32_t* sleepStart = getDynamicAttributes().getInteger(BedKind::ATTRIBUTE_SLEEPSTART);
 	int32_t sleptTime = (int32_t)time(nullptr) - (sleepStart ? *sleepStart : 0);
 	if(Condition* condition = player->getCondition(CONDITION_REGENERATION, CONDITIONID_DEFAULT))
 	{
@@ -232,36 +214,26 @@ void BedItem::regeneratePlayer(Player* player) const
 	player->changeSoul((int32_t)std::max((float)0, (float)sleptTime / (60 * 15)));
 }
 
-void BedItem::updateAppearance(const Player* player)
-{
-	if(!getKind()->isBed())
-		return;
 
-	if(player && getKind()->transformUseTo[player->getSex(false)])
-	{
-		ItemKindPC newType = server.items()[getKind()->transformUseTo[player->getSex(false)]];
-		if(newType && newType->isBed())
-			server.game().transformItem(this, getKind()->transformUseTo[player->getSex(false)]);
-	}
-	else if(getKind()->transformToFree)
-	{
-		ItemKindPC newType = server.items()[getKind()->transformToFree];
-		if(newType && newType->isBed())
-			server.game().transformItem(this, getKind()->transformToFree);
+void BedItem::updateAppearance(const Player* player) {
+	KindId newKindId = (player != nullptr ? getKind().getOccupiedBedId(player->getGender()) : getKind().getFreeBedId());
+	if (newKindId > 0) {
+		server.game().transformItem(this, newKindId);
 	}
 }
+
 
 void BedItem::internalSetSleeper(const Player* player)
 {
 	sleeper = player->getGUID();
-	getAttributes().set(ATTRIBUTE_SLEEPSTART, (int32_t)time(nullptr));
+	getDynamicAttributes().set(BedKind::ATTRIBUTE_SLEEPSTART, (int32_t)time(nullptr));
 	setSpecialDescription(player->getName() + " is sleeping there.");
 }
 
 void BedItem::internalRemoveSleeper()
 {
 	sleeper = 0;
-	getAttributes().remove(ATTRIBUTE_SLEEPSTART);
+	getDynamicAttributes().remove(BedKind::ATTRIBUTE_SLEEPSTART);
 	setSpecialDescription("Nobody is sleeping there.");
 }
 

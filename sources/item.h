@@ -21,6 +21,7 @@
 #include "attributes/Attribute.hpp"
 #include "attributes/Scheme.hpp"
 #include "attributes/Values.hpp"
+#include "item/Kind.hpp"
 #include "const.h"
 #include "thing.h"
 
@@ -41,9 +42,6 @@ class  PropWriteStream;
 class  Raid;
 class  Teleport;
 class  TrashHolder;
-
-typedef std::shared_ptr<ItemKind>        ItemKindP;
-typedef std::shared_ptr<const ItemKind>  ItemKindPC;
 
 
 enum ITEMPROPERTY
@@ -134,43 +132,40 @@ struct TeleportDest
 
 class Item : public Thing {
 
+	private:
+
+		typedef ts::attributes::Values  DynamicAttributeValues;
+		typedef ts::item::Kind          Kind;
+		typedef ts::item::KindPC        KindPC;
+
+
 	public:
 
-		typedef ts::attributes::Values               Attributes;
-		typedef ts::attributes::Scheme::Attributes   ClassAttributes;
-		typedef ts::attributes::Scheme::AttributesP  ClassAttributesP;
+		Item (const KindPC& kind);
+
+		DynamicAttributeValues&       getDynamicAttributes ();
+		const DynamicAttributeValues& getDynamicAttributes () const;
+		const Kind&                   getKind              () const;
+		KindPC                        getKindPointer       () const;
 
 
-		static const std::string ATTRIBUTE_AID;
-		static const std::string ATTRIBUTE_ARMOR;
-		static const std::string ATTRIBUTE_ARTICLE;
-		static const std::string ATTRIBUTE_ATTACK;
-		static const std::string ATTRIBUTE_ATTACKSPEED;
-		static const std::string ATTRIBUTE_CHARGES;
-		static const std::string ATTRIBUTE_CORPSEOWNER;
-		static const std::string ATTRIBUTE_DATE;
-		static const std::string ATTRIBUTE_DEFENSE;
-		static const std::string ATTRIBUTE_DESCRIPTION;
-		static const std::string ATTRIBUTE_DECAYING;
-		static const std::string ATTRIBUTE_DURATION;
-		static const std::string ATTRIBUTE_EXTRAATTACK;
-		static const std::string ATTRIBUTE_EXTRADEFENSE;
-		static const std::string ATTRIBUTE_FLUIDTYPE;
-		static const std::string ATTRIBUTE_HITCHANCE;
-		static const std::string ATTRIBUTE_NAME;
-		static const std::string ATTRIBUTE_OWNER;
-		static const std::string ATTRIBUTE_PLURALNAME;
-		static const std::string ATTRIBUTE_SCRIPTPROTECTED;
-		static const std::string ATTRIBUTE_SHOOTRANGE;
-		static const std::string ATTRIBUTE_TEXT;
-		static const std::string ATTRIBUTE_UID;
-		static const std::string ATTRIBUTE_WRITER;
+		LOGGER_DECLARATION;
+
+		DynamicAttributeValues _dynamicAttributes;
+		KindPC                 _kind;
 
 
-		static ClassAttributesP getClassAttributes();
 
-		Attributes&       getAttributes ();
-		const Attributes& getAttributes () const;
+
+
+
+
+
+
+
+
+
+
 
 		//Factory member to create item of right type based on type
 		static boost::intrusive_ptr<Item> CreateItem(uint16_t type, uint16_t amount = 1);
@@ -180,7 +175,6 @@ class Item : public Thing {
 		static bool loadContainer(xmlNodePtr node, Container* parent);
 
 		// Constructor for items
-		Item(const ItemKindPC& kind, uint16_t amount = 0);
 		virtual ~Item() {}
 
 		virtual boost::intrusive_ptr<Item> clone() const;
@@ -213,8 +207,8 @@ class Item : public Thing {
 		uint16_t getId() const;
 		uint16_t getClientID() const;
 
-		static std::string getDescription(const ItemKindPC& kind, int32_t lookDistance, const Item* item = nullptr, uint16_t subType = 0, bool addArticle = true);
-		static std::string getNameDescription(const ItemKindPC& kind, const Item* item = nullptr, uint16_t subType = 0, bool addArticle = true);
+		static std::string getDescription(const Kind& kind, int32_t lookDistance, const Item* item = nullptr, uint16_t subType = 0, bool addArticle = true);
+		static std::string getNameDescription(const Kind& kind, const Item* item = nullptr, uint16_t subType = 0, bool addArticle = true);
 		static std::string getWeightDescription(double weight, bool stackable, uint32_t count = 1);
 
 		virtual std::string getDescription(int32_t lookDistance) const;
@@ -231,24 +225,15 @@ class Item : public Thing {
 		virtual bool unserializeItemNode(FileLoader& f, const NodeStruct* node, PropStream& propStream) {return unserializeAttr(propStream);}
 
 		// Item attributes
-		void setDuration(int32_t time) {_attributes.set(ATTRIBUTE_DURATION, time);}
-		void decreaseDuration(int32_t time);
-		int32_t getDuration() const;
+		void decreaseDuration(Duration time);
+		Duration getDuration() const;
 
-		void setSpecialDescription(const std::string& description) {_attributes.set(ATTRIBUTE_DESCRIPTION, description);}
-		void resetSpecialDescription() {_attributes.remove(ATTRIBUTE_DESCRIPTION);}
 		const std::string& getSpecialDescription() const;
 
-		void setText(const std::string& text) {_attributes.set(ATTRIBUTE_TEXT, text);}
-		void resetText() {_attributes.remove(ATTRIBUTE_TEXT);}
 		const std::string& getText() const;
 
-		void setDate(time_t date) {_attributes.set(ATTRIBUTE_DATE, (int32_t)date);}
-		void resetDate() {_attributes.remove(ATTRIBUTE_DATE);}
 		time_t getDate() const;
 
-		void setWriter(std::string writer) {_attributes.set(ATTRIBUTE_WRITER, writer);}
-		void resetWriter() {_attributes.remove(ATTRIBUTE_WRITER);}
 		const std::string& getWriter() const;
 
 		void setActionId(int32_t aid);
@@ -258,23 +243,29 @@ class Item : public Thing {
 		void setUniqueId(int32_t uid);
 		int32_t getUniqueId() const;
 
-		void setCharges(uint16_t charges) {_attributes.set(ATTRIBUTE_CHARGES, charges);}
+		void setDuration(Duration time);
+		void setSpecialDescription(const std::string& description);
+		void resetSpecialDescription();
+		void setText(const std::string& text);
+		void resetText();
+		void setDate(time_t date);
+		void resetDate();
+		void setWriter(std::string writer);
+		void resetWriter();
+		void setCharges(uint16_t charges);
+		void setOwner(uint32_t owner);
+		void setCorpseOwner(uint32_t corpseOwner);
+		void setDecaying(ItemDecayState_t state);
+		void setFluidType(uint16_t fluidType);
+
 		uint16_t getCharges() const;
 
-		void setFluidType(uint16_t fluidType) {_attributes.set(ATTRIBUTE_FLUIDTYPE, fluidType);}
 		uint16_t getFluidType() const;
 
-		void setOwner(uint32_t owner) {_attributes.set(ATTRIBUTE_OWNER, (int32_t)owner);}
 		uint32_t getOwner() const;
 
-		void setCorpseOwner(uint32_t corpseOwner) {_attributes.set(ATTRIBUTE_CORPSEOWNER, (int32_t)corpseOwner);}
 		uint32_t getCorpseOwner();
-
-		void setDecaying(ItemDecayState_t state) {_attributes.set(ATTRIBUTE_DECAYING, (int32_t)state);}
 		ItemDecayState_t getDecaying() const;
-
-		ItemKindPC getKind() const;
-		void setKind(const ItemKindPC& kind);
 
 		std::string getName() const;
 		std::string getPluralName() const;
@@ -350,11 +341,11 @@ class Item : public Thing {
 		uint16_t getSubType() const;
 		void setSubType(uint16_t n);
 
-		uint32_t getDefaultDuration() const;
+		Duration getDefaultDuration() const;
 		void setDefaultDuration()
 		{
-			uint32_t duration = getDefaultDuration();
-			if(duration)
+			Duration duration = getDefaultDuration();
+			if(duration > Duration::zero())
 				setDuration(duration);
 		}
 
@@ -371,14 +362,6 @@ class Item : public Thing {
 	private:
 
 		bool unserializeMap (PropStream& stream);
-
-
-		LOGGER_DECLARATION;
-
-
-		Attributes _attributes;
-
-		ItemKindPC kind;
 
 		uint8_t count;
 		bool loadedFromMap;

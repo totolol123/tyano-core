@@ -20,6 +20,7 @@
 
 #include "container.h"
 #include "creature.h"
+#include "creature/Player.hpp"
 
 class Depot;
 class Group;
@@ -47,9 +48,26 @@ typedef std::list<Party*> PartyList;
 #define STAMINA_MAX (42 * 60 * 60 * 1000)
 #define STAMINA_MULTIPLIER (60 * 1000)
 
-class Player : public Creature, public Cylinder
-{
+
+class Player : public Creature, public Cylinder {
+
+private:
+
+	typedef ts::creature::Gender  Gender;
+	typedef ts::item::Kind        Kind;
+
+
+public:
+
+	Gender getGender() const;
+
+
+
+
+
+
 	public:
+
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 		static uint32_t playerCount;
 #endif
@@ -438,9 +456,9 @@ class Player : public Creature, public Cylinder
 
 		//event methods
 		virtual void onUpdateTileItem(const Tile* tile, const Position& pos, const Item* oldItem,
-			const ItemKindPC& oldType, const Item* newItem, const ItemKindPC& newType);
+			const ts::item::KindPC& oldType, const Item* newItem, const ts::item::KindPC& newType);
 		virtual void onRemoveTileItem(const Tile* tile, const Position& pos,
-			const ItemKindPC& iType, const Item* item);
+			const ts::item::KindPC& iType, const Item* item);
 
 		virtual void onCreatureAppear(const CreatureP& creature);
 		virtual void onCreatureDisappear(const Creature* creature, bool isLogout);
@@ -464,7 +482,7 @@ class Player : public Creature, public Cylinder
 		//container
 		void onAddContainerItem(const Container* container, const Item* item);
 		void onUpdateContainerItem(const Container* container, uint8_t slot,
-			const Item* oldItem, const ItemKindPC& oldType, const Item* newItem, const ItemKindPC& newType);
+			const Item* oldItem, const Kind& oldType, const Item* newItem, const Kind& newType);
 		void onRemoveContainerItem(const Container* container, uint8_t slot, const Item* item);
 
 		void onCloseContainer(const Container* container);
@@ -473,8 +491,8 @@ class Player : public Creature, public Cylinder
 
 		//inventory
 		void onAddInventoryItem(slots_t slot, Item* item) {}
-		void onUpdateInventoryItem(slots_t slot, Item* oldItem, const ItemKindPC& oldType,
-			Item* newItem, const ItemKindPC& newType);
+		void onUpdateInventoryItem(slots_t slot, Item* oldItem, const ts::item::KindPC& oldType,
+			Item* newItem, const ts::item::KindPC& newType);
 		void onRemoveInventoryItem(slots_t slot, Item* item);
 
 		void sendAnimatedText(const Position& pos, uint8_t color, std::string text) const;
@@ -565,7 +583,7 @@ class Player : public Creature, public Cylinder
 		void updateBaseSpeed();
 
 		void updateInventoryWeight();
-		void updateInventoryGoods(const ItemKindPC& itemKind);
+		void updateInventoryGoods(const ts::item::KindPC& itemKind);
 		void updateItemsLight(bool internal = false);
 
 		void setNextWalkActionTask(std::unique_ptr<SchedulerTask> task);

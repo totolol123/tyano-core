@@ -20,6 +20,7 @@
 
 #include "cylinder.h"
 #include "item.h"
+#include "item/ContainerKind.hpp"
 
 class  Container;
 class  Depot;
@@ -53,15 +54,17 @@ class ContainerIterator
 		friend class Container;
 };
 
-class Container : public Item, public Cylinder
-{
+class Container : public Item, public Cylinder {
+
+private:
+
+	typedef ts::item::Kind  Kind;
+
+
+
 	public:
 
-		static ClassAttributesP   getClassAttributes();
-		static const std::string& getClassId();
-		static const std::string& getClassName();
-
-		Container(const ItemKindPC& kind);
+		Container(const ts::item::ContainerKindPC& kind);
 		virtual ~Container();
 		virtual boost::intrusive_ptr<Item> clone() const;
 
@@ -155,8 +158,8 @@ class Container : public Item, public Cylinder
 
 	private:
 		void onAddContainerItem(Item* item);
-		void onUpdateContainerItem(uint32_t index, Item* oldItem, const ItemKindPC& oldType,
-			Item* newItem, const ItemKindPC& newType);
+		void onUpdateContainerItem(uint32_t index, Item* oldItem, const Kind& oldType,
+			Item* newItem, const Kind& newType);
 		void onRemoveContainerItem(uint32_t index, Item* item);
 
 		Container* getParentContainer();

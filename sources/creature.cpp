@@ -725,11 +725,11 @@ void Creature::onAddTileItem(const Tile* tile, const Position& pos, const Item* 
 }
 
 void Creature::onUpdateTileItem(const Tile* tile, const Position& pos, const Item* oldItem,
-		const ItemKindPC& oldType, const Item* newItem, const ItemKindPC& newType)
+		const Kind& oldType, const Item* newItem, const Kind& newType)
 {
 }
 
-void Creature::onRemoveTileItem(const Tile* tile, const Position& pos, const ItemKindPC& iType, const Item* item)
+void Creature::onRemoveTileItem(const Tile* tile, const Position& pos, const Kind& iType, const Item* item)
 {
 }
 
@@ -1638,7 +1638,7 @@ int32_t Creature::getStepDuration() const
 	if(!tile || !tile->ground)
 		return 0;
 
-	return ((1000 * tile->ground->getKind()->speed) / stepSpeed) * lastStepCost;
+	return ((1000 * tile->ground->getKind().getGroundSpeed()) / stepSpeed) * lastStepCost;
 }
 
 int64_t Creature::getEventStepTicks() const

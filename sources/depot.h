@@ -19,21 +19,30 @@
 #define _DEPOT_H
 
 #include "container.h"
+#include "item/DepotKind.hpp"
 
 
 class Depot : public Container {
 
+private:
+
+	typedef ts::item::DepotKind    DepotKind;
+	typedef ts::item::DepotKindPC  DepotKindPC;
+
+
+public:
+
+	Depot(const DepotKindPC& kind);
+
+	const DepotKind& getKind() const;
+
+
+
+
+
+
 	public:
 
-		static const std::string ATTRIBUTE_DEPOTID;
-
-
-		static ClassAttributesP   getClassAttributes();
-		static const std::string& getClassId();
-		static const std::string& getClassName();
-
-
-		Depot(const ItemKindPC& kind);
 		virtual ~Depot() {}
 
 		virtual Depot* getDepot() {return this;}
@@ -63,14 +72,5 @@ class Depot : public Container {
 	private:
 		uint32_t depotLimit;
 };
-
-inline uint32_t Depot::getDepotId() const
-{
-	const int32_t* v = getAttributes().getInteger(ATTRIBUTE_DEPOTID);
-	if(v)
-		return (uint32_t)*v;
-
-	return 0;
-}
 
 #endif // _DEPOT_H

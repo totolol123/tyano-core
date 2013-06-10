@@ -19,7 +19,7 @@
 #include "item.h"
 
 #include "attributes/Attribute.hpp"
-#include "items/Class.hpp"
+#include "item/Class.hpp"
 #include "container.h"
 #include "depot.h"
 
@@ -45,82 +45,24 @@
 #include "server.h"
 
 using namespace ts;
-
-
-const std::string Item::ATTRIBUTE_AID("aid");
-const std::string Item::ATTRIBUTE_ARMOR("armor");
-const std::string Item::ATTRIBUTE_ARTICLE("article");
-const std::string Item::ATTRIBUTE_ATTACK("attack");
-const std::string Item::ATTRIBUTE_ATTACKSPEED("attackspeed");
-const std::string Item::ATTRIBUTE_CHARGES("charges");
-const std::string Item::ATTRIBUTE_CORPSEOWNER("corpseowner");
-const std::string Item::ATTRIBUTE_DATE("date");
-const std::string Item::ATTRIBUTE_DECAYING("decaying");
-const std::string Item::ATTRIBUTE_DEFENSE("defense");
-const std::string Item::ATTRIBUTE_DESCRIPTION("description");
-const std::string Item::ATTRIBUTE_DURATION("duration");
-const std::string Item::ATTRIBUTE_EXTRAATTACK("extraattack");
-const std::string Item::ATTRIBUTE_EXTRADEFENSE("extradefense");
-const std::string Item::ATTRIBUTE_FLUIDTYPE("fluidtype");
-const std::string Item::ATTRIBUTE_HITCHANCE("hitchance");
-const std::string Item::ATTRIBUTE_NAME("name");
-const std::string Item::ATTRIBUTE_OWNER("owner");
-const std::string Item::ATTRIBUTE_PLURALNAME("pluralname");
-const std::string Item::ATTRIBUTE_SCRIPTPROTECTED("scriptprotected");
-const std::string Item::ATTRIBUTE_SHOOTRANGE("shootrange");
-const std::string Item::ATTRIBUTE_TEXT("text");
-const std::string Item::ATTRIBUTE_UID("uid");
-const std::string Item::ATTRIBUTE_WRITER("writer");
+using namespace ts::item;
 
 LOGGER_DEFINITION(Item);
 
 
 
-Item::Attributes& Item::getAttributes() {
-	return _attributes;
+Item::DynamicAttributeValues& Item::getDynamicAttributes() {
+	return _dynamicAttributes;
 }
 
 
-const Item::Attributes& Item::getAttributes() const {
-	return _attributes;
+const Item::DynamicAttributeValues& Item::getDynamicAttributes() const {
+	return _dynamicAttributes;
 }
 
 
-Item::ClassAttributesP Item::getClassAttributes() {
-	using attributes::Type;
-
-	auto attributes = ClassAttributesP(new ClassAttributes);
-	attributes->emplace(ATTRIBUTE_AID, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_ARMOR, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_ARTICLE, Type::STRING);
-	attributes->emplace(ATTRIBUTE_ATTACK, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_ATTACKSPEED, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_CHARGES, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_CORPSEOWNER, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_DATE, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_DECAYING, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_DEFENSE, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_DESCRIPTION, Type::STRING);
-	attributes->emplace(ATTRIBUTE_DURATION, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_EXTRAATTACK, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_EXTRADEFENSE, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_FLUIDTYPE, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_HITCHANCE, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_NAME, Type::STRING);
-	attributes->emplace(ATTRIBUTE_OWNER, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_PLURALNAME, Type::STRING);
-	attributes->emplace(ATTRIBUTE_SCRIPTPROTECTED, Type::BOOLEAN);
-	attributes->emplace(ATTRIBUTE_SHOOTRANGE, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_TEXT, Type::STRING);
-	attributes->emplace(ATTRIBUTE_UID, Type::INTEGER);
-	attributes->emplace(ATTRIBUTE_WRITER, Type::STRING);
-
-	return attributes;
-}
-
-
-uint16_t Item::getId() const {
-	return kind->id;
+KindId Item::getId() const {
+	return _kind->getId();
 }
 
 
@@ -158,35 +100,16 @@ boost::intrusive_ptr<Item> Item::CreateItem(uint16_t kindId, uint16_t amount/* =
 		break;
 	}
 
-	ItemKindPC kind = server.items()[kindId];
-	if (kind == nullptr) {
-		LOGe("Cannot create item with unknown id " << kind->id << ".");
-		return nullptr;
-	}
-	if (kind->group == ITEM_GROUP_DEPRECATED) {
-		LOGe("Cannot create deprecated item " << kind->id << ".");
+	auto _kind = server.items()[kindId];
+	if (_kind == nullptr) {
+		LOGe("Cannot create item with unknown id " << kindId << ".");
 		return nullptr;
 	}
 
-	boost::intrusive_ptr<Item> item;
-	if(kind->isDepot())
-		item = new Depot(kind);
-	else if(kind->isContainer())
-		item = new Container(kind);
-	else if(kind->isTeleport())
-		item = new Teleport(kind);
-	else if(kind->isMagicField())
-		item = new MagicField(kind);
-	else if(kind->isDoor())
-		item = new Door(kind);
-	else if(kind->isTrashHolder())
-		item = new TrashHolder(kind, kind->magicEffect);
-	else if(kind->isMailbox())
-		item = new Mailbox(kind);
-	else if(kind->isBed())
-		item = new BedItem(kind);
-	else
-		item = new Item(kind, amount);
+	auto item = _kind->newItem();
+	if (amount > 0) {
+		item->setSubType(amount);
+	}
 
 	return item;
 }
@@ -225,9 +148,9 @@ bool Item::loadItem(xmlNodePtr node, Container* parent)
 				continue;
 
 			if(atoi(v[1].c_str()) || v[1] == "0")
-				item->_attributes.set(v[0], atoi(v[1].c_str()));
+				item->_dynamicAttributes.set(v[0], atoi(v[1].c_str()));
 			else
-				item->_attributes.set(v[0], v[1]);
+				item->_dynamicAttributes.set(v[0], v[1]);
 		}
 	}
 
@@ -275,47 +198,46 @@ bool Item::loadContainer(xmlNodePtr parentNode, Container* parent)
 	return true;
 }
 
-Item::Item(const ItemKindPC& kind, uint16_t amount/* = 0*/):
-	_attributes(kind->_class->getAttributesScheme()), kind(kind)
+Item::Item(const KindPC& _kind):
+	_dynamicAttributes(_kind->getClass().getDynamicAttributeScheme()), _kind(_kind)
 {
-	assert(kind);
+	assert(_kind);
 
 	count = 1;
 	raid = nullptr;
 	loadedFromMap = false;
 
-	if(kind->charges)
-		setCharges(kind->charges);
+	if (_kind->needsCharges()) {
+		setCharges(_kind->getCharges());
+	}
 
 	setDefaultDuration();
-	if(kind->isFluidContainer() || kind->isSplash())
-		setFluidType(amount);
-	else if(kind->stackable && amount)
-		count = amount;
-	else if(kind->charges && amount)
-		setCharges(amount);
+	setDefaultSubtype();
 }
 
-boost::intrusive_ptr<Item> Item::clone() const
-{
-	boost::intrusive_ptr<Item> tmp = Item::CreateItem(kind->id, count);
-	if(!tmp)
+
+boost::intrusive_ptr<Item> Item::clone() const {
+	boost::intrusive_ptr<Item> item = _kind->newItem();
+	if (item == nullptr) {
 		return nullptr;
+	}
 
-	tmp->_attributes = _attributes;
+	item->setSubType(getSubType());
+	item->_dynamicAttributes = _dynamicAttributes;
 
-	return tmp;
+	return item;
 }
+
 
 void Item::copyAttributes(Item* item) {
 	if (item == nullptr) {
 		return;
 	}
 
-	_attributes = item->_attributes;
+	_dynamicAttributes = item->_dynamicAttributes;
 
-	_attributes.remove(ATTRIBUTE_DECAYING);
-	_attributes.remove(ATTRIBUTE_DURATION);
+	_dynamicAttributes.remove(Kind::ATTRIBUTE_DECAYING);
+	_dynamicAttributes.remove(Kind::ATTRIBUTE_DURATION);
 }
 
 void Item::onRemoved()
@@ -334,115 +256,109 @@ void Item::onRemoved()
 void Item::setDefaultSubtype()
 {
 	count = 1;
-	if(kind->charges)
-		setCharges(kind->charges);
+	if(_kind->needsCharges())
+		setCharges(_kind->getCharges());
 }
 
 
 uint16_t Item::getClientID() const {
-	return kind->clientId;
+	return _kind->getClientId();
 }
 
 
 std::string Item::getDescription(int32_t lookDistance) const {
-	return getDescription(kind, lookDistance, this);
+	return getDescription(*_kind, lookDistance, this);
 }
 
 
 std::string Item::getNameDescription() const {
-	return getNameDescription(kind, this);
+	return getNameDescription(*_kind, this);
 }
 
 
 std::string Item::getWeightDescription() const {
-	return getWeightDescription(getWeight(), kind->stackable, count);
+	return getWeightDescription(getWeight(), _kind->isStackable(), count);
 }
 
 
-Ammo_t Item::getAmmoType() const {return kind->ammoType;}
-WeaponType_t Item::getWeaponType() const {return kind->weaponType;}
-int32_t Item::getSlotPosition() const {return kind->slotPosition;}
-int32_t Item::getWieldPosition() const {return kind->wieldPosition;}
+int32_t Item::getSlotPosition() const {return _kind->getEquipmentSlot();}
 
 
-int32_t Item::getMaxWriteLength() const {return kind->maxTextLen;}
-uint64_t Item::getWorth() const {return static_cast<uint64_t>(getItemCount()) * kind->worth;}
+int32_t Item::getMaxWriteLength() const {return _kind->getMaximumTextLength();}
+uint64_t Item::getWorth() const {return static_cast<uint64_t>(getItemCount()) * _kind->getWorth();}
 int32_t Item::getThrowRange() const {return (isPickupable() ? 15 : 2);}
 
-bool Item::forceSerialize() const {return kind->forceSerialize || canWriteText() || isContainer() || isBed() || isDoor();}
+bool Item::forceSerialize() const {return _kind->isPersistent() || canWriteText() || isContainer() || isBed() || isDoor();}
 
-bool Item::hasSubType() const {return kind->hasSubType();}
-bool Item::hasCharges() const {return kind->charges;}
+bool Item::hasSubType() const {return isFluidContainer() || isSplash() || isStackable() || hasCharges();}
+
+bool Item::hasCharges() const {return _kind->needsCharges();}
 
 bool Item::canRemove() const {return true;}
 bool Item::canTransform() const {return true;}
-bool Item::canWriteText() const {return kind->canWriteText;}
+bool Item::canWriteText() const {return _kind->isWritable();}
 
 bool Item::isPushable() const {return !isNotMoveable();}
-bool Item::isGroundTile() const {return kind->isGroundTile();}
-bool Item::isContainer() const {return kind->isContainer();}
-bool Item::isSplash() const {return kind->isSplash();}
-bool Item::isFluidContainer() const {return (kind->isFluidContainer());}
-bool Item::isDoor() const {return kind->isDoor();}
-bool Item::isMagicField() const {return kind->isMagicField();}
-bool Item::isTeleport() const {return kind->isTeleport();}
-bool Item::isKey() const {return kind->isKey();}
-bool Item::isDepot() const {return kind->isDepot();}
-bool Item::isMailbox() const {return kind->isMailbox();}
-bool Item::isTrashHolder() const {return kind->isTrashHolder();}
-bool Item::isBed() const {return kind->isBed();}
-bool Item::isRune() const {return kind->isRune();}
-bool Item::isBlocking(const Creature* creature) const {return kind->blockSolid;}
-bool Item::isStackable() const {return kind->stackable;}
-bool Item::isAlwaysOnTop() const {return kind->alwaysOnTop;}
-bool Item::isNotMoveable() const {return !kind->moveable;}
-bool Item::isMoveable() const {return kind->moveable;}
-bool Item::isPickupable() const {return kind->pickupable;}
-bool Item::isUseable() const {return kind->useable;}
-bool Item::isHangable() const {return kind->isHangable;}
-bool Item::isRoteable() const {return kind->rotable && kind->rotateTo;}
-bool Item::isWeapon() const {return (kind->weaponType != WEAPON_NONE);}
-bool Item::isReadable() const {return kind->canReadText;}
+#warning isGroundTile from item group
+bool Item::isGroundTile() const {return false;}
+#warning isContainer from item group
+bool Item::isContainer() const {return false;}
+#warning isSplash from item group
+bool Item::isSplash() const {return false;}
+bool Item::isFluidContainer() const {return (_kind->containsFluid());}
+#warning rune to own class - what was ItemKind::clientCharges?
+bool Item::isRune() const {return false;}
+bool Item::isBlocking(const Creature* creature) const {return _kind->blocksSolids();}
+bool Item::isStackable() const {return _kind->isStackable();}
+bool Item::isAlwaysOnTop() const {return _kind->isAlwaysOnTop();}
+bool Item::isNotMoveable() const {return !_kind->isMovable();}
+bool Item::isMoveable() const {return _kind->isMovable();}
+bool Item::isPickupable() const {return _kind->isPocketable();}
+bool Item::isUseable() const {return _kind->isUsable();}
+bool Item::isHangable() const {return _kind->getHangableType() == HangableType::HANGING;}
+bool Item::isRoteable() const {return _kind->isRotatable();}
+bool Item::isReadable() const {return _kind->isReadable();}
 
-uint32_t Item::getDefaultDuration() const {return kind->decayTime * 1000;}
+Duration Item::getDefaultDuration() const {return _kind->getLifetime();}
 
 
-ItemKindPC Item::getKind() const {
-	return kind;
+const Kind& Item::getKind() const {
+	return *_kind;
 }
 
 
-void Item::setKind(const ItemKindPC& kind) {
-	assert(kind);
-
-	bool previousStopTime = this->kind->stopTime;
-
-	this->kind = kind;
-
-	uint32_t newDuration = kind->decayTime * 1000;
-	if(!newDuration && !kind->stopTime && kind->decayTo == -1)
-	{
-		_attributes.remove(ATTRIBUTE_DECAYING);
-		_attributes.remove(ATTRIBUTE_DURATION);
-	}
-
-	_attributes.remove(ATTRIBUTE_CORPSEOWNER);
-
-	if(newDuration > 0 && (!previousStopTime || !_attributes.contains(ATTRIBUTE_DURATION)))
-	{
-		setDecaying(DECAYING_FALSE);
-		setDuration(newDuration);
-	}
-}
+#warning FIXME
+//void Item::setKind(const ItemKindPC& _kind) {
+//	assert(_kind);
+//
+//	bool previousStopTime = this->_kind->stopTime;
+//
+//	this->_kind = _kind;
+//
+//	uint32_t newDuration = _kind->decayTime * 1000;
+//	if(!newDuration && !_kind->stopTime && _kind->decayTo == -1)
+//	{
+//		_dynamicAttributes.remove(Kind::ATTRIBUTE_DECAYING);
+//		_dynamicAttributes.remove(Kind::ATTRIBUTE_DURATION);
+//	}
+//
+//	_dynamicAttributes.remove(Kind::ATTRIBUTE_CORPSEOWNER);
+//
+//	if(newDuration > 0 && (!previousStopTime || !_dynamicAttributes.contains(Kind::ATTRIBUTE_DURATION)))
+//	{
+//		setDecaying(DECAYING_FALSE);
+//		setDuration(newDuration);
+//	}
+//}
 
 bool Item::floorChange(FloorChange_t change/* = CHANGE_NONE*/) const
 {
 	if(change < CHANGE_NONE)
-		return kind->hasFloorChange(change);
+		return _kind->hasFloorChanges();
 
 	for(int32_t i = CHANGE_PRE_FIRST; i < CHANGE_LAST; ++i)
 	{
-		if(kind->hasFloorChange(static_cast<FloorChange_t>(i)))
+		if(_kind->hasFloorChange(getDeprecatedFloorChange(static_cast<FloorChange_t>(i))))
 			return true;
 	}
 
@@ -470,10 +386,10 @@ const Player* Item::getHoldingPlayer() const
 
 uint16_t Item::getSubType() const
 {
-	if(kind->isFluidContainer() || kind->isSplash())
+	if(isFluidContainer() || isSplash())
 		return getFluidType();
 
-	if(kind->charges)
+	if(hasCharges())
 		return getCharges();
 
 	return count;
@@ -481,9 +397,9 @@ uint16_t Item::getSubType() const
 
 void Item::setSubType(uint16_t n)
 {
-	if(kind->isFluidContainer() || kind->isSplash())
+	if(isFluidContainer() || isSplash())
 		setFluidType(n);
-	else if(kind->charges)
+	else if(hasCharges())
 		setCharges(n);
 	else
 		count = n;
@@ -509,7 +425,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_USHORT(aid))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_AID, aid);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_AID, aid);
 			break;
 		}
 
@@ -529,7 +445,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(name))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_NAME, name);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_NAME, name);
 			break;
 		}
 
@@ -539,7 +455,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(name))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_PLURALNAME, name);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_PLURALNAME, name);
 			break;
 		}
 
@@ -549,7 +465,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(article))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_ARTICLE, article);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_ARTICLE, article);
 			break;
 		}
 
@@ -559,7 +475,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)attack))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_ATTACK, attack);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_ATTACK, attack);
 			break;
 		}
 
@@ -569,7 +485,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)attack))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_EXTRAATTACK, attack);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_EXTRAATTACK, attack);
 			break;
 		}
 
@@ -579,7 +495,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)defense))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_DEFENSE, defense);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_DEFENSE, defense);
 			break;
 		}
 
@@ -589,7 +505,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)defense))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_EXTRADEFENSE, defense);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_EXTRADEFENSE, defense);
 			break;
 		}
 
@@ -599,7 +515,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)armor))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_ARMOR, armor);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_ARMOR, armor);
 			break;
 		}
 
@@ -609,7 +525,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)attackSpeed))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_ATTACKSPEED, attackSpeed);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_ATTACKSPEED, attackSpeed);
 			break;
 		}
 
@@ -619,7 +535,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)hitChance))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_HITCHANCE, hitChance);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_HITCHANCE, hitChance);
 			break;
 		}
 
@@ -629,7 +545,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_UCHAR(protection))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_SCRIPTPROTECTED, protection != 0);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_SCRIPTPROTECTED, protection != 0);
 			break;
 		}
 
@@ -639,7 +555,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(text))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_TEXT, text);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_TEXT, text);
 			break;
 		}
 
@@ -649,7 +565,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)date))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_DATE, date);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_DATE, date);
 			break;
 		}
 
@@ -659,7 +575,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(writer))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_WRITER, writer);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_WRITER, writer);
 			break;
 		}
 
@@ -669,7 +585,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_STRING(text))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_DESCRIPTION, text);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_DESCRIPTION, text);
 			break;
 		}
 
@@ -699,7 +615,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			if(!propStream.GET_ULONG((uint32_t&)duration))
 				return ATTR_READ_ERROR;
 
-			_attributes.set(ATTRIBUTE_DURATION, duration);
+			_dynamicAttributes.set(Kind::ATTRIBUTE_DURATION, duration);
 			break;
 		}
 
@@ -710,7 +626,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 				return ATTR_READ_ERROR;
 
 			if((ItemDecayState_t)state != DECAYING_FALSE)
-				_attributes.set(ATTRIBUTE_DECAYING, (int32_t)DECAYING_PENDING);
+				_dynamicAttributes.set(Kind::ATTRIBUTE_DECAYING, (int32_t)DECAYING_PENDING);
 
 			break;
 		}
@@ -779,9 +695,9 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 		//ItemAttributes class
 		case ATTR_ATTRIBUTE_MAP:
 		{
-			bool unique = _attributes.contains(ATTRIBUTE_UID);
+			bool unique = _dynamicAttributes.contains(Kind::ATTRIBUTE_UID);
 			bool ret = unserializeMap(propStream);
-			if(!unique && _attributes.contains(ATTRIBUTE_UID)) // unfortunately we have to do this
+			if(!unique && _dynamicAttributes.contains(Kind::ATTRIBUTE_UID)) // unfortunately we have to do this
 				ScriptEnviroment::addUniqueThing(this);
 
 			// this attribute has a custom behavior as well
@@ -827,77 +743,77 @@ bool Item::hasProperty(enum ITEMPROPERTY prop) const
 	switch(prop)
 	{
 		case BLOCKSOLID:
-			if(kind->blockSolid)
+			if(_kind->blocksSolids())
 				return true;
 
 			break;
 
 		case MOVEABLE:
-			if(kind->moveable && (!isLoadedFromMap() || (!getUniqueId()
+			if(_kind->isMovable() && (!isLoadedFromMap() || (!getUniqueId()
 				&& (!getActionId() || getContainer()))))
 				return true;
 
 			break;
 
 		case HASHEIGHT:
-			if(kind->hasHeight)
+			if(_kind->isElevated())
 				return true;
 
 			break;
 
 		case BLOCKPROJECTILE:
-			if(kind->blockProjectile)
+			if(_kind->blocksProjectiles())
 				return true;
 
 			break;
 
 		case BLOCKPATH:
-			if(kind->blockPathFind)
+			if(_kind->blocksPathfinding())
 				return true;
 
 			break;
 
 		case ISVERTICAL:
-			if(kind->isVertical)
+			if(_kind->getHangableType() == HangableType::VERTICAL_WALL)
 				return true;
 
 			break;
 
 		case ISHORIZONTAL:
-			if(kind->isHorizontal)
+			if(_kind->getHangableType() == HangableType::HORIZONTAL_WALL)
 				return true;
 
 			break;
 
 		case IMMOVABLEBLOCKSOLID:
-			if(kind->blockSolid && (!kind->moveable || (isLoadedFromMap() &&
+			if(_kind->blocksSolids() && (!_kind->isMovable() || (isLoadedFromMap() &&
 				(getUniqueId() || (getActionId() && getContainer())))))
 				return true;
 
 			break;
 
 		case IMMOVABLEBLOCKPATH:
-			if(kind->blockPathFind && (!kind->moveable || (isLoadedFromMap() &&
+			if(_kind->blocksPathfinding() && (!_kind->isMovable() || (isLoadedFromMap() &&
 				(getUniqueId() || (getActionId() && getContainer())))))
 				return true;
 
 			break;
 
 		case SUPPORTHANGABLE:
-			if(kind->isHorizontal || kind->isVertical)
+			if(_kind->getHangableType() == HangableType::HORIZONTAL_WALL || _kind->getHangableType() == HangableType::VERTICAL_WALL)
 				return true;
 
 			break;
 
 		case IMMOVABLENOFIELDBLOCKPATH:
-			if(!kind->isMagicField() && kind->blockPathFind && (!kind->moveable || (isLoadedFromMap() &&
+			if(!_kind->isMagicField() && _kind->blocksPathfinding() && (!_kind->isMovable() || (isLoadedFromMap() &&
 				(getUniqueId() || (getActionId() && getContainer())))))
 				return true;
 
 			break;
 
 		case NOFIELDBLOCKPATH:
-			if(!kind->isMagicField() && kind->blockPathFind)
+			if(!_kind->isMagicField() && _kind->blocksPathfinding())
 				return true;
 
 			break;
@@ -912,90 +828,90 @@ bool Item::hasProperty(enum ITEMPROPERTY prop) const
 double Item::getWeight() const
 {
 	if(isStackable())
-		return kind->weight * std::max((int32_t)1, (int32_t)count);
+		return _kind->getWeight() * std::max((int32_t)1, (int32_t)count);
 
-	return kind->weight;
+	return _kind->getWeight();
 }
 
-std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, const Item* item/* = nullptr*/,
+std::string Item::getDescription(const Kind& _kind, int32_t lookDistance, const Item* item/* = nullptr*/,
 		uint16_t subType/* = 0*/, bool addArticle/* = true*/)
 {
 	std::stringstream s;
-	s << getNameDescription(kind, item, subType, addArticle);
+	s << getNameDescription(_kind, item, subType, addArticle);
 	if(item)
 		subType = item->getSubType();
 
 	bool dot = true;
-	if(kind->isRune())
+	if(_kind.isRune())
 	{
 		s << "(";
-		if(!kind->runeSpellName.empty())
-			s << "\"" << kind->runeSpellName << "\", ";
+		if(!_kind.runeSpellName.empty())
+			s << "\"" << _kind.runeSpellName << "\", ";
 
 		s << "Charges:" << subType << ")";
-		if(kind->runeLevel > 0 || kind->runeMagLevel > 0 || (kind->vocationString != "" && kind->wieldInfo == 0))
+		if(_kind.runeLevel > 0 || _kind.runeMagLevel > 0 || (_kind.vocationString != "" && _kind.wieldInfo == 0))
 		{
 			s << "." << std::endl << "It can only be used";
-			if(kind->vocationString != "" && kind->wieldInfo == 0)
-				s << " by " << kind->vocationString;
+			if(_kind.vocationString != "" && _kind.wieldInfo == 0)
+				s << " by " << _kind.vocationString;
 
 			bool begin = true;
-			if(kind->runeLevel > 0)
+			if(_kind.runeLevel > 0)
 			{
 				begin = false;
-				s << " with level " << kind->runeLevel;
+				s << " with level " << _kind.runeLevel;
 			}
 
-			if(kind->runeMagLevel > 0)
+			if(_kind.runeMagLevel > 0)
 			{
 				begin = false;
-				s << " " << (begin ? "with" : "and") << " magic level " << kind->runeMagLevel;
+				s << " " << (begin ? "with" : "and") << " magic level " << _kind.runeMagLevel;
 			}
 
 			if(!begin)
 				s << " or higher";
 		}
 	}
-	else if(kind->weaponType != WEAPON_NONE)
+	else if(_kind.weaponType != WEAPON_NONE)
 	{
 		bool begin = true;
-		if(kind->weaponType == WEAPON_DIST && kind->ammoType != AMMO_NONE)
+		if(_kind.weaponType == WEAPON_DIST && _kind.ammoType != AMMO_NONE)
 		{
 			begin = false;
-			s << " (Range:" << int32_t(item ? item->getShootRange() : kind->shootRange);
-			if(kind->attack || kind->extraAttack || (item && (item->getAttack() || item->getExtraAttack())))
+			s << " (Range:" << int32_t(item ? item->getShootRange() : _kind.shootRange);
+			if(_kind.attack || _kind.extraAttack || (item && (item->getAttack() || item->getExtraAttack())))
 			{
-				s << ", Atk " << std::showpos << int32_t(item ? item->getAttack() : kind->attack);
-				if(kind->extraAttack || (item && item->getExtraAttack()))
-					s << " " << std::showpos << int32_t(item ? item->getExtraAttack() : kind->extraAttack) << std::noshowpos;
+				s << ", Atk " << std::showpos << int32_t(item ? item->getAttack() : _kind.attack);
+				if(_kind.extraAttack || (item && item->getExtraAttack()))
+					s << " " << std::showpos << int32_t(item ? item->getExtraAttack() : _kind.extraAttack) << std::noshowpos;
 			}
 
-			if(kind->hitChance != -1 || (item && item->getHitChance() != -1))
-				s << ", Hit% " << std::showpos << (item ? item->getHitChance() : kind->hitChance) << std::noshowpos;
+			if(_kind.hitChance != -1 || (item && item->getHitChance() != -1))
+				s << ", Hit% " << std::showpos << (item ? item->getHitChance() : _kind.hitChance) << std::noshowpos;
 		}
-		else if(kind->weaponType != WEAPON_AMMO && kind->weaponType != WEAPON_WAND)
+		else if(_kind.weaponType != WEAPON_AMMO && _kind.weaponType != WEAPON_WAND)
 		{
-			if(kind->attack || kind->extraAttack || (item && (item->getAttack() || item->getExtraAttack())))
+			if(_kind.attack || _kind.extraAttack || (item && (item->getAttack() || item->getExtraAttack())))
 			{
 				begin = false;
 				s << " (Atk:";
-				if(kind->abilities.elementType != COMBAT_NONE && kind->decayTo < 1)
+				if(_kind.abilities.elementType != COMBAT_NONE && _kind.decayTo < 1)
 				{
-					s << std::max((int32_t)0, int32_t((item ? item->getAttack() : kind->attack) - kind->abilities.elementDamage));
-					if(kind->extraAttack || (item && item->getExtraAttack()))
-						s << " " << std::showpos << int32_t(item ? item->getExtraAttack() : kind->extraAttack) << std::noshowpos;
+					s << std::max((int32_t)0, int32_t((item ? item->getAttack() : _kind.attack) - _kind.abilities.elementDamage));
+					if(_kind.extraAttack || (item && item->getExtraAttack()))
+						s << " " << std::showpos << int32_t(item ? item->getExtraAttack() : _kind.extraAttack) << std::noshowpos;
 
-					s << " physical + " << kind->abilities.elementDamage << " " << getCombatName(kind->abilities.elementType);
+					s << " physical + " << _kind.abilities.elementDamage << " " << getCombatName(_kind.abilities.elementType);
 				}
 				else
 				{
-					s << int32_t(item ? item->getAttack() : kind->attack);
-					if(kind->extraAttack || (item && item->getExtraAttack()))
-						s << " " << std::showpos << int32_t(item ? item->getExtraAttack() : kind->extraAttack) << std::noshowpos;
+					s << int32_t(item ? item->getAttack() : _kind.attack);
+					if(_kind.extraAttack || (item && item->getExtraAttack()))
+						s << " " << std::showpos << int32_t(item ? item->getExtraAttack() : _kind.extraAttack) << std::noshowpos;
 				}
 			}
 
-			if(kind->defense || kind->extraDefense || (item && (item->getDefense() || item->getExtraDefense())))
+			if(_kind.defense || _kind.extraDefense || (item && (item->getDefense() || item->getExtraDefense())))
 			{
 				if(begin)
 				{
@@ -1005,22 +921,22 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 				else
 					s << ", ";
 
-				s << "Def:" << int32_t(item ? item->getDefense() : kind->defense);
-				if(kind->extraDefense || (item && item->getExtraDefense()))
-					s << " " << std::showpos << int32_t(item ? item->getExtraDefense() : kind->extraDefense) << std::noshowpos;
+				s << "Def:" << int32_t(item ? item->getDefense() : _kind.defense);
+				if(_kind.extraDefense || (item && item->getExtraDefense()))
+					s << " " << std::showpos << int32_t(item ? item->getExtraDefense() : _kind.extraDefense) << std::noshowpos;
 			}
 		}
-		else if (kind->weaponType == WEAPON_WAND) {
-			if (kind->attack > 0 || (item && item->getAttack())) {
+		else if (_kind.weaponType == WEAPON_WAND) {
+			if (_kind.attack > 0 || (item && item->getAttack())) {
 				begin = false;
 				s << " (Bonus Dmg:";
-				s << int32_t(item ? item->getAttack() : kind->attack);
+				s << int32_t(item ? item->getAttack() : _kind.attack);
 			}
 		}
 
 		for(uint16_t i = SKILL_FIRST; i <= SKILL_LAST; i++)
 		{
-			if(!kind->abilities.skills[i])
+			if(!_kind.abilities.skills[i])
 				continue;
 
 			if(begin)
@@ -1031,10 +947,10 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			else
 				s << ", ";
 
-			s << getSkillName(i) << " " << std::showpos << (int32_t)kind->abilities.skills[i] << std::noshowpos;
+			s << getSkillName(i) << " " << std::showpos << (int32_t)_kind.abilities.skills[i] << std::noshowpos;
 		}
 
-		if(kind->abilities.stats[STAT_MAGICLEVEL])
+		if(_kind.abilities.stats[STAT_MAGICLEVEL])
 		{
 			if(begin)
 			{
@@ -1044,13 +960,13 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			else
 				s << ", ";
 
-			s << "magic level " << std::showpos << (int32_t)kind->abilities.stats[STAT_MAGICLEVEL] << std::noshowpos;
+			s << "magic level " << std::showpos << (int32_t)_kind.abilities.stats[STAT_MAGICLEVEL] << std::noshowpos;
 		}
 
-		int32_t show = kind->abilities.getAbsorb(COMBAT_PHYSICALDAMAGE);
+		int32_t show = _kind.abilities.getAbsorb(COMBAT_PHYSICALDAMAGE);
 		for(uint32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.getAbsorb((CombatType_t)i) == show)
+			if(_kind.abilities.getAbsorb((CombatType_t)i) == show)
 				continue;
 
 			show = 0;
@@ -1062,7 +978,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			bool tmp = true;
 			for(uint32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				int16_t absorb = kind->abilities.getAbsorb((CombatType_t)i);
+				int16_t absorb = _kind.abilities.getAbsorb((CombatType_t)i);
 				if(absorb <= 0)
 					continue;
 
@@ -1098,7 +1014,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			s << "protection all " << show << "%";
 		}
 
-		if(kind->abilities.speed)
+		if(_kind.abilities.speed)
 		{
 			if(begin)
 			{
@@ -1108,15 +1024,15 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			else
 				s << ", ";
 
-			s << "speed " << std::showpos << (int32_t)(kind->abilities.speed / 2) << std::noshowpos;
+			s << "speed " << std::showpos << (int32_t)(_kind.abilities.speed / 2) << std::noshowpos;
 		}
 
 		if(!begin)
 			s << ")";
 	}
-	else if(kind->armor || (item && item->getArmor()) || kind->showAttributes)
+	else if(_kind.armor || (item && item->getArmor()) || _kind.showAttributes)
 	{
-		int32_t tmp = kind->armor;
+		int32_t tmp = _kind.armor;
 		if(item)
 			tmp = item->getArmor();
 
@@ -1129,7 +1045,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 
 		for(uint16_t i = SKILL_FIRST; i <= SKILL_LAST; i++)
 		{
-			if(!kind->abilities.skills[i])
+			if(!_kind.abilities.skills[i])
 				continue;
 
 			if(begin)
@@ -1140,10 +1056,10 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			else
 				s << ", ";
 
-			s << getSkillName(i) << " " << std::showpos << (int32_t)kind->abilities.skills[i] << std::noshowpos;
+			s << getSkillName(i) << " " << std::showpos << (int32_t)_kind.abilities.skills[i] << std::noshowpos;
 		}
 
-		if(kind->abilities.stats[STAT_MAGICLEVEL])
+		if(_kind.abilities.stats[STAT_MAGICLEVEL])
 		{
 			if(begin)
 			{
@@ -1153,13 +1069,13 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			else
 				s << ", ";
 
-			s << "magic level " << std::showpos << (int32_t)kind->abilities.stats[STAT_MAGICLEVEL] << std::noshowpos;
+			s << "magic level " << std::showpos << (int32_t)_kind.abilities.stats[STAT_MAGICLEVEL] << std::noshowpos;
 		}
 
-		int32_t show = kind->abilities.getAbsorb(COMBAT_PHYSICALDAMAGE);
+		int32_t show = _kind.abilities.getAbsorb(COMBAT_PHYSICALDAMAGE);
 		for(int32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.getAbsorb((CombatType_t)i) == show)
+			if(_kind.abilities.getAbsorb((CombatType_t)i) == show)
 				continue;
 
 			show = 0;
@@ -1171,7 +1087,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			bool tmp = true;
 			for(int32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				int16_t absorb = kind->abilities.getAbsorb((CombatType_t)i);
+				int16_t absorb = _kind.abilities.getAbsorb((CombatType_t)i);
 				if(absorb <= 0)
 					continue;
 
@@ -1207,10 +1123,10 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			s << "protection all " << show << "%";
 		}
 
-		show = kind->abilities.getReflect(COMBAT_PHYSICALDAMAGE, REFLECT_CHANCE);
+		show = _kind.abilities.getReflect(COMBAT_PHYSICALDAMAGE, REFLECT_CHANCE);
 		for(int32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.getReflect((CombatType_t)i, REFLECT_CHANCE) == show)
+			if(_kind.abilities.getReflect((CombatType_t)i, REFLECT_CHANCE) == show)
 				continue;
 
 			show = 0;
@@ -1222,7 +1138,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			bool tmp = true;
 			for(int32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				int16_t chance = kind->abilities.getReflect((CombatType_t)i, REFLECT_CHANCE);
+				int16_t chance = _kind.abilities.getReflect((CombatType_t)i, REFLECT_CHANCE);
 				if(chance <= 0)
 					continue;
 
@@ -1244,7 +1160,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 
 				std::string ss = "no";
 
-				int16_t percent = kind->abilities.getReflect((CombatType_t)i, REFLECT_PERCENT);
+				int16_t percent = _kind.abilities.getReflect((CombatType_t)i, REFLECT_PERCENT);
 				if(percent > 99)
 					ss = "all";
 				else if(percent >= 75)
@@ -1275,7 +1191,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			s << "reflect all " << show << "% for mixed damage";
 		}
 
-		if(kind->abilities.speed)
+		if(_kind.abilities.speed)
 		{
 			if(begin)
 			{
@@ -1285,35 +1201,35 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			else
 				s << ", ";
 
-			s << "speed " << std::showpos << (int32_t)(kind->abilities.speed / 2) << std::noshowpos;
+			s << "speed " << std::showpos << (int32_t)(_kind.abilities.speed / 2) << std::noshowpos;
 		}
 
 		if(!begin)
 			s << ")";
 	}
-	else if(kind->isContainer())
-		s << " (Vol:" << (int32_t)kind->maxItems << ")";
-	else if(kind->isKey())
+	else if(_kind.isContainer())
+		s << " (Vol:" << (int32_t)_kind.maxItems << ")";
+	else if(_kind.isKey())
 		s << " (Key:" << (item ? (int32_t)item->getActionId() : 0) << ")";
-	else if(kind->isFluidContainer())
+	else if(_kind.isFluidContainer())
 	{
 		ItemKindPC subKind = server.items()[subType];
 		if(subKind)
-			s << " of " << (subKind->name.empty() ? "unknown" : subKind->name);
+			s << " of " << (subkind.name.empty() ? "unknown" : subkind.name);
 		else
 			s << ". It is empty";
 	}
-	else if(kind->isSplash())
+	else if(_kind.isSplash())
 	{
 		s << " of ";
 
 		ItemKindPC subKind = server.items()[subType];
-		if(subKind && !subKind->name.empty())
-			s << subKind->name;
+		if(subKind && !subkind.name.empty())
+			s << subkind.name;
 		else
 			s << "unknown";
 	}
-	else if(kind->allowDistRead)
+	else if(_kind.allowDistRead)
 	{
 		s << std::endl;
 		if(item && !item->getText().empty())
@@ -1347,16 +1263,16 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 		else
 			s << "Nothing is written on it";
 	}
-	else if(kind->levelDoor && item && item->getActionId() >= (int32_t)kind->levelDoor && item->getActionId()
-		<= ((int32_t)kind->levelDoor + server.configManager().getNumber(ConfigManager::MAXIMUM_DOOR_LEVEL)))
-		s << " for level " << item->getActionId() - kind->levelDoor;
+	else if(_kind.levelDoor && item && item->getActionId() >= (int32_t)_kind.levelDoor && item->getActionId()
+		<= ((int32_t)_kind.levelDoor + server.configManager().getNumber(ConfigManager::MAXIMUM_DOOR_LEVEL)))
+		s << " for level " << item->getActionId() - _kind.levelDoor;
 
-	if(kind->showCharges)
+	if(_kind.showCharges)
 		s << " that has " << subType << " charge" << (subType != 1 ? "s" : "") << " left";
 
-	if(kind->showDuration)
+	if(_kind.showDuration)
 	{
-		if(item && item->_attributes.contains(ATTRIBUTE_DURATION))
+		if(item && item->_dynamicAttributes.contains(Kind::ATTRIBUTE_DURATION))
 		{
 			int32_t duration = item->getDuration() / 1000;
 			s << " that has energy for ";
@@ -1375,38 +1291,38 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 	if(dot)
 		s << ".";
 
-	if(kind->wieldInfo)
+	if(_kind.wieldInfo)
 	{
 		s << std::endl << "It can only be wielded properly by ";
-		if(kind->wieldInfo & WIELDINFO_PREMIUM)
+		if(_kind.wieldInfo & WIELDINFO_PREMIUM)
 			s << "premium ";
 
-		if(kind->wieldInfo & WIELDINFO_VOCREQ)
-			s << kind->vocationString;
+		if(_kind.wieldInfo & WIELDINFO_VOCREQ)
+			s << _kind.vocationString;
 		else
 			s << "players";
 
-		if(kind->wieldInfo & WIELDINFO_LEVEL)
-			s << " of level " << (int32_t)kind->minReqLevel << " or higher";
+		if(_kind.wieldInfo & WIELDINFO_LEVEL)
+			s << " of level " << (int32_t)_kind.minReqLevel << " or higher";
 
-		if(kind->wieldInfo & WIELDINFO_MAGLV)
+		if(_kind.wieldInfo & WIELDINFO_MAGLV)
 		{
-			if(kind->wieldInfo & WIELDINFO_LEVEL)
+			if(_kind.wieldInfo & WIELDINFO_LEVEL)
 				s << " and";
 			else
 				s << " of";
 
-			s << " magic level " << (int32_t)kind->minReqMagicLevel << " or higher";
+			s << " magic level " << (int32_t)_kind.minReqMagicLevel << " or higher";
 		}
 
 		s << ".";
 	}
 
-	if(lookDistance <= 1 && kind->pickupable)
+	if(lookDistance <= 1 && _kind.pickupable)
 	{
 		std::string tmp;
 		if(!item)
-			tmp = getWeightDescription(kind->weight, kind->stackable, subType);
+			tmp = getWeightDescription(_kind.weight, _kind.stackable, subType);
 		else
 			tmp = item->getWeightDescription();
 
@@ -1414,21 +1330,21 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			s << std::endl << tmp;
 	}
 
-	if(kind->abilities.elementType != COMBAT_NONE && kind->decayTo > 0)
+	if(_kind.abilities.elementType != COMBAT_NONE && _kind.decayTo > 0)
 	{
-		s << std::endl << "It is temporarily enchanted with " << getCombatName(kind->abilities.elementType) << " (";
-		s << std::max((int32_t)0, int32_t((item ? item->getAttack() : kind->attack) - kind->abilities.elementDamage));
-		if(kind->extraAttack || (item && item->getExtraAttack()))
-			s << " " << std::showpos << int32_t(item ? item->getExtraAttack() : kind->extraAttack) << std::noshowpos;
+		s << std::endl << "It is temporarily enchanted with " << getCombatName(_kind.abilities.elementType) << " (";
+		s << std::max((int32_t)0, int32_t((item ? item->getAttack() : _kind.attack) - _kind.abilities.elementDamage));
+		if(_kind.extraAttack || (item && item->getExtraAttack()))
+			s << " " << std::showpos << int32_t(item ? item->getExtraAttack() : _kind.extraAttack) << std::noshowpos;
 
-		s << " physical + " << kind->abilities.elementDamage << " " << getCombatName(kind->abilities.elementType) << " damage).";
+		s << " physical + " << _kind.abilities.elementDamage << " " << getCombatName(_kind.abilities.elementType) << " damage).";
 	}
 
 	std::string str;
 	if(item && !item->getSpecialDescription().empty())
 		str = item->getSpecialDescription();
-	else if(!kind->description.empty() && lookDistance <= 1)
-		str = kind->description;
+	else if(!_kind.description.empty() && lookDistance <= 1)
+		str = _kind.description;
 
 	if(str.empty())
 		return s.str();
@@ -1498,31 +1414,31 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 	return s.str();
 }
 
-std::string Item::getNameDescription(const ItemKindPC& kind, const Item* item/* = nullptr*/, uint16_t subType/* = 0*/, bool addArticle/* = true*/)
+std::string Item::getNameDescription(const ItemKindPC& _kind, const Item* item/* = nullptr*/, uint16_t subType/* = 0*/, bool addArticle/* = true*/)
 {
 	if(item)
 		subType = item->getSubType();
 
 	std::stringstream s;
-	if(!kind->name.empty() || (item && !item->getName().empty()))
+	if(!_kind->name.empty() || (item && !item->getName().empty()))
 	{
-		if(subType > 1 && kind->stackable && kind->showCount)
-			s << subType << " " << (item ? item->getPluralName() : kind->pluralName);
+		if(subType > 1 && _kind->stackable && _kind->showCount)
+			s << subType << " " << (item ? item->getPluralName() : _kind->pluralName);
 		else
 		{
 			if(addArticle)
 			{
 				if(item && !item->getArticle().empty())
 					s << item->getArticle() << " ";
-				else if(!kind->article.empty())
-					s << kind->article << " ";
+				else if(!_kind->article.empty())
+					s << _kind->article << " ";
 			}
 
-			s << (item ? item->getName() : kind->name);
+			s << (item ? item->getName() : _kind->name);
 		}
 	}
 	else
-		s << "an item of type " << kind->id << ", please report it to gamemaster";
+		s << "an item of type " << _kind->id << ", please report it to gamemaster";
 
 	return s.str();
 }
@@ -1546,7 +1462,7 @@ void Item::setActionId(int32_t aid)
 	if(getActionId())
 		server.moveEvents().onRemoveTileItem(getTile(), this);
 
-	_attributes.set(ATTRIBUTE_AID, aid);
+	_dynamicAttributes.set(Kind::ATTRIBUTE_AID, aid);
 	server.moveEvents().onAddTileItem(getTile(), this);
 }
 
@@ -1555,7 +1471,7 @@ void Item::resetActionId()
 	if(!getActionId())
 		return;
 
-	_attributes.remove(ATTRIBUTE_AID);
+	_dynamicAttributes.remove(Kind::ATTRIBUTE_AID);
 	server.moveEvents().onAddTileItem(getTile(), this);
 }
 
@@ -1564,7 +1480,7 @@ void Item::setUniqueId(int32_t uid)
 	if(getUniqueId())
 		return;
 
-	_attributes.set(ATTRIBUTE_UID, uid);
+	_dynamicAttributes.set(Kind::ATTRIBUTE_UID, uid);
 	ScriptEnviroment::addUniqueThing(this);
 }
 
@@ -1576,13 +1492,13 @@ bool Item::canDecay(bool ignoreRemoved)
 	if(isLoadedFromMap() && (getUniqueId() || (getActionId() && getContainer())))
 		return false;
 
-	return kind->decayTo >= 0 && kind->decayTime;
+	return _kind->decayTo >= 0 && _kind->decayTime;
 }
 
 void Item::getLight(LightInfo& lightInfo)
 {
-	lightInfo.color = kind->lightColor;
-	lightInfo.level = kind->lightLevel;
+	lightInfo.color = _kind->lightColor;
+	lightInfo.level = _kind->lightLevel;
 }
 
 void Item::__startDecaying()
@@ -1592,34 +1508,34 @@ void Item::__startDecaying()
 
 std::string Item::getName() const
 {
-	const std::string* v = _attributes.getString(ATTRIBUTE_NAME);
+	const std::string* v = _dynamicAttributes.getString(Kind::ATTRIBUTE_NAME);
 	if(v)
 		return *v;
 
-	return kind->name;
+	return _kind->name;
 }
 
 std::string Item::getPluralName() const
 {
-	const std::string* v = _attributes.getString(ATTRIBUTE_PLURALNAME);
+	const std::string* v = _dynamicAttributes.getString(Kind::ATTRIBUTE_PLURALNAME);
 	if(v)
 		return *v;
 
-	return kind->pluralName;
+	return _kind->pluralName;
 }
 
 std::string Item::getArticle() const
 {
-	const std::string* v = _attributes.getString(ATTRIBUTE_ARTICLE);
+	const std::string* v = _dynamicAttributes.getString(Kind::ATTRIBUTE_ARTICLE);
 	if(v)
 		return *v;
 
-	return kind->article;
+	return _kind->article;
 }
 
 bool Item::isScriptProtected() const
 {
-	const bool* v = _attributes.getBoolean(ATTRIBUTE_SCRIPTPROTECTED);
+	const bool* v = _dynamicAttributes.getBoolean(Kind::ATTRIBUTE_SCRIPTPROTECTED);
 	if(v)
 		return *v;
 
@@ -1628,86 +1544,86 @@ bool Item::isScriptProtected() const
 
 int32_t Item::getAttack() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_ATTACK);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_ATTACK);
 	if(v)
 		return *v;
 
-	return kind->attack;
+	return _kind->attack;
 }
 
 int32_t Item::getExtraAttack() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_EXTRAATTACK);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_EXTRAATTACK);
 	if(v)
 		return *v;
 
-	return kind->extraAttack;
+	return _kind->extraAttack;
 }
 
 int32_t Item::getDefense() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_DEFENSE);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_DEFENSE);
 	if(v)
 		return *v;
 
-	return kind->defense;
+	return _kind->defense;
 }
 
 int32_t Item::getExtraDefense() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_EXTRADEFENSE);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_EXTRADEFENSE);
 	if(v)
 		return *v;
 
-	return kind->extraDefense;
+	return _kind->extraDefense;
 }
 
 int32_t Item::getArmor() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_ARMOR);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_ARMOR);
 	if(v)
 		return *v;
 
-	return kind->armor;
+	return _kind->armor;
 }
 
 int32_t Item::getAttackSpeed() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_ATTACKSPEED);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_ATTACKSPEED);
 	if(v)
 		return *v;
 
-	return kind->attackSpeed;
+	return _kind->attackSpeed;
 }
 
 int32_t Item::getHitChance() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_HITCHANCE);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_HITCHANCE);
 	if(v)
 		return *v;
 
-	return kind->hitChance;
+	return _kind->hitChance;
 }
 
 int32_t Item::getShootRange() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_SHOOTRANGE);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_SHOOTRANGE);
 	if(v)
 		return *v;
 
-	return kind->shootRange;
+	return _kind->shootRange;
 }
 
 void Item::decreaseDuration(int32_t time)
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_DURATION);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_DURATION);
 	if(v)
-		_attributes.set(ATTRIBUTE_DURATION, *v - time);
+		_dynamicAttributes.set(Kind::ATTRIBUTE_DURATION, *v - time);
 }
 
 int32_t Item::getDuration() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_DURATION);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_DURATION);
 	if(v)
 		return *v;
 
@@ -1716,7 +1632,7 @@ int32_t Item::getDuration() const
 
 const std::string& Item::getSpecialDescription() const
 {
-	const std::string* v = _attributes.getString(ATTRIBUTE_DESCRIPTION);
+	const std::string* v = _dynamicAttributes.getString(Kind::ATTRIBUTE_DESCRIPTION);
 	if(v)
 		return *v;
 
@@ -1725,7 +1641,7 @@ const std::string& Item::getSpecialDescription() const
 
 const std::string& Item::getText() const
 {
-	const std::string* v = _attributes.getString(ATTRIBUTE_TEXT);
+	const std::string* v = _dynamicAttributes.getString(Kind::ATTRIBUTE_TEXT);
 	if(v)
 		return *v;
 
@@ -1734,7 +1650,7 @@ const std::string& Item::getText() const
 
 time_t Item::getDate() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_DATE);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_DATE);
 	if(v)
 		return (time_t)*v;
 
@@ -1743,7 +1659,7 @@ time_t Item::getDate() const
 
 const std::string& Item::getWriter() const
 {
-	const std::string* v = _attributes.getString(ATTRIBUTE_WRITER);
+	const std::string* v = _dynamicAttributes.getString(Kind::ATTRIBUTE_WRITER);
 	if(v)
 		return *v;
 
@@ -1752,7 +1668,7 @@ const std::string& Item::getWriter() const
 
 int32_t Item::getActionId() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_AID);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_AID);
 	if(v)
 		return *v;
 
@@ -1761,7 +1677,7 @@ int32_t Item::getActionId() const
 
 int32_t Item::getUniqueId() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_UID);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_UID);
 	if(v)
 		return *v;
 
@@ -1770,7 +1686,7 @@ int32_t Item::getUniqueId() const
 
 uint16_t Item::getCharges() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_CHARGES);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_CHARGES);
 	if(v && *v >= 0)
 		return (uint16_t)*v;
 
@@ -1779,7 +1695,7 @@ uint16_t Item::getCharges() const
 
 uint16_t Item::getFluidType() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_FLUIDTYPE);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_FLUIDTYPE);
 	if(v && *v >= 0)
 		return (uint16_t)*v;
 
@@ -1788,7 +1704,7 @@ uint16_t Item::getFluidType() const
 
 uint32_t Item::getOwner() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_OWNER);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_OWNER);
 	if(v)
 		return (uint32_t)*v;
 
@@ -1797,7 +1713,7 @@ uint32_t Item::getOwner() const
 
 uint32_t Item::getCorpseOwner()
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_CORPSEOWNER);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_CORPSEOWNER);
 	if(v)
 		return (uint32_t)*v;
 
@@ -1806,7 +1722,7 @@ uint32_t Item::getCorpseOwner()
 
 ItemDecayState_t Item::getDecaying() const
 {
-	const int32_t* v = _attributes.getInteger(ATTRIBUTE_DECAYING);
+	const int32_t* v = _dynamicAttributes.getInteger(Kind::ATTRIBUTE_DECAYING);
 	if(v)
 		return (ItemDecayState_t)*v;
 
@@ -1846,9 +1762,9 @@ bool Item::serializeAttr(PropWriteStream& stream) const
 		stream.ADD_UCHAR((uint8_t)getSubType());
 	}
 
-	auto entries = _attributes.getEntries();
+	auto entries = _dynamicAttributes.getEntries();
 	if (entries != nullptr && !entries->empty()) {
-		stream.ADD_UCHAR(ATTR_ATTRIBUTE_MAP);
+		stream.ADD_UCHAR(ATTR_Kind::ATTRIBUTE_MAP);
 		stream.ADD_USHORT((uint16_t)std::min((size_t)0xFFFF, entries->size()));
 
 		for (auto& it : *entries) {
@@ -1910,7 +1826,7 @@ bool Item::unserializeMap(PropStream& stream) {
 				if(!stream.GET_LSTRING(v))
 					return false;
 
-				_attributes.set(key, v);
+				_dynamicAttributes.set(key, v);
 				break;
 			}
 			case SerializedTypeInt:
@@ -1919,7 +1835,7 @@ bool Item::unserializeMap(PropStream& stream) {
 				if(!stream.GET_VALUE(v))
 					return false;
 
-				_attributes.set(key, v);
+				_dynamicAttributes.set(key, v);
 				break;
 			}
 			case SerializedTypeFloat:
@@ -1928,7 +1844,7 @@ bool Item::unserializeMap(PropStream& stream) {
 				if(!stream.GET_VALUE(v))
 					return false;
 
-				_attributes.set(key, v);
+				_dynamicAttributes.set(key, v);
 				break;
 			}
 			case SerializedTypeBool:
@@ -1937,7 +1853,7 @@ bool Item::unserializeMap(PropStream& stream) {
 				if(!stream.GET_UCHAR(v))
 					return false;
 
-				_attributes.set(key, v != 0);
+				_dynamicAttributes.set(key, v != 0);
 				break;
 			}
 		}
@@ -1945,3 +1861,18 @@ bool Item::unserializeMap(PropStream& stream) {
 
 	return true;
 }
+
+void Item::setDuration(Duration time) {_dynamicAttributes.set(Kind::ATTRIBUTE_DURATION, time.count());}
+void Item::setSpecialDescription(const std::string& description) {_dynamicAttributes.set(Kind::ATTRIBUTE_DESCRIPTION, description);}
+void Item::resetSpecialDescription() {_dynamicAttributes.remove(Kind::ATTRIBUTE_DESCRIPTION);}
+void Item::setText(const std::string& text) {_dynamicAttributes.set(Kind::ATTRIBUTE_TEXT, text);}
+void Item::resetText() {_dynamicAttributes.remove(Kind::ATTRIBUTE_TEXT);}
+void Item::setDate(time_t date) {_dynamicAttributes.set(Kind::ATTRIBUTE_DATE, (int32_t)date);}
+void Item::resetDate() {_dynamicAttributes.remove(Kind::ATTRIBUTE_DATE);}
+void Item::setWriter(std::string writer) {_dynamicAttributes.set(Kind::ATTRIBUTE_WRITER, writer);}
+void Item::resetWriter() {_dynamicAttributes.remove(Kind::ATTRIBUTE_WRITER);}
+void Item::setCharges(uint16_t charges) {_dynamicAttributes.set(Kind::ATTRIBUTE_CHARGES, charges);}
+void Item::setOwner(uint32_t owner) {_dynamicAttributes.set(Kind::ATTRIBUTE_OWNER, (int32_t)owner);}
+void Item::setCorpseOwner(uint32_t corpseOwner) {_dynamicAttributes.set(Kind::ATTRIBUTE_CORPSEOWNER, (int32_t)corpseOwner);}
+void Item::setDecaying(ItemDecayState_t state) {_dynamicAttributes.set(Kind::ATTRIBUTE_DECAYING, (int32_t)state);}
+void Item::setFluidType(uint16_t fluidType) {_dynamicAttributes.set(Kind::ATTRIBUTE_FLUIDTYPE, fluidType);}

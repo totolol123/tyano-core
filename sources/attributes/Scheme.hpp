@@ -24,7 +24,8 @@ namespace attributes {
 	class Attribute;
 	class Scheme;
 
-	typedef std::shared_ptr<Scheme>  SchemeP;
+	typedef std::shared_ptr<Scheme>        SchemeP;
+	typedef std::shared_ptr<const Scheme>  SchemePC;
 
 
 	class Scheme {

@@ -21,45 +21,44 @@
 #include "const.h"
 
 
-namespace ts {
-namespace combat {
+namespace ts { namespace combat {
 
-	enum class DamageType : uint8_t {
-		NONE = 0,
-		DEATH,
-		DROWNING,
-		EARTH,
-		ENERGY,
-		FIRE,
-		HEALING,
-		HOLY,
-		ICE,
-		HEALTH_DRAIN,
-		MANA_DRAIN,
-		PHYSICAL,
-		UNDEFINED,
-	};
-
+enum class DamageType : uint8_t {
+	NONE = 0,
+	DEATH,
+	DROWNING,
+	EARTH,
+	ENERGY,
+	FIRE,
+	HEALING,
+	HOLY,
+	ICE,
+	HEALTH_DRAIN,
+	MANA_DRAIN,
+	PHYSICAL,
+	UNDEFINED,
+};
 
 
-	ConditionType_t getConditionTypeWithId (const std::string& id);
-	DamageType      getDamageTypeWithId    (const std::string& id, bool includeDeprecated = false);
 
-} // namespace combat
-} // namespace ts
+CombatType_t    getCombatTypeForDamageType (DamageType damageType);
+ConditionType_t getConditionTypeWithId     (const std::string& id);
+DamageType      getDamageTypeWithId        (const std::string& id, bool includeDeprecated = false);
+
+}} // namespace ts::combat
 
 
 
 namespace std {
 
-	template <>
-	struct hash<ts::combat::DamageType> : function<size_t(const ts::combat::DamageType)> {
-		typedef std::underlying_type<argument_type>::type  underlying_type;
+template <>
+struct hash<ts::combat::DamageType> : function<size_t(const ts::combat::DamageType)> {
+	typedef std::underlying_type<argument_type>::type  underlying_type;
 
-		result_type operator()(const argument_type& type) const {
-			return std::hash<underlying_type>()(static_cast<underlying_type>(type));
-		}
-	};
+	result_type operator()(const argument_type& type) const {
+		return std::hash<underlying_type>()(static_cast<underlying_type>(type));
+	}
+};
 
 } // namespace std
 

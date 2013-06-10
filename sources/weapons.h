@@ -20,6 +20,7 @@
 
 #include "combat.h"
 #include "baseevents.h"
+#include "item/WeaponKind.hpp"
 
 class Item;
 class Tile;
@@ -71,7 +72,7 @@ class Weapon : public Event
 
 		virtual bool configureEvent(xmlNodePtr p);
 		virtual bool loadFunction(const std::string& functionName);
-		virtual bool configureWeapon(const ItemKindPC& kind);
+		virtual bool configureWeapon(const ts::item::WeaponKindPC& kind);
 
 		virtual int32_t playerWeaponCheck(Player* player, Creature* target) const;
 		static bool useFist(Player* player, Creature* target);
@@ -133,7 +134,7 @@ class WeaponMelee : public Weapon
 		virtual ~WeaponMelee() {}
 
 		virtual bool configureEvent(xmlNodePtr p);
-		virtual bool configureWeapon(const ItemKindPC& kind);
+		virtual bool configureWeapon(const ts::item::WeaponKindPC& kind);
 
 		virtual bool useWeapon(Player* player, Item* item, Creature* target) const;
 		virtual int32_t getWeaponDamage(const Player* player, const Creature* target, const Item* item, bool maxDamage = false) const;
@@ -155,7 +156,7 @@ class WeaponDistance : public Weapon
 		virtual ~WeaponDistance() {}
 
 		virtual bool configureEvent(xmlNodePtr p);
-		virtual bool configureWeapon(const ItemKindPC& kind);
+		virtual bool configureWeapon(const ts::item::WeaponKindPC& kind);
 
 		virtual int32_t playerWeaponCheck(Player* player, Creature* target) const;
 		virtual bool useWeapon(Player* player, Item* item, Creature* target) const;
@@ -176,7 +177,7 @@ class WeaponWand : public Weapon
 		virtual ~WeaponWand() {}
 
 		virtual bool configureEvent(xmlNodePtr p);
-		virtual bool configureWeapon(const ItemKindPC& kind);
+		virtual bool configureWeapon(const ts::item::WeaponKindPC& kind);
 
 		virtual int32_t getWeaponDamage(const Player* player, const Creature* target, const Item* item, bool maxDamage = false) const;
 

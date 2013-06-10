@@ -22,17 +22,21 @@
 #include "fileloader.h"
 #include "iomap.h"
 #include "items.h"
+#include "item/ContainerKind.hpp"
 #include "player.h"
 #include "server.h"
 #include "tools.h"
+
+using namespace ts;
+using namespace ts::item;
 
 
 LOGGER_DEFINITION(Container);
 
 
-Container::Container(const ItemKindPC& kind) : Item(kind)
+Container::Container(const ContainerKindPC& kind)
+	: Item(kind)
 {
-	maxSize = kind->maxItems;
 	serializationCount = 0;
 	totalWeight = 0.0;
 }
@@ -46,23 +50,6 @@ Container::~Container()
 	}
 
 	itemlist.clear();
-}
-
-
-Container::ClassAttributesP Container::getClassAttributes() {
-	return Item::getClassAttributes();
-}
-
-
-const std::string& Container::getClassId() {
-	static const std::string id("container");
-	return id;
-}
-
-
-const std::string& Container::getClassName() {
-	static const std::string name("Container");
-	return name;
 }
 
 
@@ -238,8 +225,9 @@ void Container::onAddContainerItem(Item* item)
 	}
 }
 
-void Container::onUpdateContainerItem(uint32_t index, Item* oldItem, const ItemKindPC& oldType,
-	Item* newItem, const ItemKindPC& newType)
+
+void Container::onUpdateContainerItem(uint32_t index, Item* oldItem, const Kind& oldType,
+	Item* newItem, const Kind& newType)
 {
 	const Position& cylinderMapPos = getPosition();
 	SpectatorList list;
@@ -527,14 +515,16 @@ void Container::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
-	ItemKindPC oldType = item->getKind();
-	ItemKindPC newType = server.items()[itemId];
+	const auto& oldType = item->getKind();
+	const auto& newType = server.items()[itemId];
 	if (!newType) {
 		return;
 	}
 
 	const double oldWeight = item->getWeight();
-	item->setKind(newType);
+#warning FIX THIS
+	assert(false);
+	//item->setKind(newType);
 	item->setSubType(count);
 
 	const double diffWeight = -oldWeight + item->getWeight();
@@ -544,7 +534,7 @@ void Container::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
 
 	//send change to client
 	if(getParent())
-		onUpdateContainerItem(index, item, oldType, item, newType);
+		onUpdateContainerItem(index, item, oldType, item, *newType);
 }
 
 void Container::__replaceThing(uint32_t index, Thing* thing)

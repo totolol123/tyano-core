@@ -20,7 +20,6 @@
 
 #include "attributes/Attribute.hpp"
 #include "attributes/Scheme.hpp"
-#include "items/Class.hpp"
 #include "scriptmanager.h"
 
 #include "player.h"

@@ -269,7 +269,7 @@ class Tile : public Cylinder
 		LOGGER_DECLARATION;
 
 		void onAddTileItem(Item* item);
-		void onUpdateTileItem(Item* oldItem, const ItemKindPC& oldType, Item* newItem, const ItemKindPC& newType);
+		void onUpdateTileItem(Item* oldItem, const ts::item::KindPC& oldType, Item* newItem, const ts::item::KindPC& newType);
 		void onRemoveTileItem(const SpectatorList& list, std::vector<uint32_t>& oldStackPosVector, Item* item);
 		void onUpdateTile();
 

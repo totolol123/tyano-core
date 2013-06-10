@@ -19,23 +19,27 @@
 #define _BEDS_H
 
 #include "item.h"
+#include "item/BedKind.hpp"
 
 class House;
 class Player;
 
 
-class BedItem : public Item
-{
-	public:
+class BedItem : public Item {
 
-		static const std::string ATTRIBUTE_SLEEPSTART;
+private:
+
+	typedef ts::item::BedKind  BedKind;
 
 
-		static ClassAttributesP   getClassAttributes();
-		static const std::string& getClassId();
-		static const std::string& getClassName();
+public:
 
-		BedItem(const ItemKindPC& kind): Item(kind), house(nullptr) {internalRemoveSleeper();}
+	const BedKind& getKind() const;
+
+
+
+
+		BedItem(const ts::item::BedKindPC& kind): Item(kind), house(nullptr) {internalRemoveSleeper();}
 		virtual ~BedItem() {}
 
 		virtual BedItem* getBed() {return this;}

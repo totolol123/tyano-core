@@ -20,6 +20,7 @@
 
 #include "baseevents.h"
 #include "item.h"
+#include "item/MagicFieldKind.hpp"
 
 class Combat;
 class Creature;
@@ -364,15 +365,23 @@ class Combat
 
 };
 
-class MagicField : public Item
-{
+class MagicField : public Item {
+
+private:
+
+	typedef ts::item::MagicFieldKind  MagicFieldKind;
+
+
+public:
+
+	const MagicFieldKind& getKind() const;
+
+
+
+
 	public:
 
-		static ClassAttributesP   getClassAttributes();
-		static const std::string& getClassId();
-		static const std::string& getClassName();
-
-		MagicField(const ItemKindPC& kind) : Item(kind) {createTime = OTSYS_TIME();}
+		MagicField(const ts::item::MagicFieldKindPC& kind) : Item(kind) {createTime = OTSYS_TIME();}
 		virtual ~MagicField() {}
 
 		virtual MagicField* getMagicField() {return this;}

@@ -21,39 +21,28 @@
 #include "tools.h"
 
 using namespace ts;
+using namespace ts::item;
 
 
-const std::string Depot::ATTRIBUTE_DEPOTID("depotid");
 
-
-Depot::Depot(const ItemKindPC& kind):
-	Container(kind)
+Depot::Depot(const DepotKindPC& kind)
+	: Container(kind)
 {
 	maxSize = 30;
 	depotLimit = 1000;
 }
 
 
-Depot::ClassAttributesP Depot::getClassAttributes() {
-	using attributes::Type;
+uint32_t Depot::getDepotId() const
+{
+	const int32_t* v = getDynamicAttributes().getInteger(DepotKind::ATTRIBUTE_DEPOTID);
+	if(v)
+		return (uint32_t)*v;
 
-	auto attributes = Container::getClassAttributes();
-	attributes->emplace(ATTRIBUTE_DEPOTID, Type::INTEGER);
-
-	return attributes;
+	return 0;
 }
 
 
-const std::string& Depot::getClassId() {
-	static const std::string id("depot");
-	return id;
-}
-
-
-const std::string& Depot::getClassName() {
-	static const std::string name("Depot");
-	return name;
-}
 
 
 Attr_ReadValue Depot::readAttr(AttrTypes_t attr, PropStream& propStream)
@@ -65,7 +54,7 @@ Attr_ReadValue Depot::readAttr(AttrTypes_t attr, PropStream& propStream)
 	if(!propStream.GET_USHORT(depotId))
 		return ATTR_READ_ERROR;
 
-	getAttributes().set(ATTRIBUTE_DEPOTID, depotId);
+	getDynamicAttributes().set(DepotKind::ATTRIBUTE_DEPOTID, depotId);
 	return ATTR_READ_CONTINUE;
 }
 

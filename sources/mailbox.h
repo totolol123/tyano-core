@@ -20,17 +20,14 @@
 
 #include "cylinder.h"
 #include "item.h"
+#include "item/MailboxKind.hpp"
 
 
 class Mailbox : public Item, public Cylinder
 {
 	public:
 
-		static ClassAttributesP   getClassAttributes();
-		static const std::string& getClassId();
-		static const std::string& getClassName();
-
-		Mailbox(const ItemKindPC& kind): Item(kind) {}
+		Mailbox(const ts::item::MailboxKindPC& kind): Item(kind) {}
 		virtual ~Mailbox() {}
 
 		virtual Mailbox* getMailbox() {return this;}

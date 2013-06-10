@@ -35,6 +35,10 @@
 
 #include "server.h"
 
+using namespace ts;
+using namespace ts::combat;
+using namespace ts::item;
+
 
 LOGGER_DEFINITION(Combat);
 
@@ -662,8 +666,8 @@ void Combat::combatTileEffects(const SpectatorList& list, Creature* caster, Tile
 				}
 			}
 			else if(params.isAggressive) {
-				ItemKindPC itemKind = server.items()[itemId];
-				if (itemKind && itemKind->blockPathFind) {
+				KindPC kind = server.items()[itemId];
+				if (kind && kind->blocksPathfinding()) {
 					pzLock = true;
 				}
 			}
@@ -1393,22 +1397,6 @@ void CombatArea::setupExtArea(const std::list<uint32_t>& list, uint32_t rows)
 
 // **********************************************************
 
-MagicField::ClassAttributesP MagicField::getClassAttributes() {
-	return Item::getClassAttributes();
-}
-
-
-const std::string& MagicField::getClassId() {
-	static const std::string id("magicField");
-	return id;
-}
-
-
-const std::string& MagicField::getClassName() {
-	static const std::string name("Magic Field");
-	return name;
-}
-
 
 bool MagicField::isBlocking(const Creature* creature) const
 {
@@ -1431,10 +1419,10 @@ void MagicField::onStepInField(Creature* creature, bool purposeful/* = true*/)
 	if(!purposeful)
 		return;
 
-	if(!getKind()->condition)
+	if (!getKind().getDamageCondition())
 		return;
 
-	Condition* condition = getKind()->condition->clone();
+	Condition* condition = getKind().getDamageCondition()->clone();
 	uint32_t ownerId = getOwner();
 	if(ownerId && !getTile()->hasFlag(TILESTATE_PVPZONE))
 	{
@@ -1460,10 +1448,10 @@ void MagicField::onStepInField(Creature* creature, bool purposeful/* = true*/)
 }
 
 
-bool MagicField::isReplaceable() const {return getKind()->replaceable;}
+bool MagicField::isReplaceable() const {return getKind().isReplaceable();}
 
 
 CombatType_t MagicField::getCombatType() const
 {
-	return getKind()->combatType;
+	return getCombatTypeForDamageType(getKind().getDamageType());
 }

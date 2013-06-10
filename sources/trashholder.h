@@ -20,17 +20,14 @@
 
 #include "cylinder.h"
 #include "item.h"
+#include "item/TrashHolderKind.hpp"
 
 
 class TrashHolder : public Item, public Cylinder
 {
 	public:
 
-		static ClassAttributesP   getClassAttributes();
-		static const std::string& getClassId();
-		static const std::string& getClassName();
-
-		TrashHolder(const ItemKindPC& kind, MagicEffect_t _effect = MAGIC_EFFECT_NONE): Item(kind), effect(_effect) {}
+		TrashHolder(const ts::item::TrashHolderKindPC& kind, MagicEffect_t _effect = MAGIC_EFFECT_NONE): Item(kind), effect(_effect) {}
 		virtual ~TrashHolder() {}
 
 		virtual TrashHolder* getTrashHolder() {return this;}

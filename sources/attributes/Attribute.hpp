@@ -21,6 +21,12 @@
 namespace ts {
 namespace attributes {
 
+	class Attribute;
+
+	typedef std::shared_ptr<Attribute>        AttributeP;
+	typedef std::shared_ptr<const Attribute>  AttributePC;
+
+
 	enum class Type : uint8_t {
 		BOOLEAN,
 		FLOAT,

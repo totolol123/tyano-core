@@ -53,7 +53,7 @@ TODO
 - figure out what to do if the stackpos of a creature is invalid
 - check whether summons/master should start thinking depending on what the other one does
 - check which creature/monster/player methods need `startThinking()`
-- replace boost::intrusive\_ptr by boost::shared\_ptr
+- replace boost::intrusive\_ptr with boost::shared\_ptr
 - make monster attack other target if they cannot attack their current one
 - set `BOOST_DISABLE_ASSERTS` and `NDEBUG` for release
 - update `hasToThinkAboutCreature` to take a monster's targeting distance into account
@@ -61,3 +61,8 @@ TODO
 - use least-size integers instead of fixed-size ones
 - fix TODOs written in code comments
 - use `weak_ptr` where it makes sense (e.g. master->summon relationship and damage list to avoid cyclic references)
+- get rid of dynamic casts
+- rename `BedKind::_counterpartDirection`
+- item kind: add check for mutual exclusivity of fluid/splash/stackable/charges
+- make splash/ground/container items work (`ITEM_GROUP_xxx`)
+ 

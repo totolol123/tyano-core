@@ -562,7 +562,7 @@ Thing* Game::internalGetThing(Player* player, const Position& pos, int32_t index
 				Item* item = tile->getItemByTopOrder(2);
 				if(item && server.actions().hasAction(item))
 				{
-					if(!downItem || (!item->getKind()->hasHeight && !item->getKind()->allowPickupable))
+					if(!downItem || (!item->getKind().isElevated() && !item->getKind().blocksSolidsExceptPocketables()))
 						thing = item;
 				}
 
@@ -604,15 +604,15 @@ Thing* Game::internalGetThing(Player* player, const Position& pos, int32_t index
 	}
 	else if(!pos.y && !pos.z)
 	{
-		ItemKindPC kind = server.items().getKindByClientId(spriteId);
+		auto kind = server.items().getKindByClientId(spriteId);
 		if (!kind)
 			return nullptr;
 
 		int32_t subType = -1;
-		if(kind->isFluidContainer() && index < int32_t(sizeof(reverseFluidMap) / sizeof(int8_t)))
+		if(kind->containsFluid() && index < int32_t(sizeof(reverseFluidMap) / sizeof(int8_t)))
 			subType = reverseFluidMap[index];
 
-		return findItemOfType(player, kind->id, true, subType);
+		return findItemOfType(player, kind->getId(), true, subType);
 	}
 
 	return player->getInventoryItem((slots_t)static_cast<uint8_t>(pos.y));
@@ -1969,13 +1969,13 @@ Item* Game::transformItem(Item* item, uint16_t newId, int32_t newCount /*= -1*/)
 	if(!item->canTransform())
 		return item;
 
-	ItemKindPC newKind = server.items()[newId];
+	auto newKind = server.items()[newId];
 	if (!newKind) {
 		return item;
 	}
 
-	ItemKindPC oldKind = item->getKind();
-	if(oldKind->alwaysOnTop != newKind->alwaysOnTop)
+	const auto& oldKind = item->getKind();
+	if(oldKind.isAlwaysOnTop() != newKind->isAlwaysOnTop())
 	{
 		//This only occurs when you transform items on tiles from a downItem to a topItem (or vice versa)
 		//Remove the old, and add the new
@@ -1999,46 +1999,47 @@ Item* Game::transformItem(Item* item, uint16_t newId, int32_t newCount /*= -1*/)
 		return nullptr;
 	}
 
-	if(oldKind->type == newKind->type)
-	{
-		//Both items has the same type so we can safely change id/subtype
-		if(!newCount && (item->isStackable() || item->hasCharges()))
-		{
-			if(!item->isStackable() && (!item->getDefaultDuration() || item->getDuration() <= 0))
-			{
-				int32_t tmpId = newId;
-				if(oldKind->id == newKind->id)
-					tmpId = oldKind->decayTo;
-
-				if(tmpId != -1)
-				{
-					item = transformItem(item, tmpId);
-					return item;
-				}
-			}
-
-			internalRemoveItem(nullptr, item);
-			return nullptr;
-		}
-
-		uint16_t itemId = item->getId();
-		int32_t count = item->getSubType();
-
-		cylinder->postRemoveNotification(nullptr, item, cylinder, itemIndex, false);
-		if(oldKind->id != newKind->id)
-		{
-			itemId = newId;
-			if(oldKind->group != newKind->group)
-				item->setDefaultSubtype();
-		}
-
-		if(newCount != -1 && newKind->hasSubType())
-			count = newCount;
-
-		cylinder->__updateThing(item, itemId, count);
-		cylinder->postAddNotification(nullptr, item, cylinder, itemIndex);
-		return item;
-	}
+#warning check this
+//	if(oldKind->type == newKind->type)
+//	{
+//		//Both items has the same type so we can safely change id/subtype
+//		if(!newCount && (item->isStackable() || item->hasCharges()))
+//		{
+//			if(!item->isStackable() && (!item->getDefaultDuration() || item->getDuration() <= 0))
+//			{
+//				int32_t tmpId = newId;
+//				if(oldKind->id == newKind->id)
+//					tmpId = oldKind->decayTo;
+//
+//				if(tmpId != -1)
+//				{
+//					item = transformItem(item, tmpId);
+//					return item;
+//				}
+//			}
+//
+//			internalRemoveItem(nullptr, item);
+//			return nullptr;
+//		}
+//
+//		uint16_t itemId = item->getId();
+//		int32_t count = item->getSubType();
+//
+//		cylinder->postRemoveNotification(nullptr, item, cylinder, itemIndex, false);
+//		if(oldKind->id != newKind->id)
+//		{
+//			itemId = newId;
+//			if(oldKind->group != newKind->group)
+//				item->setDefaultSubtype();
+//		}
+//
+//		if(newCount != -1 && newKind->hasSubType())
+//			count = newCount;
+//
+//		cylinder->__updateThing(item, itemId, count);
+//		cylinder->postAddNotification(nullptr, item, cylinder, itemIndex);
+//		return item;
+//	}
 
 	//Replacing the the old item with the new while maintaining the old position
 	boost::intrusive_ptr<Item> newItem = nullptr;
@@ -2686,9 +2687,8 @@ bool Game::playerRotateItem(uint32_t playerId, const Position& pos, int16_t stac
 		return false;
 	}
 
-	uint16_t newId = item->getKind()->rotateTo;
-	if(newId != 0)
-		transformItem(item, newId);
+	if (item->getKind().isRotatable())
+		transformItem(item, item->getKind().getRotatedCounterpartId());
 
 	player->setIdleTime(0);
 	return true;
@@ -2754,9 +2754,9 @@ bool Game::playerWriteItem(uint32_t playerId, uint32_t windowTextId, const std::
 		writeItem->resetDate();
 	}
 
-	uint16_t newId = writeItem->getKind()->writeOnceItemId;
-	if(newId != 0)
-		transformItem(writeItem, newId);
+	if (writeItem->getKind().hasWrittenCounterpart()) {
+		transformItem(writeItem, writeItem->getKind().getWrittenCounterpartId());
+	}
 
 	player->setWriteItem(nullptr);
 	return true;
@@ -3066,13 +3066,13 @@ bool Game::playerLookInTrade(uint32_t playerId, bool lookAtCounterOffer, int32_t
 				ss << ", UniqueID: [" << tradeItem->getUniqueId() << "]";
 
 			ss << ".";
-			ItemKindPC kind = tradeItem->getKind();
-			if(kind->transformEquipTo)
-				ss << std::endl << "TransformTo (onEquip): [" << kind->transformEquipTo << "]";
-			else if(kind->transformDeEquipTo)
-				ss << std::endl << "TransformTo (onDeEquip): [" << kind->transformDeEquipTo << "]";
-			else if(kind->decayTo != -1)
-				ss << std::endl << "DecayTo: [" << kind->decayTo << "]";
+
+			const auto& kind = tradeItem->getKind();
+			if (kind.hasEquipmentCounterpart()) {
+				ss << std::endl << "TransformTo: [" << kind.getEquipmentCounterpartId() << "]";
+			}
+			else if(kind.hasLimitedLifetime())
+				ss << std::endl << "DecayTo: [" << kind.getDecayedCounterpartId() << "]";
 		}
 
 		player->sendTextMessage(MSG_INFO_DESCR, ss.str());
@@ -3112,13 +3112,11 @@ bool Game::playerLookInTrade(uint32_t playerId, bool lookAtCounterOffer, int32_t
 					ss << ", UniqueID: [" << (*it)->getUniqueId() << "]";
 
 				ss << ".";
-				ItemKindPC kind = (*it)->getKind();
-				if(kind->transformEquipTo)
-					ss << std::endl << "TransformTo: [" << kind->transformEquipTo << "] (onEquip).";
-				else if(kind->transformDeEquipTo)
-					ss << std::endl << "TransformTo: [" << kind->transformDeEquipTo << "] (onDeEquip).";
-				else if(kind->decayTo != -1)
-					ss << std::endl << "DecayTo: [" << kind->decayTo << "].";
+				const auto& kind = (*it)->getKind();
+				if (kind.hasEquipmentCounterpart())
+					ss << std::endl << "TransformTo: [" << kind.getEquipmentCounterpartId() << "].";
+				else if(kind.hasLimitedLifetime())
+					ss << std::endl << "DecayTo: [" << kind.getDecayedCounterpartId() << "].";
 			}
 
 			player->sendTextMessage(MSG_INFO_DESCR, ss.str());
@@ -3205,18 +3203,18 @@ bool Game::playerPurchaseItem(uint32_t playerId, uint16_t spriteId, uint8_t coun
 	if(!merchant)
 		return false;
 
-	ItemKindPC kind = server.items().getKindByClientId(spriteId);
+	auto kind = server.items().getKindByClientId(spriteId);
 	if(!kind)
 		return false;
 
 	uint8_t subType = count;
-	if(kind->isFluidContainer() && count < uint8_t(sizeof(reverseFluidMap) / sizeof(int8_t)))
+	if(kind->containsFluid() && count < uint8_t(sizeof(reverseFluidMap) / sizeof(int8_t)))
 		subType = reverseFluidMap[count];
 
-	if(!player->canShopItem(kind->id, subType, SHOPEVENT_BUY))
+	if(!player->canShopItem(kind->getId(), subType, SHOPEVENT_BUY))
 		return false;
 
-	merchant->onPlayerTrade(player, SHOPEVENT_BUY, onBuy, kind->id, subType, amount, ignoreCap, inBackpacks);
+	merchant->onPlayerTrade(player, SHOPEVENT_BUY, onBuy, kind->getId(), subType, amount, ignoreCap, inBackpacks);
 	return true;
 }
 
@@ -3231,18 +3229,18 @@ bool Game::playerSellItem(uint32_t playerId, uint16_t spriteId, uint8_t count, u
 	if(!merchant)
 		return false;
 
-	ItemKindPC kind = server.items().getKindByClientId(spriteId);
+	auto kind = server.items().getKindByClientId(spriteId);
 	if(!kind)
 		return false;
 
 	uint8_t subType = count;
-	if(kind->isFluidContainer() && count < uint8_t(sizeof(reverseFluidMap) / sizeof(int8_t)))
+	if(kind->containsFluid() && count < uint8_t(sizeof(reverseFluidMap) / sizeof(int8_t)))
 		subType = reverseFluidMap[count];
 
-	if(!player->canShopItem(kind->id, subType, SHOPEVENT_SELL))
+	if(!player->canShopItem(kind->getId(), subType, SHOPEVENT_SELL))
 		return false;
 
-	merchant->onPlayerTrade(player, SHOPEVENT_SELL, onSell, kind->id, subType, amount);
+	merchant->onPlayerTrade(player, SHOPEVENT_SELL, onSell, kind->getId(), subType, amount);
 	return true;
 }
 
@@ -3262,18 +3260,18 @@ bool Game::playerLookInShop(uint32_t playerId, uint16_t spriteId, uint8_t count)
 	if(player == nullptr || player->isRemoved())
 		return false;
 
-	ItemKindPC kind = server.items().getKindByClientId(spriteId);
+	auto kind = server.items().getKindByClientId(spriteId);
 	if(!kind)
 		return false;
 
 	uint8_t subType = count;
-	if(kind->isFluidContainer() && count < uint8_t(sizeof(reverseFluidMap) / sizeof(int8_t)))
+	if(kind->containsFluid() && count < uint8_t(sizeof(reverseFluidMap) / sizeof(int8_t)))
 		subType = reverseFluidMap[count];
 
 	std::stringstream ss;
-	ss << "You see " << Item::getDescription(kind, 1, nullptr, subType);
+	ss << "You see " << Item::getDescription(*kind, 1, nullptr, subType);
 	if(player->hasCustomFlag(PlayerCustomFlag_CanSeeItemDetails))
-		ss << std::endl << "ItemID: [" << kind->id << "].";
+		ss << std::endl << "ItemID: [" << kind->getId() << "].";
 
 	player->sendTextMessage(MSG_INFO_DESCR, ss.str());
 	return true;
@@ -3337,13 +3335,11 @@ bool Game::playerLookAt(uint32_t playerId, const Position& pos, uint16_t spriteI
 
 			ss << ".";
 
-			ItemKindPC kind = item->getKind();
-			if(kind->transformEquipTo)
-				ss << std::endl << "TransformTo: [" << kind->transformEquipTo << "] (onEquip).";
-			else if(kind->transformDeEquipTo)
-				ss << std::endl << "TransformTo: [" << kind->transformDeEquipTo << "] (onDeEquip).";
-			else if(kind->decayTo != -1)
-				ss << std::endl << "DecayTo: [" << kind->decayTo << "].";
+			const auto& kind = item->getKind();
+			if(kind.hasEquipmentCounterpart())
+				ss << std::endl << "TransformTo: [" << kind.getEquipmentCounterpartId() << "].";
+			else if(kind.hasLimitedLifetime())
+				ss << std::endl << "DecayTo: [" << kind.getDecayedCounterpartId() << "].";
 		}
 	}
 
@@ -3371,7 +3367,7 @@ bool Game::playerLookAt(uint32_t playerId, const Position& pos, uint16_t spriteI
 	player->sendTextMessage(MSG_INFO_DESCR, ss.str());
 
 	if (Item* item = thing->getItem()) {
-		if (item->isReadable() && item->getKind()->allowDistRead && !item->getText().empty()) {
+		if (item->isReadable() && item->getKind().descriptionContainsText() && !item->getText().empty()) {
 			player->setWriteItem(nullptr);
 			player->sendTextWindow(item, 0, false);
 		}
@@ -4490,7 +4486,7 @@ void Game::startDecay(Item* item)
 	if(!item || !item->canDecay() || item->getDecaying() == DECAYING_TRUE)
 		return;
 
-	if(item->getDuration() > 0)
+	if(item->getDuration() > Duration::zero())
 	{
 		item->setDecaying(DECAYING_TRUE);
 		toDecayItems.push_back(item);
@@ -4501,9 +4497,9 @@ void Game::startDecay(Item* item)
 
 void Game::internalDecayItem(Item* item)
 {
-	if(item->getKind()->decayTo)
+	if(item->getKind().hasDecayedCounterpart())
 	{
-		Item* newItem = transformItem(item, item->getKind()->decayTo);
+		Item* newItem = transformItem(item, item->getKind().getDecayedCounterpartId());
 		startDecay(newItem);
 	}
 	else
@@ -4533,8 +4529,8 @@ void Game::checkDecay()
 	{
 		Item* item = (*it).get();
 
-		int32_t decreaseTime = EVENT_DECAYINTERVAL * EVENT_DECAYBUCKETS;
-		if(item->getDuration() - decreaseTime < 0)
+		Duration decreaseTime = std::chrono::milliseconds(EVENT_DECAYINTERVAL * EVENT_DECAYBUCKETS);
+		if(item->getDuration() - decreaseTime < Duration::zero())
 			decreaseTime = item->getDuration();
 
 		item->decreaseDuration(decreaseTime);
@@ -4546,18 +4542,18 @@ void Game::checkDecay()
 			continue;
 		}
 
-		int32_t dur = item->getDuration();
-		if(dur <= 0)
+		Duration dur = item->getDuration();
+		if(dur <= Duration::zero())
 		{
 			autorelease(item);
 			it = decayItems[bucket].erase(it);
 			internalDecayItem(item);
 		}
-		else if(dur < EVENT_DECAYINTERVAL * EVENT_DECAYBUCKETS)
+		else if(dur < std::chrono::milliseconds(EVENT_DECAYINTERVAL * EVENT_DECAYBUCKETS))
 		{
 			autorelease(item);
 			it = decayItems[bucket].erase(it);
-			size_t newBucket = (bucket + ((dur + EVENT_DECAYINTERVAL / 2) / 1000)) % EVENT_DECAYBUCKETS;
+			size_t newBucket = (bucket + ((dur.count() + EVENT_DECAYINTERVAL / 2) / 1000)) % EVENT_DECAYBUCKETS;
 			if(newBucket == bucket)
 			{
 				internalDecayItem(item);
@@ -6060,11 +6056,11 @@ void Game::cleanup() {
 
 	for(ItemList::iterator it = toDecayItems.begin(); it != toDecayItems.end(); ++it)
 	{
-		int32_t dur = (*it)->getDuration();
-		if(dur >= EVENT_DECAYINTERVAL * EVENT_DECAYBUCKETS)
+		Duration dur = (*it)->getDuration();
+		if(dur >= std::chrono::milliseconds(EVENT_DECAYINTERVAL * EVENT_DECAYBUCKETS))
 			decayItems[lastBucket].push_back(*it);
 		else
-			decayItems[(lastBucket + 1 + (*it)->getDuration() / 1000) % EVENT_DECAYBUCKETS].push_back(*it);
+			decayItems[(lastBucket + 1 + (*it)->getDuration().count() / 1000) % EVENT_DECAYBUCKETS].push_back(*it);
 	}
 	toDecayItems.clear();
 }
@@ -6083,14 +6079,14 @@ void Game::autorelease(ReferenceCounted* object) {
 
 void Game::showHotkeyUseMessage(Player* player, Item* item)
 {
-	ItemKindPC kind = item->getKind();
+	const auto& kind = item->getKind();
 	uint32_t count = player->__getItemTypeCount(item->getId(), -1);
 
-	char buffer[40 + kind->name.size()];
+	char buffer[40 + kind.getName().size()];
 	if(count == 1)
-		sprintf(buffer, "Using the last %s...", kind->name.c_str());
+		sprintf(buffer, "Using the last %s...", kind.getName().c_str());
 	else
-		sprintf(buffer, "Using one of %d %s...", count, kind->pluralName.c_str());
+		sprintf(buffer, "Using one of %d %s...", count, kind.getPluralName().c_str());
 
 	player->sendTextMessage(MSG_INFO_DESCR, buffer);
 }

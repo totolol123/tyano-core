@@ -44,13 +44,19 @@ typedef std::list<CreatureEventP>            CreatureEventList;
 typedef std::list<CreatureP>                 CreatureList;
 typedef std::vector<CreatureP>               CreatureVector;
 typedef std::vector<DeathEntry>              DeathList;
-typedef std::shared_ptr<ItemKind>            ItemKindP;
-typedef std::shared_ptr<const ItemKind>      ItemKindPC;
 typedef boost::intrusive_ptr<Monster>        MonsterP;
 typedef std::list<MonsterP>                  MonsterList;
 typedef boost::intrusive_ptr<Player>         PlayerP;
 typedef boost::intrusive_ptr<const Player>   PlayerPC;
 typedef std::map<uint32_t, std::string>      StorageMap;
+
+namespace ts { namespace item {
+
+	class Kind;
+
+	typedef std::shared_ptr<const Kind>  KindPC;
+
+}}
 
 
 struct FindPathParams
@@ -151,6 +157,9 @@ protected:
 
 
 private:
+
+	typedef ts::item::Kind  Kind;
+
 
 	void think ();
 
@@ -382,8 +391,8 @@ private:
 
 		virtual void onAddTileItem(const Tile* tile, const Position& pos, const Item* item);
 		virtual void onUpdateTileItem(const Tile* tile, const Position& pos, const Item* oldItem,
-				const ItemKindPC& oldType, const Item* newItem, const ItemKindPC& newType);
-		virtual void onRemoveTileItem(const Tile* tile, const Position& pos, const ItemKindPC& iType, const Item* item);
+				const Kind& oldType, const Item* newItem, const Kind& newType);
+		virtual void onRemoveTileItem(const Tile* tile, const Position& pos, const Kind& iType, const Item* item);
 		virtual void onUpdateTile(const Tile* tile, const Position& pos) {}
 
 		virtual void onCreatureDisappear(const Creature* creature, bool isLogout);

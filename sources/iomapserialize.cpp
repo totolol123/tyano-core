@@ -17,9 +17,12 @@
 #include "otpch.h"
 #include "iomapserialize.h"
 
+#include "beds.h"
 #include "database.h"
 #include "depot.h"
 #include "fileloader.h"
+#include "item/BedKind.hpp"
+#include "item/DoorKind.hpp"
 #include "house.h"
 #include "housetile.h"
 #include "iologindata.h"
@@ -29,6 +32,9 @@
 #include "items.h"
 #include "player.h"
 #include "server.h"
+
+using namespace ts;
+using namespace ts::item;
 
 
 LOGGER_DEFINITION(IOMapSerialize);
@@ -509,12 +515,12 @@ bool IOMapSerialize::loadItems(Database& db, DBResultP result, Cylinder* parent,
 		PropStream propStream;
 		propStream.init(attr, attrSize);
 
-		ItemKindPC kind = server.items()[id];
+		auto kind = server.items()[id];
 		if (!kind) {
 			continue;
 		}
 
-		if(kind->moveable || kind->forceSerialize || pid)
+		if(kind->isMovable() || kind->isPersistent() || pid)
 		{
 			if(!(item = Item::CreateItem(id, count)))
 				continue;
@@ -545,13 +551,13 @@ bool IOMapSerialize::loadItems(Database& db, DBResultP result, Cylinder* parent,
 					break;
 				}
 
-				if(kind->isDoor() && findItem->getDoor())
+				if(std::dynamic_pointer_cast<const DoorKind>(kind) != nullptr && dynamic_cast<Door*>(findItem) != nullptr)
 				{
 					item = findItem;
 					break;
 				}
 
-				if(kind->isBed() && findItem->getBed())
+				if(std::dynamic_pointer_cast<const BedKind>(kind) != nullptr && dynamic_cast<BedItem*>(findItem) != nullptr)
 				{
 					item = findItem;
 					break;
@@ -717,12 +723,12 @@ bool IOMapSerialize::loadItem(PropStream& propStream, Cylinder* parent, bool dep
 	propStream.GET_USHORT(id);
 	boost::intrusive_ptr<Item> item;
 
-	ItemKindPC kind = server.items()[id];
+	auto kind = server.items()[id];
 	if (!kind) {
 		return true;
 	}
 
-	if(kind->moveable || kind->forceSerialize || (!depotTransfer && !tile))
+	if(kind->isMovable() || kind->isPersistent() || (!depotTransfer && !tile))
 	{
 		if(!(item = Item::CreateItem(id)))
 			return true;
@@ -765,13 +771,13 @@ bool IOMapSerialize::loadItem(PropStream& propStream, Cylinder* parent, bool dep
 				break;
 			}
 
-			if(kind->isDoor() && findItem->getDoor())
+			if(std::dynamic_pointer_cast<const DoorKind>(kind) != nullptr && dynamic_cast<Door*>(findItem) != nullptr)
 			{
 				item = findItem;
 				break;
 			}
 
-			if(kind->isBed() && findItem->getBed())
+			if(std::dynamic_pointer_cast<const BedKind>(kind) != nullptr && dynamic_cast<BedItem*>(findItem) != nullptr)
 			{
 				item = findItem;
 				break;
