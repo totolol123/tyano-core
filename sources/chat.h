@@ -40,7 +40,7 @@ enum ChannelFlags_t
 class ChatChannel
 {
 	public:
-		ChatChannel(uint16_t id, const std::string& name, uint16_t flags, uint32_t access = 0,
+		ChatChannel(uint16_t id, const std::string& name, bool autojoin, uint16_t flags, uint32_t access = 0,
 			uint32_t level = 1, Condition* condition = nullptr, int32_t conditionId = -1,
 			const std::string& conditionMessage = "", VocationMap* vocationMap = nullptr);
 		virtual ~ChatChannel();
@@ -59,6 +59,7 @@ class ChatChannel
 		virtual uint32_t getOwner() {return 0;}
 
 		bool hasFlag(uint16_t value) const {return ((m_flags & (uint16_t)value) == (uint16_t)value);}
+		bool isAutojoin() const {return _autojoin;}
 		bool checkVocation(uint32_t vocationId) const
 			{return !m_vocationMap || m_vocationMap->empty() || m_vocationMap->find(
 				vocationId) != m_vocationMap->end();}
@@ -69,6 +70,9 @@ class ChatChannel
 		bool talk(Player* player, SpeakClasses type, const std::string& text, uint32_t _time = 0);
 
 	protected:
+
+		bool _autojoin;
+
 		uint16_t m_id, m_flags;
 		int32_t m_conditionId;
 		uint32_t m_access, m_level;

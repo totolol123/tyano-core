@@ -272,6 +272,20 @@ bool ProtocolGame::login(const std::string& name, uint32_t id, const std::string
 		player->lastLogin = std::max(time(nullptr), player->lastLogin + 1);
 
 		m_acceptPackets = true;
+
+		auto channels = server.chat().getChannelList(player.get());
+		for (auto channel : channels) {
+			if (channel->isAutojoin()) {
+				channel = server.chat().addUserToChannel(player.get(), channel->getId());
+				if (channel != nullptr) {
+					if(channel->getId() != CHANNEL_RVR)
+						player->sendChannel(channel->getId(), channel->getName());
+					else
+						player->sendRuleViolationsChannel(channel->getId());
+				}
+			}
+		}
+
 		return true;
 	}
 	else if(_player->client)

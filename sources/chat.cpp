@@ -32,7 +32,7 @@
 uint16_t ChatChannel::staticFlags = CHANNELFLAG_ENABLED | CHANNELFLAG_ACTIVE;
 
 PrivateChatChannel::PrivateChatChannel(uint16_t id, std::string name, uint16_t flags):
-	ChatChannel(id, name, flags), m_owner(0) {}
+	ChatChannel(id, name, false, flags), m_owner(0) {}
 
 bool PrivateChatChannel::isInvited(const Player* player)
 {
@@ -100,10 +100,10 @@ void PrivateChatChannel::closeChannel()
 LOGGER_DEFINITION(ChatChannel);
 
 
-ChatChannel::ChatChannel(uint16_t id, const std::string& name, uint16_t flags, uint32_t access/* = 0*/,
+ChatChannel::ChatChannel(uint16_t id, const std::string& name, bool autojoin, uint16_t flags, uint32_t access/* = 0*/,
 	uint32_t level/* = 1*/, Condition* condition/* = nullptr*/, int32_t conditionId/* = -1*/,
 	const std::string& conditionMessage/* = ""*/, VocationMap* vocationMap/* = nullptr*/):
-	m_id(id), m_flags(flags), m_conditionId(conditionId), m_access(access), m_level(level),
+		_autojoin(autojoin), m_id(id), m_flags(flags), m_conditionId(conditionId), m_access(access), m_level(level),
 		m_name(name), m_conditionMessage(conditionMessage), m_condition(condition),
 		m_vocationMap(vocationMap)
 {
@@ -282,6 +282,8 @@ bool Chat::parseChannelNode(xmlNodePtr p)
 	if((readXMLString(p, "logged", strValue) || readXMLString(p, "log", strValue)) && booleanString(strValue))
 		flags |= CHANNELFLAG_LOGGED;
 
+	bool autojoin = (readXMLString(p, "autojoin", strValue) && booleanString(strValue));
+
 	uint32_t access = 0;
 	if(readXMLInteger(p, "access", intValue))
 		access = intValue;
@@ -346,7 +348,7 @@ bool Chat::parseChannelNode(xmlNodePtr p)
 
 		default:
 		{
-			if(ChatChannel* newChannel = new ChatChannel(id, name, flags, access, level,
+			if(ChatChannel* newChannel = new ChatChannel(id, name, autojoin, flags, access, level,
 				condition, conditionId, conditionMessage, vocationMap))
 				m_normalChannels[id] = newChannel;
 
@@ -367,7 +369,7 @@ ChatChannel* Chat::createChannel(Player* player, uint16_t channelId)
 		case CHANNEL_GUILD:
 		{
 			ChatChannel* newChannel = nullptr;
-			if((newChannel = new ChatChannel(channelId, player->getGuildName(), ChatChannel::staticFlags)))
+			if((newChannel = new ChatChannel(channelId, player->getGuildName(), false, ChatChannel::staticFlags)))
 				m_guildChannels[player->getGuildId()] = newChannel;
 
 			return newChannel;
@@ -376,7 +378,7 @@ ChatChannel* Chat::createChannel(Player* player, uint16_t channelId)
 		case CHANNEL_PARTY:
 		{
 			ChatChannel* newChannel = nullptr;
-			if(player->getParty() && (newChannel = new ChatChannel(channelId, partyName, ChatChannel::staticFlags)))
+			if(player->getParty() && (newChannel = new ChatChannel(channelId, partyName, false, ChatChannel::staticFlags)))
 				m_partyChannels[player->getParty()] = newChannel;
 
 			return newChannel;
