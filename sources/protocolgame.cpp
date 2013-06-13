@@ -954,7 +954,10 @@ void ProtocolGame::GetFloorDescription(NetworkMessage_ptr msg, int32_t x, int32_
 	{
 		for(int32_t ny = 0; ny < height; ny++)
 		{
-			if((tile = server.game().getTile(Position(x + nx + offset, y + ny + offset, z))))
+			int_fast32_t finalX = x + nx + offset;
+			int_fast32_t finalY = y + ny + offset;
+
+			if(Position::isValid(finalX, finalY, z) && (tile = server.game().getTile(Position(finalX, finalY, z))))
 			{
 				if(skip >= 0)
 				{

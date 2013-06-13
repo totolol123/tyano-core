@@ -82,8 +82,8 @@ bool Position::isValid() const {
 }
 
 
-bool Position::isValid(uint16_t x, uint16_t y, uint8_t z) {
-	return (x <= MAX_X && y <= MAX_Y && z <= MAX_Z);
+bool Position::isValid(int_fast32_t x, int_fast32_t y, int_fast32_t z) {
+	return (x >= MIN_X && x <= MAX_X && y >= MIN_Y && y <= MAX_Y && z >= MIN_Z && z <= MAX_Z);
 }
 
 
@@ -168,13 +168,13 @@ StackPosition::StackPosition(const StackPosition& position)
 }
 
 
-bool StackPosition::isValid(uint16_t x, uint16_t y, uint8_t z, uint8_t index) {
-	return (Position::isValid(x, y, z) && index <= MAX_INDEX);
+bool StackPosition::isValid(int_fast32_t x, int_fast32_t y, int_fast32_t z, int_fast32_t index) {
+	return (Position::isValid(x, y, z) && index >= MIN_INDEX && index <= MAX_INDEX);
 }
 
 
-bool StackPosition::isValid(const Position& position, uint8_t index) {
-	return (position.isValid() && index <= MAX_INDEX);
+bool StackPosition::isValid(const Position& position, int_fast32_t index) {
+	return (position.isValid() && index >= MIN_INDEX && index <= MAX_INDEX);
 }
 
 

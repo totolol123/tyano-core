@@ -40,7 +40,7 @@ class Position {
 public:
 
 	static bool areInRange (const Position& range, const Position& a, const Position& b);
-	static bool isValid    (uint16_t x, uint16_t y, uint8_t z);
+	static bool isValid    (int_fast32_t x, int_fast32_t y, int_fast32_t z);
 
 	Position          ();
 	Position          (const Position& position);
@@ -103,8 +103,8 @@ class StackPosition : public Position {
 
 public:
 
-	static bool isValid (uint16_t x, uint16_t y, uint8_t z, uint8_t index);
-	static bool isValid (const Position& position, uint8_t index);
+	static bool isValid (int_fast32_t x, int_fast32_t y, int_fast32_t z, int_fast32_t index);
+	static bool isValid (const Position& position, int_fast32_t index);
 
 	StackPosition          ();
 	StackPosition          (const StackPosition& position);
