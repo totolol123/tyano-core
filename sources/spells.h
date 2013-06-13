@@ -76,7 +76,7 @@ class Spells : public BaseEvents<Spell> {
 
 typedef bool (InstantSpellFunction)(const InstantSpell* spell, Creature* creature, const std::string& param);
 typedef bool (ConjureSpellFunction)(const ConjureSpell* spell, Creature* creature, const std::string& param);
-typedef bool (RuneSpellFunction)(const RuneSpell* spell, Creature* creature, Item* item, const Position& posFrom, const Position& posTo);
+typedef bool (RuneSpellFunction)(const RuneSpell* spell, Creature* creature, Item* item, const ExtendedPosition& origin, const ExtendedPosition& destination);
 
 class BaseSpell
 {
@@ -151,7 +151,7 @@ class Spell : public BaseSpell, virtual public EventBase
 		bool playerSpellCheck(Player* player) const;
 		bool playerInstantSpellCheck(Player* player, Creature* creature);
 		bool playerInstantSpellCheck(Player* player, const Position& toPos);
-		bool playerRuneSpellCheck(Player* player, const Position& toPos);
+		bool playerRuneSpellCheck(Player* player, const ExtendedPosition& destination);
 
 		int32_t level;
 		int32_t magLevel;
@@ -252,7 +252,7 @@ class ConjureSpell : public InstantSpell
 		virtual std::string getScriptEventParams() const {return "cid, var";}
 
 		static ReturnValue internalConjureItem(Player* player, uint32_t conjureId, uint32_t conjureCount,
-			bool transform = false, uint32_t reagentId = 0, slots_t slot = SLOT_WHEREEVER, bool test = false);
+			bool transform = false, uint32_t reagentId = 0, slots_t slot = slots_t::WHEREEVER, bool test = false);
 
 		static ConjureSpellFunction ConjureItem;
 		static ConjureSpellFunction ConjureFood;
@@ -281,11 +281,10 @@ class RuneSpell : public Spell, public Action
 		virtual bool configureEvent(xmlNodePtr p);
 		virtual bool loadFunction(const std::string& functionName);
 
-		virtual ReturnValue canExecuteAction(const Player* player, const Position& toPos);
+		virtual ReturnValue canExecuteAction(const Player* player, const ExtendedPosition& toPos);
 		virtual bool hasOwnErrorHandler() {return true;}
 
-		virtual bool executeUse(Player* player, Item* item, const PositionEx& posFrom,
-			const PositionEx& posTo, bool extendedUse, uint32_t creatureId);
+		virtual bool executeUse(Player* player, Item* item, const ExtendedPosition& origin, const ExtendedPosition& destination, bool extendedUse, uint32_t creatureId);
 
 		virtual bool castSpell(Creature* creature);
 		virtual bool castSpell(Creature* creature, Creature* target);

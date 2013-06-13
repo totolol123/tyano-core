@@ -18,6 +18,8 @@
 #include "otpch.h"
 #include "position.h"
 
+#include "const.h"
+
 
 const uint16_t Position::MAX_X = 60000;
 const uint16_t Position::MAX_Y = 60000;
@@ -126,24 +128,24 @@ Position Position::operator - (const Position& position) const {
 
 
 
-const uint8_t    PositionEx::MAX_INDEX = 9;
-const uint8_t    PositionEx::MIN_INDEX = 0;
-const PositionEx PositionEx::INVALID(Position::INVALID, std::numeric_limits<typeof(index)>::max(), true);
+const uint8_t    StackPosition::MAX_INDEX = 9;
+const uint8_t    StackPosition::MIN_INDEX = 0;
+const StackPosition StackPosition::INVALID(Position::INVALID, std::numeric_limits<typeof(index)>::max(), true);
 
 
 
-PositionEx::PositionEx()
+StackPosition::StackPosition()
 	: index(0)
 {}
 
 
-PositionEx::PositionEx(uint16_t x, uint16_t y, uint8_t z, uint8_t index)
+StackPosition::StackPosition(uint16_t x, uint16_t y, uint8_t z, uint8_t index)
 	: Position(x, y, z),
 	  index(0)
 {}
 
 
-PositionEx::PositionEx(const Position& position, uint8_t index)
+StackPosition::StackPosition(const Position& position, uint8_t index)
 	: Position(position),
 	  index(index)
 {
@@ -151,14 +153,14 @@ PositionEx::PositionEx(const Position& position, uint8_t index)
 }
 
 
-PositionEx::PositionEx(const Position& position, uint8_t index, bool)
+StackPosition::StackPosition(const Position& position, uint8_t index, bool)
 	: Position(position),
 	  index(index)
 {
 }
 
 
-PositionEx::PositionEx(const PositionEx& position)
+StackPosition::StackPosition(const StackPosition& position)
 	: Position(position.withoutIndex()),
 	  index(position.index)
 {
@@ -166,32 +168,32 @@ PositionEx::PositionEx(const PositionEx& position)
 }
 
 
-bool PositionEx::isValid(uint16_t x, uint16_t y, uint8_t z, uint8_t index) {
+bool StackPosition::isValid(uint16_t x, uint16_t y, uint8_t z, uint8_t index) {
 	return (Position::isValid(x, y, z) && index <= MAX_INDEX);
 }
 
 
-bool PositionEx::isValid(const Position& position, uint8_t index) {
+bool StackPosition::isValid(const Position& position, uint8_t index) {
 	return (position.isValid() && index <= MAX_INDEX);
 }
 
 
-bool PositionEx::isValid() const {
+bool StackPosition::isValid() const {
 	return (isValid(*this, index));
 }
 
 
-Position& PositionEx::withoutIndex() {
+Position& StackPosition::withoutIndex() {
 	return static_cast<Position&>(*this);
 }
 
 
-const Position& PositionEx::withoutIndex() const {
+const Position& StackPosition::withoutIndex() const {
 	return static_cast<const Position&>(*this);
 }
 
 
-PositionEx& PositionEx::operator = (const PositionEx& position) {
+StackPosition& StackPosition::operator = (const StackPosition& position) {
 	assert(position.isValid() || position == INVALID);
 
 	withoutIndex() = position.withoutIndex();
@@ -201,13 +203,182 @@ PositionEx& PositionEx::operator = (const PositionEx& position) {
 }
 
 
-bool PositionEx::operator == (const PositionEx& position) const {
+bool StackPosition::operator == (const StackPosition& position) const {
 	return (withoutIndex() == position.withoutIndex() && index == position.index);
 }
 
 
-bool PositionEx::operator != (const PositionEx& position) const {
+bool StackPosition::operator != (const StackPosition& position) const {
 	return (withoutIndex() != position.withoutIndex() || index != position.index);
+}
+
+
+
+
+ExtendedPosition::ExtendedPosition(Value value)
+	: _value(value)
+{}
+
+
+ExtendedPosition ExtendedPosition::forBackpack(uint8_t openedContainerId, uint8_t containerItemIndex) {
+	Backpack backpack;
+	backpack.containerItemIndex = containerItemIndex;
+	backpack.openedContainerId = openedContainerId;
+
+	return ExtendedPosition(backpack);
+}
+
+
+ExtendedPosition ExtendedPosition::forBackpackSearch(uint16_t clientItemKindId, int8_t fluidType) {
+	BackpackSearch backpackSearch;
+	backpackSearch.clientItemKindId = clientItemKindId;
+	backpackSearch.fluidType = fluidType;
+
+	return ExtendedPosition(backpackSearch);
+}
+
+
+ExtendedPosition ExtendedPosition::forPosition(const Position& position) {
+	return ExtendedPosition(position);
+}
+
+
+ExtendedPosition ExtendedPosition::forSlot(slots_t slot) {
+	return ExtendedPosition(slot);
+}
+
+
+ExtendedPosition ExtendedPosition::forStackPosition(const StackPosition& stackPosition) {
+	return ExtendedPosition(stackPosition);
+}
+
+
+uint16_t ExtendedPosition::getClientItemKindId() const {
+	if (getType() != Type::BACKPACK_SEARCH) {
+		assert(getType() == Type::BACKPACK_SEARCH);
+		return 0;
+	}
+
+	return boost::get<BackpackSearch>(_value).clientItemKindId;
+}
+
+
+uint8_t ExtendedPosition::getContainerItemIndex() const {
+	if (getType() != Type::BACKPACK) {
+		assert(getType() == Type::BACKPACK);
+		return 0;
+	}
+
+	return boost::get<Backpack>(_value).containerItemIndex;
+}
+
+
+int8_t ExtendedPosition::getFluidType() const {
+	if (getType() != Type::BACKPACK_SEARCH) {
+		assert(getType() == Type::BACKPACK_SEARCH);
+		return 0;
+	}
+
+	return boost::get<BackpackSearch>(_value).fluidType;
+}
+
+
+uint8_t ExtendedPosition::getOpenedContainerId() const {
+	if (getType() != Type::BACKPACK) {
+		assert(getType() == Type::BACKPACK);
+		return 0;
+	}
+
+	return boost::get<Backpack>(_value).openedContainerId;
+}
+
+
+Position ExtendedPosition::getPosition(bool convertsStackPosititon) const {
+	switch (getType()) {
+	case Type::POSITION:
+		return boost::get<Position>(_value);
+
+	case Type::STACK_POSITION:
+		if (!convertsStackPosititon) {
+			assert(getType() == Type::POSITION || (convertsStackPosititon || getType() == Type::STACK_POSITION));
+			return Position();
+		}
+
+		return boost::get<StackPosition>(_value).withoutIndex();
+
+	case Type::BACKPACK:
+	case Type::BACKPACK_SEARCH:
+	case Type::NOWHERE:
+	case Type::SLOT:
+		break;
+	}
+
+	assert(getType() == Type::POSITION || (convertsStackPosititon || getType() == Type::STACK_POSITION));
+	return Position();
+}
+
+
+slots_t ExtendedPosition::getSlot() const {
+	if (getType() != Type::SLOT) {
+		assert(getType() == Type::SLOT);
+		return slots_t::HEAD;
+	}
+
+	return boost::get<slots_t>(_value);
+}
+
+
+StackPosition ExtendedPosition::getStackPosition(bool convertsPosititon) const {
+	switch (getType()) {
+	case Type::STACK_POSITION:
+		return boost::get<StackPosition>(_value);
+
+	case Type::POSITION:
+		if (!convertsPosititon) {
+			assert(getType() == Type::STACK_POSITION || (convertsPosititon || getType() == Type::POSITION));
+			return StackPosition();
+		}
+
+		return StackPosition(boost::get<Position>(_value), 0);
+
+	case Type::BACKPACK:
+	case Type::BACKPACK_SEARCH:
+	case Type::NOWHERE:
+	case Type::SLOT:
+		break;
+	}
+
+	assert(getType() == Type::STACK_POSITION || (convertsPosititon || getType() == Type::POSITION));
+	return StackPosition();
+}
+
+
+ExtendedPosition::Type ExtendedPosition::getType() const {
+	return static_cast<Type>(_value.which());
+}
+
+
+bool ExtendedPosition::hasPosition(bool convertsStackPosition) const {
+	switch (getType()) {
+	case Type::POSITION:
+		return true;
+
+	case Type::STACK_POSITION:
+		return convertsStackPosition;
+
+	case Type::BACKPACK:
+	case Type::BACKPACK_SEARCH:
+	case Type::NOWHERE:
+	case Type::SLOT:
+		return false;
+	}
+
+	return false;
+}
+
+
+ExtendedPosition ExtendedPosition::nowhere() {
+	return ExtendedPosition(Nowhere());
 }
 
 
@@ -254,7 +425,7 @@ std::ostream& operator << (std::ostream& stream, Direction direction) {
 }
 
 
-std::ostream& operator << (std::ostream& stream, const PositionEx& position) {
+std::ostream& operator << (std::ostream& stream, const StackPosition& position) {
 	if (position.isValid()) {
 		return stream << position.withoutIndex() << "#" << position.index;
 	}

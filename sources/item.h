@@ -295,7 +295,7 @@ class Item : public Thing {
 		Ammo_t getAmmoType() const;
 		WeaponType_t getWeaponType() const;
 		int32_t getSlotPosition() const;
-		int32_t getWieldPosition() const;
+		slots_t getWieldPosition() const;
 
 		virtual double getWeight() const;
 		void getLight(LightInfo& lightInfo);

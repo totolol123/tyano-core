@@ -327,34 +327,34 @@ MoveEventP MoveEvents::getEvent(Item* item, MoveEvent_t eventType, slots_t slot)
 	uint32_t slotp = 0;
 	switch(slot)
 	{
-		case SLOT_HEAD:
+		case slots_t::HEAD:
 			slotp = SLOTP_HEAD;
 			break;
-		case SLOT_NECKLACE:
+		case slots_t::NECKLACE:
 			slotp = SLOTP_NECKLACE;
 			break;
-		case SLOT_BACKPACK:
+		case slots_t::BACKPACK:
 			slotp = SLOTP_BACKPACK;
 			break;
-		case SLOT_ARMOR:
+		case slots_t::ARMOR:
 			slotp = SLOTP_ARMOR;
 			break;
-		case SLOT_RIGHT:
+		case slots_t::RIGHT:
 			slotp = SLOTP_RIGHT;
 			break;
-		case SLOT_LEFT:
+		case slots_t::LEFT:
 			slotp = SLOTP_LEFT;
 			break;
-		case SLOT_LEGS:
+		case slots_t::LEGS:
 			slotp = SLOTP_LEGS;
 			break;
-		case SLOT_FEET:
+		case slots_t::FEET:
 			slotp = SLOTP_FEET;
 			break;
-		case SLOT_AMMO:
+		case slots_t::AMMO:
 			slotp = SLOTP_AMMO;
 			break;
-		case SLOT_RING:
+		case slots_t::RING:
 			slotp = SLOTP_RING;
 			break;
 		default:
@@ -1122,7 +1122,7 @@ uint32_t MoveEvent::executeEquip(Player* player, Item* item, slots_t slot)
 
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 			env->streamThing(scriptstream, "item", item, env->addThing(item));
-			scriptstream << "local slot = " << slot << std::endl;
+			scriptstream << "local slot = " << +slot << std::endl;
 
 			scriptstream << m_scriptData;
 			bool result = true;
@@ -1151,7 +1151,7 @@ uint32_t MoveEvent::executeEquip(Player* player, Item* item, slots_t slot)
 
 			lua_pushnumber(L, env->addThing(player));
 			LuaScriptInterface::pushThing(L, item, env->addThing(item));
-			lua_pushnumber(L, slot);
+			lua_pushnumber(L, +slot);
 
 			bool result = m_interface->callFunction(3);
 			m_interface->releaseEnv();

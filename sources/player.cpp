@@ -272,11 +272,13 @@ std::string Player::getDescription(int32_t lookDistance) const
 
 Item* Player::getInventoryItem(slots_t slot) const
 {
-	if(slot > SLOT_PRE_FIRST && slot < SLOT_LAST)
-		return inventory[slot].get();
+	if(slot > slots_t::PRE_FIRST && slot < slots_t::LAST)
+		return inventory[+slot].get();
 
-	if(slot == SLOT_HAND)
-		return inventory[SLOT_LEFT] ? inventory[SLOT_LEFT].get() : inventory[SLOT_RIGHT].get();
+	if(slot == slots_t::HAND)
+		return inventory[+slots_t::LEFT]
+		                 ? inventory[+slots_t::LEFT].get()
+		                		 : inventory[+slots_t::RIGHT].get();
 
 	return nullptr;
 }
@@ -289,9 +291,9 @@ Item* Player::getEquippedItem(slots_t slot) const
 
 	switch(slot)
 	{
-		case SLOT_LEFT:
-		case SLOT_RIGHT:
-			return item->getWieldPosition() == SLOT_HAND ? item : nullptr;
+		case slots_t::LEFT:
+		case slots_t::RIGHT:
+			return item->getWieldPosition() == slots_t::HAND ? item : nullptr;
 
 		default:
 			break;
@@ -311,7 +313,7 @@ void Player::setConditionSuppressions(uint32_t conditions, bool remove)
 Item* Player::getWeapon(bool ignoreAmmo /*= false*/)
 {
 	Item* item;
-	for(uint32_t slot = SLOT_RIGHT; slot <= SLOT_LEFT; slot++)
+	for(uint32_t slot = +slots_t::RIGHT; slot <= +slots_t::LEFT; slot++)
 	{
 		item = getEquippedItem((slots_t)slot);
 		if(!item)
@@ -335,7 +337,7 @@ Item* Player::getWeapon(bool ignoreAmmo /*= false*/)
 			{
 				if(!ignoreAmmo && item->getAmmoType() != AMMO_NONE)
 				{
-					Item* ammoItem = getInventoryItem(SLOT_AMMO);
+					Item* ammoItem = getInventoryItem(slots_t::AMMO);
 					if(ammoItem && ammoItem->getAmmoType() == item->getAmmoType())
 					{
 						WeaponPC weapon = server.weapons().getWeapon(ammoItem);
@@ -406,7 +408,7 @@ int32_t Player::getWeaponSkill(const Item* item) const
 int32_t Player::getArmor() const
 {
 	int32_t armor = 0;
-	for(int32_t i = SLOT_FIRST; i < SLOT_LAST; ++i)
+	for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
 	{
 		if(Item* item = getInventoryItem((slots_t)i))
 			armor += item->getArmor();
@@ -423,7 +425,7 @@ void Player::getShieldAndWeapon(const Item* &shield, const Item* &weapon) const
 	shield = weapon = nullptr;
 
 	Item* item = nullptr;
-	for(uint32_t slot = SLOT_RIGHT; slot <= SLOT_LEFT; slot++)
+	for(uint32_t slot = +slots_t::RIGHT; slot <= +slots_t::LEFT; slot++)
 	{
 		item = getInventoryItem((slots_t)slot);
 		if(!item)
@@ -554,7 +556,7 @@ void Player::updateInventoryWeight()
 	if(hasFlag(PlayerFlag_HasInfiniteCapacity))
 		return;
 
-	for(int32_t i = SLOT_FIRST; i < SLOT_LAST; ++i)
+	for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
 	{
 		if(Item* item = getInventoryItem((slots_t)i))
 			inventoryWeight += item->getWeight();
@@ -805,7 +807,7 @@ void Player::dropLoot(Container* corpse)
 	}
 
 	uint32_t itemLoss = (uint32_t)std::floor((5. + loss) * lossPercent[LOSS_ITEMS] / 1000.);
-	for(int32_t i = SLOT_FIRST; i < SLOT_LAST; ++i)
+	for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
 	{
 		Item* item = inventory[i].get();
 		if(!item)
@@ -815,7 +817,7 @@ void Player::dropLoot(Container* corpse)
 		if(skull > SKULL_WHITE || (item->getContainer() && rand < loss) || (!item->getContainer() && rand < itemLoss))
 		{
 			server.game().internalMoveItem(nullptr, this, corpse, INDEX_WHEREEVER, item, item->getItemCount(), 0);
-			sendRemoveInventoryItem((slots_t)i, inventory[(slots_t)i].get());
+			sendRemoveInventoryItem((slots_t)i, inventory[i].get());
 		}
 	}
 }
@@ -1337,7 +1339,7 @@ void Player::onCreatureAppear(const CreatureP& creature)
 		return;
 
 	Item* item = nullptr;
-	for(int32_t slot = SLOT_FIRST; slot < SLOT_LAST; ++slot)
+	for(int32_t slot = +slots_t::FIRST; slot < +slots_t::LAST; ++slot)
 	{
 		if(!(item = getInventoryItem((slots_t)slot)))
 			continue;
@@ -2036,11 +2038,11 @@ void Player::onAttackedCreatureBlockHit(Creature* target, BlockType_t blockType)
 bool Player::hasShield() const
 {
 	bool result = false;
-	Item* item = getInventoryItem(SLOT_LEFT);
+	Item* item = getInventoryItem(slots_t::LEFT);
 	if(item && item->getWeaponType() == WEAPON_SHIELD)
 		result = true;
 
-	item = getInventoryItem(SLOT_RIGHT);
+	item = getInventoryItem(slots_t::RIGHT);
 	if(item && item->getWeaponType() == WEAPON_SHIELD)
 		result = true;
 
@@ -2072,7 +2074,7 @@ BlockType_t Player::blockHit(Creature* attacker, CombatType_t combatType, int32_
 	{
 		Item* item = nullptr;
 		int32_t blocked = 0, reflected = 0;
-		for(int32_t slot = SLOT_FIRST; slot < SLOT_LAST; ++slot)
+		for(int32_t slot = +slots_t::FIRST; slot < +slots_t::LAST; ++slot)
 		{
 			if(!(item = getInventoryItem((slots_t)slot)) || (server.moveEvents().hasEquipEvent(item)
 				&& !isItemAbilityEnabled((slots_t)slot)))
@@ -2158,7 +2160,7 @@ bool Player::onDeath()
 	else*/ if(skull < SKULL_RED && server.game().getWorldType() != WORLD_TYPE_PVP_ENFORCED)
 	{
 		Item* item = nullptr;
-		for(int32_t i = SLOT_FIRST; ((skillLoss || lootDrop == LOOT_DROP_FULL) && i < SLOT_LAST); ++i)
+		for(int32_t i = +slots_t::FIRST; ((skillLoss || lootDrop == LOOT_DROP_FULL) && i < +slots_t::LAST); ++i)
 		{
 			if(!(item = getInventoryItem((slots_t)i)) || (server.moveEvents().hasEquipEvent(item)
 				&& !isItemAbilityEnabled((slots_t)i)))
@@ -2262,9 +2264,9 @@ bool Player::onDeath()
 
 		blessings = 0;
 		loginPosition = masterPosition;
-		if(!inventory[SLOT_BACKPACK]) {
+		if(!inventory[+slots_t::BACKPACK]) {
 			boost::intrusive_ptr<Item> container = Item::CreateItem(server.configManager().getNumber(ConfigManager::DEATH_CONTAINER));
-			__internalAddThing(SLOT_BACKPACK, container.get());
+			__internalAddThing(+slots_t::BACKPACK, container.get());
 		}
 
 		sendIcons();
@@ -2585,36 +2587,36 @@ ReturnValue Player::__queryAdd(int32_t index, const Thing* thing, uint32_t count
 
 	switch(index)
 	{
-		case SLOT_HEAD:
+		case +slots_t::HEAD:
 			if(item->getSlotPosition() & SLOTP_HEAD)
 				ret = RET_NOERROR;
 			break;
-		case SLOT_NECKLACE:
+		case +slots_t::NECKLACE:
 			if(item->getSlotPosition() & SLOTP_NECKLACE)
 				ret = RET_NOERROR;
 			break;
-		case SLOT_BACKPACK:
+		case +slots_t::BACKPACK:
 			if(item->getSlotPosition() & SLOTP_BACKPACK)
 				ret = RET_NOERROR;
 			break;
-		case SLOT_ARMOR:
+		case +slots_t::ARMOR:
 			if(item->getSlotPosition() & SLOTP_ARMOR)
 				ret = RET_NOERROR;
 			break;
-		case SLOT_RIGHT:
+		case +slots_t::RIGHT:
 			if(item->getSlotPosition() & SLOTP_RIGHT)
 			{
 				//check if we already carry an item in the other hand
 				if(item->getSlotPosition() & SLOTP_TWO_HAND)
 				{
-					if(inventory[SLOT_LEFT] && inventory[SLOT_LEFT] != item)
+					if(inventory[+slots_t::LEFT] && inventory[+slots_t::LEFT] != item)
 						ret = RET_BOTHHANDSNEEDTOBEFREE;
 					else
 						ret = RET_NOERROR;
 				}
-				else if(inventory[SLOT_LEFT])
+				else if(inventory[+slots_t::LEFT])
 				{
-					const boost::intrusive_ptr<Item> leftItem = inventory[SLOT_LEFT];
+					const boost::intrusive_ptr<Item> leftItem = inventory[+slots_t::LEFT];
 					WeaponType_t type = item->getWeaponType(), leftType = leftItem->getWeaponType();
 					if(leftItem->getSlotPosition() & SLOTP_TWO_HAND)
 						ret = RET_DROPTWOHANDEDITEM;
@@ -2633,20 +2635,20 @@ ReturnValue Player::__queryAdd(int32_t index, const Thing* thing, uint32_t count
 					ret = RET_NOERROR;
 			}
 			break;
-		case SLOT_LEFT:
+		case +slots_t::LEFT:
 			if(item->getSlotPosition() & SLOTP_LEFT)
 			{
 				//check if we already carry an item in the other hand
 				if(item->getSlotPosition() & SLOTP_TWO_HAND)
 				{
-					if(inventory[SLOT_RIGHT] && inventory[SLOT_RIGHT] != item)
+					if(inventory[+slots_t::RIGHT] && inventory[+slots_t::RIGHT] != item)
 						ret = RET_BOTHHANDSNEEDTOBEFREE;
 					else
 						ret = RET_NOERROR;
 				}
-				else if(inventory[SLOT_RIGHT])
+				else if(inventory[+slots_t::RIGHT])
 				{
-					const boost::intrusive_ptr<Item> rightItem = inventory[SLOT_RIGHT];
+					const boost::intrusive_ptr<Item> rightItem = inventory[+slots_t::RIGHT];
 					WeaponType_t type = item->getWeaponType(), rightType = rightItem->getWeaponType();
 					if(rightItem->getSlotPosition() & SLOTP_TWO_HAND)
 						ret = RET_DROPTWOHANDEDITEM;
@@ -2665,23 +2667,23 @@ ReturnValue Player::__queryAdd(int32_t index, const Thing* thing, uint32_t count
 					ret = RET_NOERROR;
 			}
 			break;
-		case SLOT_LEGS:
+		case +slots_t::LEGS:
 			if(item->getSlotPosition() & SLOTP_LEGS)
 				ret = RET_NOERROR;
 			break;
-		case SLOT_FEET:
+		case +slots_t::FEET:
 			if(item->getSlotPosition() & SLOTP_FEET)
 				ret = RET_NOERROR;
 			break;
-		case SLOT_RING:
+		case +slots_t::RING:
 			if(item->getSlotPosition() & SLOTP_RING)
 				ret = RET_NOERROR;
 			break;
-		case SLOT_AMMO:
+		case +slots_t::AMMO:
 			if(item->getSlotPosition() & SLOTP_AMMO)
 				ret = RET_NOERROR;
 			break;
-		case SLOT_WHEREEVER:
+		case +slots_t::WHEREEVER:
 		case -1:
 			ret = RET_NOTENOUGHROOM;
 			break;
@@ -2776,7 +2778,7 @@ Cylinder* Player::__queryDestination(int32_t& index, const Thing* thing, Item** 
 			return this;
 
 		//find a appropiate slot
-		for(int32_t i = SLOT_FIRST; i < SLOT_LAST; ++i)
+		for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
 		{
 			if(!inventory[i] && __queryAdd(i, item, item->getItemCount(), 0) == RET_NOERROR)
 			{
@@ -2787,7 +2789,7 @@ Cylinder* Player::__queryDestination(int32_t& index, const Thing* thing, Item** 
 
 		//try containers
 		std::list<std::pair<Container*, int32_t> > deepList;
-		for(int32_t i = SLOT_FIRST; i < SLOT_LAST; ++i)
+		for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
 		{
 			if(inventory[i] == tradeItem)
 				continue;
@@ -3034,7 +3036,7 @@ void Player::__removeThing(Thing* thing, uint32_t count)
 
 Thing* Player::__getThing(uint32_t index) const
 {
-	if(index > SLOT_PRE_FIRST && index < SLOT_LAST)
+	if(index > +slots_t::PRE_FIRST && index < +slots_t::LAST)
 		return inventory[index].get();
 
 	return nullptr;
@@ -3042,7 +3044,7 @@ Thing* Player::__getThing(uint32_t index) const
 
 int32_t Player::__getIndexOfThing(const Thing* thing) const
 {
-	for(int32_t i = SLOT_FIRST; i < SLOT_LAST; ++i)
+	for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
 	{
 		if(inventory[i] == thing)
 			return i;
@@ -3053,12 +3055,12 @@ int32_t Player::__getIndexOfThing(const Thing* thing) const
 
 int32_t Player::__getFirstIndex() const
 {
-	return SLOT_FIRST;
+	return +slots_t::FIRST;
 }
 
 int32_t Player::__getLastIndex() const
 {
-	return SLOT_LAST;
+	return +slots_t::LAST;
 }
 
 uint32_t Player::__getItemTypeCount(uint16_t itemId, int32_t subType /*= -1*/, bool itemCount /*= true*/) const
@@ -3067,7 +3069,7 @@ uint32_t Player::__getItemTypeCount(uint16_t itemId, int32_t subType /*= -1*/, b
 	Container* container = nullptr;
 
 	uint32_t count = 0;
-	for(int32_t i = SLOT_FIRST; i < SLOT_LAST; ++i)
+	for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
 	{
 		if(!(item = inventory[i].get()))
 			continue;
@@ -3094,7 +3096,7 @@ std::map<uint32_t, uint32_t>& Player::__getAllItemTypeCount(std::map<uint32_t,
 {
 	Item* item = nullptr;
 	Container* container = nullptr;
-	for(int32_t i = SLOT_FIRST; i < SLOT_LAST; ++i)
+	for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
 	{
 		if(!(item = inventory[i].get()))
 			continue;
@@ -3440,7 +3442,7 @@ void Player::updateItemsLight(bool internal /*=false*/)
 {
 	LightInfo maxLight;
 	LightInfo curLight;
-	for(int32_t i = SLOT_FIRST; i < SLOT_LAST; ++i)
+	for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
 	{
 		if(Item* item = getInventoryItem((slots_t)i))
 		{
@@ -4930,7 +4932,7 @@ void Player::increaseCombatValues(int32_t& min, int32_t& max, bool useCharges, b
 
 	Item* item = nullptr;
 	int32_t minValue = 0, maxValue = 0;
-	for(int32_t i = SLOT_FIRST; i < SLOT_LAST; ++i)
+	for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
 	{
 		if(!(item = getInventoryItem((slots_t)i)) || (server.moveEvents().hasEquipEvent(item)
 			&& !isItemAbilityEnabled((slots_t)i)))
@@ -5018,28 +5020,28 @@ void Player::disconnect() {if(client) client->disconnect();}
 
 
 void Player::sendAddTileItem(const Tile* tile, const Position& pos, const Item* item, const char* callSource)
-	{if(client) client->sendAddTileItem(tile, PositionEx(pos, tile->getClientIndexOfThing(this, item)), item, callSource);}
+	{if(client) client->sendAddTileItem(tile, StackPosition(pos, tile->getClientIndexOfThing(this, item)), item, callSource);}
 void Player::sendUpdateTileItem(const Tile* tile, const Position& pos, const Item* oldItem, const Item* newItem)
-	{if(client) client->sendUpdateTileItem(tile, PositionEx(pos, tile->getClientIndexOfThing(this, oldItem)), newItem);}
+	{if(client) client->sendUpdateTileItem(tile, StackPosition(pos, tile->getClientIndexOfThing(this, oldItem)), newItem);}
 void Player::sendRemoveTileItem(const Tile* tile, const Position& pos, uint32_t stackpos, const Item* item, const char* callSource)
-	{if(client) client->sendRemoveTileItem(tile, PositionEx(pos, stackpos), item, callSource);}
+	{if(client) client->sendRemoveTileItem(tile, StackPosition(pos, stackpos), item, callSource);}
 void Player::sendUpdateTile(const Tile* tile, const Position& pos)
 	{if(client) client->sendUpdateTile(tile, pos);}
 
 void Player::sendChannelMessage(std::string author, std::string text, SpeakClasses type, uint8_t channel)
 	{if(client) client->sendChannelMessage(author, text, type, channel);}
 void Player::sendCreatureAppear(const Creature* creature, const char* callSource)
-	{if(client) client->sendAddCreature(creature, PositionEx(creature->getPosition(), creature->getTile()->getClientIndexOfThing(
+	{if(client) client->sendAddCreature(creature, StackPosition(creature->getPosition(), creature->getTile()->getClientIndexOfThing(
 		this, creature)), callSource);}
 void Player::sendCreatureDisappear(const Creature* creature, uint32_t stackpos, const char* callSource)
-	{if(client) client->sendRemoveCreature(creature, PositionEx(creature->getPosition(), stackpos), callSource);}
+	{if(client) client->sendRemoveCreature(creature, StackPosition(creature->getPosition(), stackpos), callSource);}
 void Player::sendCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
 	const Tile* oldTile, const Position& oldPos, uint32_t oldStackpos, bool teleport, const char* callSource)
-	{if(client) client->sendMoveCreature(creature, newTile, PositionEx(newPos, newTile->getClientIndexOfThing(
-		this, creature)), oldTile, PositionEx(oldPos, oldStackpos), teleport, callSource);}
+	{if(client) client->sendMoveCreature(creature, newTile, StackPosition(newPos, newTile->getClientIndexOfThing(
+		this, creature)), oldTile, StackPosition(oldPos, oldStackpos), teleport, callSource);}
 
 void Player::sendCreatureTurn(const Creature* creature)
-	{if(client) client->sendCreatureTurn(creature, PositionEx(creature->getPosition(), creature->getTile()->getClientIndexOfThing(this, creature)));}
+	{if(client) client->sendCreatureTurn(creature, StackPosition(creature->getPosition(), creature->getTile()->getClientIndexOfThing(this, creature)));}
 void Player::sendCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos)
 	{if(client) client->sendCreatureSay(creature, type, text, pos);}
 void Player::sendCreatureSquare(const Creature* creature, SquareColor_t color)

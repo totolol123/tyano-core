@@ -509,27 +509,38 @@ void Game::refreshMap(RefreshTiles::iterator* it/* = nullptr*/, uint32_t limit/*
 	}
 }
 
-Cylinder* Game::internalGetCylinder(Player* player, const Position& pos)
-{
-	if(pos.x != 0xFFFF)
-		return getTile(pos);
 
-	//container
-	if(pos.y & 0x40)
-	{
-		uint8_t fromCid = pos.y & 0x0F;
-		return player->getContainer(fromCid);
+Cylinder* Game::internalGetCylinder(Player* player, const ExtendedPosition& position) {
+	typedef ExtendedPosition::Type  Type;
+
+	switch (position.getType()) {
+	case Type::POSITION:
+	case Type::STACK_POSITION:
+		return getTile(position.getPosition(true));
+
+	case Type::BACKPACK:
+		return player->getContainer(position.getOpenedContainerId());
+
+	case Type::BACKPACK_SEARCH:
+	case Type::SLOT:
+		return player;
+
+	case Type::NOWHERE:
+		break;
 	}
 
-	return player;
+	return nullptr;
 }
 
-Thing* Game::internalGetThing(Player* player, const Position& pos, int32_t index,
-	uint32_t spriteId/* = 0*/, stackposType_t type/* = STACKPOS_NORMAL*/)
-{
-	if(pos.x != 0xFFFF)
-	{
-		Tile* tile = getTile(pos);
+
+Thing* Game::internalGetThing(Player* player, const ExtendedPosition& position, stackposType_t type/* = STACKPOS_NORMAL*/) {
+	typedef ExtendedPosition::Type  Type;
+
+	switch (position.getType()) {
+	case Type::POSITION:
+	case Type::STACK_POSITION: {
+
+		Tile* tile = getTile(position.getPosition(true));
 		if(!tile)
 			return nullptr;
 
@@ -579,7 +590,7 @@ Thing* Game::internalGetThing(Player* player, const Position& pos, int32_t index
 			}
 
 			default:
-				thing = tile->__getThing(index);
+				thing = tile->__getThing(position.getType() == ExtendedPosition::Type::STACK_POSITION ? position.getStackPosition().index : 0);
 				break;
 		}
 
@@ -596,56 +607,58 @@ Thing* Game::internalGetThing(Player* player, const Position& pos, int32_t index
 
 		return thing;
 	}
-	else if(pos.y & 0x40)
-	{
-		uint8_t fromCid = pos.y & 0x0F, slot = pos.z;
-		if(Container* parentcontainer = player->getContainer(fromCid))
-			return parentcontainer->getItem(slot);
+
+	case Type::BACKPACK: {
+		Container* parentcontainer = player->getContainer(position.getOpenedContainerId());
+		if (parentcontainer == nullptr) {
+			return nullptr;
+		}
+
+		return parentcontainer->getItem(position.getContainerItemIndex());
 	}
-	else if(!pos.y && !pos.z)
-	{
-		ItemKindPC kind = server.items().getKindByClientId(spriteId);
+
+	case Type::BACKPACK_SEARCH: {
+		ItemKindPC kind = server.items().getKindByClientId(position.getClientItemKindId());
 		if (!kind)
 			return nullptr;
 
-		int32_t subType = -1;
-		if(kind->isFluidContainer() && index < int32_t(sizeof(reverseFluidMap) / sizeof(int8_t)))
-			subType = reverseFluidMap[index];
-
-		return findItemOfType(player, kind->id, true, subType);
+		return findItemOfType(player, kind->id, true, position.getFluidType());
 	}
 
-	return player->getInventoryItem((slots_t)static_cast<uint8_t>(pos.y));
+	case Type::SLOT: {
+		return player->getInventoryItem(position.getSlot());
+	}
+
+	case Type::NOWHERE:
+		break;
+	} // switch
+
+	return nullptr;
 }
 
-void Game::internalGetPosition(Item* item, Position& pos, int16_t& stackpos)
+ExtendedPosition Game::internalGetPosition(Item* item, const ExtendedPosition& position)
 {
-	pos.x = pos.y = pos.z = stackpos = 0;
 	if(Cylinder* topParent = item->getTopParent())
 	{
 		if(Player* player = dynamic_cast<Player*>(topParent))
 		{
-			pos.x = 0xFFFF;
-
 			Container* container = dynamic_cast<Container*>(item->getParent());
 			if(container)
 			{
-				pos.y = ((uint16_t) ((uint16_t)0x40) | ((uint16_t)player->getContainerID(container)) );
-				pos.z = container->__getIndexOfThing(item);
-				stackpos = pos.z;
+				return ExtendedPosition::forBackpack(player->getContainerID(container), container->__getIndexOfThing(item));
 			}
 			else
 			{
-				pos.y = player->__getIndexOfThing(item);
-				stackpos = pos.y;
+				return ExtendedPosition::forSlot(slots_t(player->__getIndexOfThing(item)));
 			}
 		}
 		else if(Tile* tile = topParent->getTile())
 		{
-			pos = tile->getPosition();
-			stackpos = tile->__getIndexOfThing(item);
+			return ExtendedPosition::forStackPosition(StackPosition(tile->getPosition(), tile->__getIndexOfThing(item)));
 		}
 	}
+
+	return ExtendedPosition::nowhere();
 }
 
 Creature* Game::getCreatureByID(uint32_t id)
@@ -987,26 +1000,14 @@ bool Game::removeCreature(Creature* creature, bool isLogout /*= true*/)
 	return true;
 }
 
-bool Game::playerMoveThing(uint32_t playerId, const Position& fromPos,
-	uint16_t spriteId, int16_t fromStackpos, const Position& toPos, uint8_t count)
+bool Game::playerMoveThing(uint32_t playerId, const ExtendedPosition& origin, const ExtendedPosition& destination, uint8_t count)
 {
 	Player* player = getPlayerByID(playerId);
 	if(!player || player->isRemoved())
 		return false;
 
-	uint8_t fromIndex = 0;
-	if(fromPos.x == 0xFFFF)
-	{
-		if(fromPos.y & 0x40)
-			fromIndex = fromPos.z;
-		else
-			fromIndex = static_cast<uint8_t>(fromPos.y);
-	}
-	else
-		fromIndex = fromStackpos;
-
-	Thing* thing = internalGetThing(player, fromPos, fromIndex, spriteId, STACKPOS_MOVE);
-	Cylinder* toCylinder = internalGetCylinder(player, toPos);
+	Thing* thing = internalGetThing(player, origin, STACKPOS_MOVE);
+	Cylinder* toCylinder = internalGetCylinder(player, destination);
 	if(!thing || !toCylinder)
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
@@ -1025,7 +1026,7 @@ bool Game::playerMoveThing(uint32_t playerId, const Position& fromPos,
 			playerMoveCreature(playerId, movingCreature->getID(), movingCreature->getPosition(), toCylinder->getPosition());
 	}
 	else if(thing->getItem())
-		playerMoveItem(playerId, fromPos, spriteId, fromStackpos, toPos, count);
+		playerMoveItem(playerId, origin, destination, count);
 
 	return true;
 }
@@ -1232,8 +1233,7 @@ ReturnValue Game::internalMoveCreature(Creature* actor, Creature* creature, Cyli
 	return RET_NOERROR;
 }
 
-bool Game::playerMoveItem(uint32_t playerId, const Position& fromPos,
-	uint16_t spriteId, int16_t fromStackpos, const Position& toPos, uint8_t count)
+bool Game::playerMoveItem(uint32_t playerId, const ExtendedPosition& origin, const ExtendedPosition& destination, uint8_t count)
 {
 	Player* player = getPlayerByID(playerId);
 	if(!player || player->isRemoved() || player->hasFlag(PlayerFlag_CannotMoveItems))
@@ -1244,25 +1244,14 @@ bool Game::playerMoveItem(uint32_t playerId, const Position& fromPos,
 		uint32_t delay = player->getNextActionTime();
 
 		player->setNextActionTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(&Game::playerMoveItem, this,
-				playerId, fromPos, spriteId, fromStackpos, toPos, count)));
+				playerId, origin, destination, count)));
 		return false;
 	}
 
 	player->setNextActionTask(nullptr);
-	Cylinder* fromCylinder = internalGetCylinder(player, fromPos);
+	Cylinder* fromCylinder = internalGetCylinder(player, origin);
 
-	uint8_t fromIndex = 0;
-	if(fromPos.x == 0xFFFF)
-	{
-		if(fromPos.y & 0x40)
-			fromIndex = fromPos.z;
-		else
-			fromIndex = static_cast<uint8_t>(fromPos.y);
-	}
-	else
-		fromIndex = fromStackpos;
-
-	Thing* thing = internalGetThing(player, fromPos, fromIndex, spriteId, STACKPOS_MOVE);
+	Thing* thing = internalGetThing(player, origin, STACKPOS_MOVE);
 	if(!thing || !thing->getItem())
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
@@ -1270,18 +1259,9 @@ bool Game::playerMoveItem(uint32_t playerId, const Position& fromPos,
 	}
 
 	Item* item = thing->getItem();
-	Cylinder* toCylinder = internalGetCylinder(player, toPos);
+	Cylinder* toCylinder = internalGetCylinder(player, destination);
 
-	uint8_t toIndex = 0;
-	if(toPos.x == 0xFFFF)
-	{
-		if(toPos.y & 0x40)
-			toIndex = static_cast<uint8_t>(toPos.z);
-		else
-			toIndex = static_cast<uint8_t>(toPos.y);
-	}
-
-	if(!fromCylinder || !toCylinder || !item || item->getClientID() != spriteId)
+	if(!fromCylinder || !toCylinder || !item || (origin.getType() == ExtendedPosition::Type::BACKPACK_SEARCH && item->getClientID() != origin.getClientItemKindId()))
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
 		return false;
@@ -1320,7 +1300,7 @@ bool Game::playerMoveItem(uint32_t playerId, const Position& fromPos,
 				this, player->getID(), listDir)));
 
 			player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(player->getStepDuration()), std::bind(&Game::playerMoveItem, this,
-					playerId, fromPos, spriteId, fromStackpos, toPos, count)));
+					playerId, origin, destination, count)));
 			return true;
 		}
 
@@ -1358,11 +1338,8 @@ bool Game::playerMoveItem(uint32_t playerId, const Position& fromPos,
 			if(toCylinder->getTile()->hasProperty(ISHORIZONTAL))
 				walkPos.y -= -1;
 
-			Position itemPos = fromPos;
-			int16_t itemStackpos = fromStackpos;
-			if(fromPos.x != 0xFFFF && Position::areInRange<1,1,0>(mapFromPos, player->getPosition())
-				&& !Position::areInRange<1,1,0>(mapFromPos, walkPos))
-			{
+			ExtendedPosition position = origin;
+			if(position.hasPosition(true) && Position::areInRange<1,1,0>(mapFromPos, player->getPosition()) && !Position::areInRange<1,1,0>(mapFromPos, walkPos)) {
 				//need to pickup the item first
 				Item* moveItem = nullptr;
 				ReturnValue ret = internalMoveItem(player, fromCylinder, player, INDEX_WHEREEVER, item, count, &moveItem);
@@ -1373,7 +1350,7 @@ bool Game::playerMoveItem(uint32_t playerId, const Position& fromPos,
 				}
 
 				//changing the position since its now in the inventory of the player
-				internalGetPosition(moveItem, itemPos, itemStackpos);
+				position = internalGetPosition(moveItem, position);
 			}
 
 			std::list<Direction> listDir;
@@ -1383,7 +1360,7 @@ bool Game::playerMoveItem(uint32_t playerId, const Position& fromPos,
 					this, player->getID(), listDir)));
 
 				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(player->getStepDuration()), std::bind(&Game::playerMoveItem, this,
-						playerId, itemPos, spriteId, itemStackpos, toPos, count)));
+						playerId, position, destination, count)));
 				return true;
 			}
 
@@ -1409,7 +1386,12 @@ bool Game::playerMoveItem(uint32_t playerId, const Position& fromPos,
 		return false;
 	}
 
-	ReturnValue ret = internalMoveItem(player, fromCylinder, toCylinder, toIndex, item, count, nullptr);
+	uint8_t destinationIndex = 0;
+	if (destination.getType() == ExtendedPosition::Type::STACK_POSITION) {
+		destinationIndex = destination.getStackPosition().index;
+	}
+
+	ReturnValue ret = internalMoveItem(player, fromCylinder, toCylinder, destinationIndex, item, count, nullptr);
 	if(ret == RET_NOERROR)
 		return true;
 
@@ -2363,17 +2345,17 @@ bool Game::playerStopAutoWalk(uint32_t playerId)
 	return true;
 }
 
-bool Game::playerUseItemEx(uint32_t playerId, const Position& fromPos, int16_t fromStackpos, uint16_t fromSpriteId,
-	const Position& toPos, int16_t toStackpos, uint16_t toSpriteId, bool isHotkey)
+bool Game::playerUseItemEx(uint32_t playerId, const ExtendedPosition& origin, const ExtendedPosition& destination)
 {
 	Player* player = getPlayerByID(playerId);
 	if(!player || player->isRemoved())
 		return false;
 
+	bool isHotkey = (origin.getType() == ExtendedPosition::Type::BACKPACK_SEARCH);
 	if(isHotkey && !server.configManager().getBool(ConfigManager::AIMBOT_HOTKEY_ENABLED))
 		return false;
 
-	Thing* thing = internalGetThing(player, fromPos, fromStackpos, fromSpriteId, STACKPOS_USEITEM);
+	Thing* thing = internalGetThing(player, origin, STACKPOS_USEITEM);
 	if(!thing)
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
@@ -2387,23 +2369,22 @@ bool Game::playerUseItemEx(uint32_t playerId, const Position& fromPos, int16_t f
 		return false;
 	}
 
-	Position walkToPos = fromPos;
-	ReturnValue ret = server.actions().canUse(player, fromPos);
-	if(ret == RET_NOERROR)
-	{
-		ret = server.actions().canUseEx(player, toPos, item);
-		if(ret == RET_TOOFARAWAY)
-			walkToPos = toPos;
+	ReturnValue ret = RET_NOERROR;
+
+	if (origin.hasPosition(true)) {
+		ret = server.actions().canUse(player, origin.getPosition(true));
+	}
+	if (ret == RET_NOERROR) {
+		ret = server.actions().canUseEx(player, destination, item);
 	}
 
 	if(ret != RET_NOERROR)
 	{
-		if(ret == RET_TOOFARAWAY)
+		if(ret == RET_TOOFARAWAY && destination.hasPosition(true))
 		{
-			Position itemPos = fromPos;
-			int16_t itemStackpos = fromStackpos;
-			if(fromPos.x != 0xFFFF && toPos.x != 0xFFFF && Position::areInRange<1,1,0>(fromPos,
-				player->getPosition()) && !Position::areInRange<1,1,0>(fromPos, toPos))
+			ExtendedPosition position = origin;
+			if(Position::areInRange<1,1,0>(origin.getPosition(true), player->getPosition())
+					&& !Position::areInRange<1,1,0>(origin.getPosition(true), destination.getPosition(true)))
 			{
 				Item* moveItem = nullptr;
 				ReturnValue retTmp = internalMoveItem(player, item->getParent(), player,
@@ -2415,17 +2396,17 @@ bool Game::playerUseItemEx(uint32_t playerId, const Position& fromPos, int16_t f
 				}
 
 				//changing the position since its now in the inventory of the player
-				internalGetPosition(moveItem, itemPos, itemStackpos);
+				position = internalGetPosition(moveItem, origin);
 			}
 
 			std::list<Direction> listDir;
-			if(getPathToEx(player, walkToPos, listDir, 0, 1, true, true, 10))
+			if(getPathToEx(player, destination.getPosition(true), listDir, 0, 1, true, true, 10))
 			{
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
 					this, player->getID(), listDir)));
 
 				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerUseItemEx, this,
-						playerId, itemPos, itemStackpos, fromSpriteId, toPos, toStackpos, toSpriteId, isHotkey)));
+						playerId, position, destination)));
 				return true;
 			}
 
@@ -2444,26 +2425,27 @@ bool Game::playerUseItemEx(uint32_t playerId, const Position& fromPos, int16_t f
 		uint32_t delay = player->getNextActionTime();
 
 		player->setNextActionTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(&Game::playerUseItemEx, this,
-				playerId, fromPos, fromStackpos, fromSpriteId, toPos, toStackpos, toSpriteId, isHotkey)));
+				playerId, origin, destination)));
 		return false;
 	}
 
 	player->setIdleTime(0);
 	player->setNextActionTask(nullptr);
-	return server.actions().useItemEx(player, fromPos, toPos, toStackpos, item, isHotkey);
+
+	return server.actions().useItemEx(player, origin, destination, item);
 }
 
-bool Game::playerUseItem(uint32_t playerId, const Position& pos, int16_t stackpos,
-	uint8_t index, uint16_t spriteId, bool isHotkey)
+bool Game::playerUseItem(uint32_t playerId, const ExtendedPosition& origin, uint8_t openContainerId)
 {
 	Player* player = getPlayerByID(playerId);
 	if(!player || player->isRemoved())
 		return false;
 
+	bool isHotkey = (origin.getType() == ExtendedPosition::Type::BACKPACK_SEARCH);
 	if(isHotkey && !server.configManager().getBool(ConfigManager::AIMBOT_HOTKEY_ENABLED))
 		return false;
 
-	Thing* thing = internalGetThing(player, pos, stackpos, spriteId, STACKPOS_USEITEM);
+	Thing* thing = internalGetThing(player, origin, STACKPOS_USEITEM);
 	if(!thing)
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
@@ -2477,19 +2459,23 @@ bool Game::playerUseItem(uint32_t playerId, const Position& pos, int16_t stackpo
 		return false;
 	}
 
-	ReturnValue ret = server.actions().canUse(player, pos);
+	ReturnValue ret = RET_NOERROR;
+	if (origin.hasPosition(true)) {
+		ret = server.actions().canUse(player, origin.getPosition(true));
+	}
+
 	if(ret != RET_NOERROR)
 	{
 		if(ret == RET_TOOFARAWAY)
 		{
 			std::list<Direction> listDir;
-			if(getPathToEx(player, pos, listDir, 0, 1, true, true))
+			if(getPathToEx(player, origin.getPosition(true), listDir, 0, 1, true, true))
 			{
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
 					this, player->getID(), listDir)));
 
 				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerUseItem, this,
-						playerId, pos, stackpos, index, spriteId, isHotkey)));
+						playerId, origin, openContainerId)));
 				return true;
 			}
 
@@ -2508,17 +2494,16 @@ bool Game::playerUseItem(uint32_t playerId, const Position& pos, int16_t stackpo
 		uint32_t delay = player->getNextActionTime();
 
 		player->setNextActionTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(&Game::playerUseItem, this,
-				playerId, pos, stackpos, index, spriteId, isHotkey)));
+				playerId, origin, openContainerId)));
 		return false;
 	}
 
 	player->setIdleTime(0);
 	player->setNextActionTask(nullptr);
-	return server.actions().useItem(player, pos, index, item);
+	return server.actions().useItem(player, item, origin, openContainerId);
 }
 
-bool Game::playerUseBattleWindow(uint32_t playerId, const Position& fromPos, int16_t fromStackpos,
-	uint32_t creatureId, uint16_t spriteId, bool isHotkey)
+bool Game::playerUseBattleWindow(uint32_t playerId, const ExtendedPosition& origin, uint32_t creatureId)
 {
 	Player* player = getPlayerByID(playerId);
 	if(!player || player->isRemoved())
@@ -2531,13 +2516,14 @@ bool Game::playerUseBattleWindow(uint32_t playerId, const Position& fromPos, int
 	if(!Position::areInRange<7,5,0>(creature->getPosition(), player->getPosition()))
 		return false;
 
+	bool isHotkey = (origin.getType() == ExtendedPosition::Type::BACKPACK_SEARCH);
 	if(!server.configManager().getBool(ConfigManager::AIMBOT_HOTKEY_ENABLED) && (creature->getPlayer() || isHotkey))
 	{
 		player->sendCancelMessage(RET_DIRECTPLAYERSHOOT);
 		return false;
 	}
 
-	Thing* thing = internalGetThing(player, fromPos, fromStackpos, spriteId, STACKPOS_USE);
+	Thing* thing = internalGetThing(player, origin, STACKPOS_USE);
 	if(!thing)
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
@@ -2545,13 +2531,17 @@ bool Game::playerUseBattleWindow(uint32_t playerId, const Position& fromPos, int
 	}
 
 	Item* item = thing->getItem();
-	if(!item || item->getClientID() != spriteId)
+	if(!item || (origin.getType() == ExtendedPosition::Type::BACKPACK_SEARCH && item->getClientID() != origin.getClientItemKindId()))
 	{
 		player->sendCancelMessage(RET_CANNOTUSETHISOBJECT);
 		return false;
 	}
 
-	ReturnValue ret = server.actions().canUse(player, fromPos);
+	ReturnValue ret = RET_NOERROR;
+	if (origin.hasPosition(true)) {
+		ret = server.actions().canUse(player, origin.getPosition(true));
+	}
+
 	if(ret != RET_NOERROR)
 	{
 		if(ret == RET_TOOFARAWAY)
@@ -2563,7 +2553,7 @@ bool Game::playerUseBattleWindow(uint32_t playerId, const Position& fromPos, int
 					this, player->getID(), listDir)));
 
 				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerUseBattleWindow, this,
-						playerId, fromPos, fromStackpos, creatureId, spriteId, isHotkey)));
+						playerId, origin, creatureId)));
 				return true;
 			}
 
@@ -2582,14 +2572,14 @@ bool Game::playerUseBattleWindow(uint32_t playerId, const Position& fromPos, int
 		uint32_t delay = player->getNextActionTime();
 
 		player->setNextActionTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(&Game::playerUseBattleWindow, this,
-				playerId, fromPos, fromStackpos, creatureId, spriteId, isHotkey)));
+				playerId, origin, creatureId)));
 		return false;
 	}
 
 	player->setIdleTime(0);
 	player->setNextActionTask(nullptr);
-	return server.actions().useItemEx(player, fromPos, creature->getPosition(),
-		creature->getParent()->__getIndexOfThing(creature), item, isHotkey, creatureId);
+	return server.actions().useItemEx(player, origin, ExtendedPosition::forStackPosition(StackPosition(creature->getPosition(),
+			creature->getParent()->__getIndexOfThing(creature))), item, creatureId);
 }
 
 bool Game::playerCloseContainer(uint32_t playerId, uint8_t cid)
@@ -2651,34 +2641,34 @@ bool Game::playerUpdateContainer(uint32_t playerId, uint8_t cid)
 	return true;
 }
 
-bool Game::playerRotateItem(uint32_t playerId, const Position& pos, int16_t stackpos, const uint16_t spriteId)
+bool Game::playerRotateItem(uint32_t playerId, const ExtendedPosition& position)
 {
 	Player* player = getPlayerByID(playerId);
 	if(!player || player->isRemoved())
 		return false;
 
-	Thing* thing = internalGetThing(player, pos, stackpos);
+	Thing* thing = internalGetThing(player, position);
 	if(!thing)
 		return false;
 
 	Item* item = thing->getItem();
-	if(!item || item->getClientID() != spriteId || !item->isRoteable() || (item->isLoadedFromMap() &&
+	if(!item || (position.getType() == ExtendedPosition::Type::BACKPACK_SEARCH && item->getClientID() != position.getClientItemKindId()) || !item->isRoteable() || (item->isLoadedFromMap() &&
 		(item->getUniqueId() != 0 || (item->getActionId() != 0 && item->getContainer()))))
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
 		return false;
 	}
 
-	if(pos.x != 0xFFFF && !Position::areInRange<1,1,0>(pos, player->getPosition()))
+	if(position.hasPosition(true) && !Position::areInRange<1,1,0>(position.getPosition(true), player->getPosition()))
 	{
 		std::list<Direction> listDir;
-		if(getPathToEx(player, pos, listDir, 0, 1, true, true))
+		if(getPathToEx(player, position.getPosition(true), listDir, 0, 1, true, true))
 		{
 			server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
 				this, player->getID(), listDir)));
 
 			player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerRotateItem, this,
-					playerId, pos, stackpos, spriteId)));
+					playerId, position)));
 			return true;
 		}
 
@@ -2781,8 +2771,7 @@ bool Game::playerUpdateHouseWindow(uint32_t playerId, uint8_t listId, uint32_t w
 	return true;
 }
 
-bool Game::playerRequestTrade(uint32_t playerId, const Position& pos, int16_t stackpos,
-	uint32_t tradePlayerId, uint16_t spriteId)
+bool Game::playerRequestTrade(uint32_t playerId, const ExtendedPosition& position, uint32_t tradePlayerId)
 {
 	Player* player = getPlayerByID(playerId);
 	if(!player || player->isRemoved())
@@ -2803,41 +2792,43 @@ bool Game::playerRequestTrade(uint32_t playerId, const Position& pos, int16_t st
 		return false;
 	}
 
-	Item* tradeItem = dynamic_cast<Item*>(internalGetThing(player, pos, stackpos, spriteId, STACKPOS_USE));
-	if(!tradeItem || tradeItem->getClientID() != spriteId || !tradeItem->isPickupable() || (tradeItem->isLoadedFromMap() &&
+	Item* tradeItem = dynamic_cast<Item*>(internalGetThing(player, position, STACKPOS_USE));
+	if(!tradeItem || (position.getType() == ExtendedPosition::Type::BACKPACK_SEARCH && tradeItem->getClientID() != position.getClientItemKindId()) || !tradeItem->isPickupable() || (tradeItem->isLoadedFromMap() &&
 		(tradeItem->getUniqueId() != 0 || (tradeItem->getActionId() != 0 && tradeItem->getContainer()))))
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
 		return false;
 	}
 
-	if(player->getPosition().z > tradeItem->getPosition().z)
-	{
-		player->sendCancelMessage(RET_FIRSTGOUPSTAIRS);
-		return false;
-	}
-
-	if(player->getPosition().z < tradeItem->getPosition().z)
-	{
-		player->sendCancelMessage(RET_FIRSTGODOWNSTAIRS);
-		return false;
-	}
-
-	if(!Position::areInRange<1,1,0>(tradeItem->getPosition(), player->getPosition()))
-	{
-		std::list<Direction> listDir;
-		if(getPathToEx(player, pos, listDir, 0, 1, true, true))
+	if (position.hasPosition(true)) {
+		if(player->getPosition().z > tradeItem->getPosition().z)
 		{
-			server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
-				this, player->getID(), listDir)));
-
-			player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerRequestTrade, this,
-					playerId, pos, stackpos, tradePlayerId, spriteId)));
-			return true;
+			player->sendCancelMessage(RET_FIRSTGOUPSTAIRS);
+			return false;
 		}
 
-		player->sendCancelMessage(RET_THEREISNOWAY);
-		return false;
+		if(player->getPosition().z < tradeItem->getPosition().z)
+		{
+			player->sendCancelMessage(RET_FIRSTGODOWNSTAIRS);
+			return false;
+		}
+
+		if(!Position::areInRange<1,1,0>(tradeItem->getPosition(), player->getPosition()))
+		{
+			std::list<Direction> listDir;
+			if(getPathToEx(player, position.getPosition(true), listDir, 0, 1, true, true))
+			{
+				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
+					this, player->getID(), listDir)));
+
+				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerRequestTrade, this,
+						playerId, position, tradePlayerId)));
+				return true;
+			}
+
+			player->sendCancelMessage(RET_THEREISNOWAY);
+			return false;
+		}
 	}
 
 	const Container* container = nullptr;
@@ -3279,22 +3270,34 @@ bool Game::playerLookInShop(uint32_t playerId, uint16_t spriteId, uint8_t count)
 	return true;
 }
 
-bool Game::playerLookAt(uint32_t playerId, const Position& pos, uint16_t spriteId, int16_t stackpos)
+bool Game::playerLookAt(uint32_t playerId, const ExtendedPosition& position)
 {
 	Player* player = getPlayerByID(playerId);
 	if(!player || player->isRemoved())
 		return false;
 
-	Thing* thing = internalGetThing(player, pos, stackpos, spriteId, STACKPOS_LOOK);
+	Thing* thing = internalGetThing(player, position, STACKPOS_LOOK);
 	if(!thing)
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
 		return false;
 	}
 
-	Position thingPos = pos;
-	if(pos.x == 0xFFFF)
+	Position thingPos;
+	if (position.hasPosition(true)) {
+		thingPos = position.getPosition(true);
+	}
+	else {
 		thingPos = thing->getPosition();
+	}
+
+	uint8_t stackpos;
+	if (position.getType() == ExtendedPosition::Type::STACK_POSITION) {
+		stackpos = position.getStackPosition().index;
+	}
+	else {
+		stackpos = thing->getParent()->__getIndexOfThing(thing);
+	}
 
 	if(!player->canSee(thingPos))
 	{

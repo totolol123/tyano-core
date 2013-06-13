@@ -56,10 +56,8 @@ namespace std {
 
 	template <>
 	struct hash<ItemType> : function<size_t(const ItemType)> {
-		typedef std::underlying_type<argument_type>::type  underlying_type;
-
 		result_type operator()(const argument_type& type) const {
-			return std::hash<underlying_type>()(static_cast<underlying_type>(type));
+			return std::hash<decltype(+type)>()(+type);
 		}
 	};
 
@@ -333,7 +331,7 @@ class ItemKind {
 		Ammo_t ammoType:3;
 		itemgroup_t group:4;
 		uint16_t slotPosition:12;
-		uint8_t wieldPosition:4;
+		slots_t wieldPosition;
 
 		items::ClassP _class;
 		ItemType type;

@@ -338,9 +338,9 @@ bool CombatSpell::castSpell(Creature* creature)
 		LuaVariant var;
 		var.type = VARIANT_POSITION;
 		if(needDirection)
-			var.pos = PositionEx(Spells::getCasterPosition(creature, creature->getDirection()), 0);
+			var.pos = StackPosition(Spells::getCasterPosition(creature, creature->getDirection()), 0);
 		else
-			var.pos = PositionEx(creature->getPosition(), 0);
+			var.pos = StackPosition(creature->getPosition(), 0);
 
 		return executeCastSpell(creature, var);
 	}
@@ -368,11 +368,11 @@ bool CombatSpell::castSpell(Creature* creature, Creature* target)
 			var.type = VARIANT_POSITION;
 
 			if(needTarget)
-				var.pos = PositionEx(target->getPosition(), 0);
+				var.pos = StackPosition(target->getPosition(), 0);
 			else if(needDirection)
-				var.pos = PositionEx(Spells::getCasterPosition(creature, creature->getDirection()), 0);
+				var.pos = StackPosition(Spells::getCasterPosition(creature, creature->getDirection()), 0);
 			else
-				var.pos = PositionEx(creature->getPosition(), 0);
+				var.pos = StackPosition(creature->getPosition(), 0);
 		}
 		else
 		{
@@ -778,9 +778,6 @@ bool Spell::playerInstantSpellCheck(Player* player, const Position& toPos)
 	if(!playerSpellCheck(player))
 		return false;
 
-	if(toPos.x == 0xFFFF)
-		return true;
-
 	const Position& playerPos = player->getPosition();
 	if(playerPos.z > toPos.z)
 	{
@@ -835,13 +832,15 @@ bool Spell::playerInstantSpellCheck(Player* player, const Position& toPos)
 	return true;
 }
 
-bool Spell::playerRuneSpellCheck(Player* player, const Position& toPos)
+bool Spell::playerRuneSpellCheck(Player* player, const ExtendedPosition& destination)
 {
 	if(!playerSpellCheck(player))
 		return false;
 
-	if(toPos.x == 0xFFFF)
+	if (!destination.hasPosition(true))
 		return true;
+
+	Position toPos = destination.getPosition(true);
 
 	const Position& playerPos = player->getPosition();
 	if(playerPos.z > toPos.z)
@@ -1156,7 +1155,7 @@ bool InstantSpell::playerCastInstant(Player* player, const std::string& param)
 		else
 		{
 			var.type = VARIANT_POSITION;
-			var.pos = PositionEx(Spells::getCasterPosition(player, player->getDirection()), 0);
+			var.pos = StackPosition(Spells::getCasterPosition(player, player->getDirection()), 0);
 			if(!playerInstantSpellCheck(player, var.pos))
 				return false;
 		}
@@ -1172,9 +1171,9 @@ bool InstantSpell::playerCastInstant(Player* player, const std::string& param)
 	{
 		var.type = VARIANT_POSITION;
 		if(needDirection)
-			var.pos = PositionEx(Spells::getCasterPosition(player, player->getDirection()), 0);
+			var.pos = StackPosition(Spells::getCasterPosition(player, player->getDirection()), 0);
 		else
-			var.pos = PositionEx(player->getPosition(), 0);
+			var.pos = StackPosition(player->getPosition(), 0);
 
 		if(!playerInstantSpellCheck(player, var.pos))
 			return false;
@@ -1220,12 +1219,12 @@ bool InstantSpell::castSpell(Creature* creature)
 	if(needDirection)
 	{
 		var.type = VARIANT_POSITION;
-		var.pos = PositionEx(Spells::getCasterPosition(creature, creature->getDirection()), 0);
+		var.pos = StackPosition(Spells::getCasterPosition(creature, creature->getDirection()), 0);
 	}
 	else
 	{
 		var.type = VARIANT_POSITION;
-		var.pos = PositionEx(creature->getPosition(), 0);
+		var.pos = StackPosition(creature->getPosition(), 0);
 	}
 
 	return internalCastSpell(creature, var);
@@ -1603,24 +1602,24 @@ bool ConjureSpell::ConjureItem(const ConjureSpell* spell, Creature* creature, co
 	if(spell->getReagentId() != 0)
 	{
 		ReturnValue resLeft = internalConjureItem(player, spell->getConjureId(), spell->getConjureCount(),
-			true, spell->getReagentId(), SLOT_LEFT, true);
+			true, spell->getReagentId(), slots_t::LEFT, true);
 		if(resLeft == RET_NOERROR)
 		{
 			resLeft = internalConjureItem(player, spell->getConjureId(), spell->getConjureCount(),
-				true, spell->getReagentId(), SLOT_LEFT);
+				true, spell->getReagentId(), slots_t::LEFT);
 			if(resLeft == RET_NOERROR)
 				spell->postCastSpell(player, false);
 		}
 
 		ReturnValue resRight = internalConjureItem(player, spell->getConjureId(), spell->getConjureCount(),
-			true, spell->getReagentId(), SLOT_RIGHT, true);
+			true, spell->getReagentId(), slots_t::RIGHT, true);
 		if(resRight == RET_NOERROR)
 		{
 			if(resLeft == RET_NOERROR && !spell->playerSpellCheck(player))
 				return false;
 
 			resRight = internalConjureItem(player, spell->getConjureId(), spell->getConjureCount(),
-				true, spell->getReagentId(), SLOT_RIGHT);
+				true, spell->getReagentId(), slots_t::RIGHT);
 			if(resRight == RET_NOERROR)
 				spell->postCastSpell(player, false);
 		}
@@ -1771,13 +1770,13 @@ bool RuneSpell::loadFunction(const std::string& functionName)
 	return true;
 }
 
-bool RuneSpell::Illusion(const RuneSpell* spell, Creature* creature, Item* item, const Position& posFrom, const Position& posTo)
+bool RuneSpell::Illusion(const RuneSpell* spell, Creature* creature, Item* item, const ExtendedPosition& origin, const ExtendedPosition& destination)
 {
 	Player* player = creature->getPlayer();
 	if(!player)
 		return false;
 
-	Thing* thing = server.game().internalGetThing(player, posTo, 0, 0, STACKPOS_MOVE);
+	Thing* thing = server.game().internalGetThing(player, destination, STACKPOS_MOVE);
 	if(!thing)
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
@@ -1806,7 +1805,7 @@ bool RuneSpell::Illusion(const RuneSpell* spell, Creature* creature, Item* item,
 	return (ret == RET_NOERROR);
 }
 
-bool RuneSpell::Convince(const RuneSpell* spell, Creature* creature, Item* item, const Position& posFrom, const Position& posTo)
+bool RuneSpell::Convince(const RuneSpell* spell, Creature* creature, Item* item, const ExtendedPosition& origin, const ExtendedPosition& destination)
 {
 	Player* player = creature->getPlayer();
 	if(!player)
@@ -1829,7 +1828,7 @@ bool RuneSpell::Convince(const RuneSpell* spell, Creature* creature, Item* item,
 		}
 	}
 
-	Thing* thing = server.game().internalGetThing(player, posTo, 0, 0, STACKPOS_LOOK);
+	Thing* thing = server.game().internalGetThing(player, destination, STACKPOS_LOOK);
 	if(!thing)
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
@@ -1868,7 +1867,7 @@ bool RuneSpell::Convince(const RuneSpell* spell, Creature* creature, Item* item,
 	return true;
 }
 
-ReturnValue RuneSpell::canExecuteAction(const Player* player, const Position& toPos)
+ReturnValue RuneSpell::canExecuteAction(const Player* player, const ExtendedPosition& toPos)
 {
 	if(player->hasFlag(PlayerFlag_CannotUseSpells))
 		return RET_CANNOTUSETHISOBJECT;
@@ -1877,7 +1876,7 @@ ReturnValue RuneSpell::canExecuteAction(const Player* player, const Position& to
 	if(ret != RET_NOERROR)
 		return ret;
 
-	if(toPos.x == 0xFFFF)
+	if(toPos.getType() == ExtendedPosition::Type::BACKPACK_SEARCH)
 	{
 		if(needTarget)
 			return RET_CANONLYUSETHISRUNEONCREATURES;
@@ -1889,10 +1888,9 @@ ReturnValue RuneSpell::canExecuteAction(const Player* player, const Position& to
 	return RET_NOERROR;
 }
 
-bool RuneSpell::executeUse(Player* player, Item* item, const PositionEx& posFrom,
-	const PositionEx& posTo, bool extendedUse, uint32_t creatureId)
+bool RuneSpell::executeUse(Player* player, Item* item, const ExtendedPosition& origin, const ExtendedPosition& destination, bool extendedUse, uint32_t creatureId)
 {
-	if(!playerRuneSpellCheck(player, posTo))
+	if(!playerRuneSpellCheck(player, destination))
 		return false;
 
 	bool result = false;
@@ -1906,14 +1904,14 @@ bool RuneSpell::executeUse(Player* player, Item* item, const PositionEx& posFrom
 		}
 		else
 		{
-			var.type = VARIANT_POSITION;
-			var.pos = posTo;
+			var.type = VARIANT_EXTENDEDPOSITION;
+			var.epos = destination;
 		}
 
 		result = internalCastSpell(player, var);
 	}
 	else if(function)
-		result = function(this, player, item, posFrom, posTo);
+		result = function(this, player, item, origin, destination);
 
 	if(result)
 	{

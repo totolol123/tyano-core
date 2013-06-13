@@ -62,9 +62,9 @@ class ProtocolGame : public Protocol
 		struct CreatureValidationResult {
 
 			CreatureValidationResult();
-			CreatureValidationResult(bool registered, const PositionEx& expectedPosition, bool expectedPositionIsWrong);
+			CreatureValidationResult(bool registered, const StackPosition& expectedPosition, bool expectedPositionIsWrong);
 
-			PositionEx expectedPosition;
+			StackPosition expectedPosition;
 			bool       expectedPositionIsWrong;
 			bool       registered;
 
@@ -73,7 +73,7 @@ class ProtocolGame : public Protocol
 
 		typedef boost::intrusive_ptr<const Creature>       CreatureP;
 		typedef boost::intrusive_ptr<Player>               PlayerP;
-		typedef std::unordered_map<CreatureP,PositionEx>  RegisteredCreatures;
+		typedef std::unordered_map<CreatureP,StackPosition>  RegisteredCreatures;
 
 
 		void disconnectClient(uint8_t error, const char* message);
@@ -186,7 +186,7 @@ class ProtocolGame : public Protocol
 		void sendCreatureHealth(const Creature* creature);
 		void sendSkills();
 		void sendPing();
-		void sendCreatureTurn(const CreatureP& creature, const PositionEx& position);
+		void sendCreatureTurn(const CreatureP& creature, const StackPosition& position);
 		void sendCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos = nullptr);
 
 		void sendCancel(const std::string& message);
@@ -228,14 +228,14 @@ class ProtocolGame : public Protocol
 		void sendCreatureSquare(const Creature* creature, SquareColor_t color);
 
 		//tiles
-		void sendAddTileItem(const Tile* tile, const PositionEx& position, const Item* item, const char* callSource);
-		void sendUpdateTileItem(const Tile* tile, const PositionEx& position, const Item* item);
-		void sendRemoveTileItem(const Tile* tile, const PositionEx& position, const Item* item, const char* callSource);
+		void sendAddTileItem(const Tile* tile, const StackPosition& position, const Item* item, const char* callSource);
+		void sendUpdateTileItem(const Tile* tile, const StackPosition& position, const Item* item);
+		void sendRemoveTileItem(const Tile* tile, const StackPosition& position, const Item* item, const char* callSource);
 		void sendUpdateTile(const Tile* tile, const Position& pos);
 
-		void sendAddCreature(const CreatureP& creature, const PositionEx& position, const char* callSource);
-		void sendRemoveCreature(const CreatureP& creature, PositionEx position, const char* callSource);
-		void sendMoveCreature(const CreatureP& creature, const Tile* newTile, const PositionEx& newPosition, const Tile* oldTile, PositionEx oldPosition, bool teleport, const char* callSource);
+		void sendAddCreature(const CreatureP& creature, const StackPosition& position, const char* callSource);
+		void sendRemoveCreature(const CreatureP& creature, StackPosition position, const char* callSource);
+		void sendMoveCreature(const CreatureP& creature, const Tile* newTile, const StackPosition& newPosition, const Tile* oldTile, StackPosition oldPosition, bool teleport, const char* callSource);
 
 		//containers
 		void sendAddContainerItem(uint8_t cid, const Item* item);
@@ -268,7 +268,7 @@ class ProtocolGame : public Protocol
 		void AddAnimatedText(NetworkMessage_ptr msg, const Position& pos, uint8_t color, const std::string& text);
 		void AddMagicEffect(NetworkMessage_ptr msg, const Position& pos, uint8_t type);
 		void AddDistanceShoot(NetworkMessage_ptr msg, const Position& from, const Position& to, uint8_t type);
-		void AddCreature(NetworkMessage_ptr msg, const CreatureP& creature, const PositionEx& position);
+		void AddCreature(NetworkMessage_ptr msg, const CreatureP& creature, const StackPosition& position);
 		void AddPlayerStats(NetworkMessage_ptr msg);
 		void AddCreatureSpeak(NetworkMessage_ptr msg, const Creature* creature, SpeakClasses type,
 			std::string text, uint16_t channelId, uint32_t time = 0, Position* pos = nullptr);
@@ -279,11 +279,11 @@ class ProtocolGame : public Protocol
 		void AddCreatureLight(NetworkMessage_ptr msg, const Creature* creature);
 
 		//tiles
-		void AddTileItem(NetworkMessage_ptr msg, const PositionEx& position, const Item* item);
-		void AddTileCreature(NetworkMessage_ptr msg, const PositionEx& position, const CreatureP& creature);
-		void UpdateTileItem(NetworkMessage_ptr msg, const PositionEx& position, const Item* item);
-		void RemoveTileItem(NetworkMessage_ptr msg, const PositionEx& position);
-		void RemoveTileCreature(NetworkMessage_ptr msg, const PositionEx& position);
+		void AddTileItem(NetworkMessage_ptr msg, const StackPosition& position, const Item* item);
+		void AddTileCreature(NetworkMessage_ptr msg, const StackPosition& position, const CreatureP& creature);
+		void UpdateTileItem(NetworkMessage_ptr msg, const StackPosition& position, const Item* item);
+		void RemoveTileItem(NetworkMessage_ptr msg, const StackPosition& position);
+		void RemoveTileCreature(NetworkMessage_ptr msg, const StackPosition& position);
 
 		void MoveUpCreature(NetworkMessage_ptr msg, const Creature* creature,
 			const Position& newPos, const Position& oldPos, uint32_t oldStackpos);
@@ -311,14 +311,14 @@ class ProtocolGame : public Protocol
 		template<class FunctionType>
 		void addGameTaskInternal(uint32_t delay, const FunctionType&);
 
-		void                     correctRegisteredCreature     (const CreatureP& creature, const PositionEx& previousPosition, const PositionEx& newPosition, const CreatureValidationResult& validationResult);
+		void                     correctRegisteredCreature     (const CreatureP& creature, const StackPosition& previousPosition, const StackPosition& newPosition, const CreatureValidationResult& validationResult);
 		bool                     invalidateCreature            (const CreatureP& creature);
 		void                     invalidateCreaturesAtPosition (const Position& position);
 		void                     invalidateDistantCreatures    ();
-		bool                     registerCreature              (const CreatureP& creature, const PositionEx& position, uint32_t& removedCreatureId);
+		bool                     registerCreature              (const CreatureP& creature, const StackPosition& position, uint32_t& removedCreatureId);
 		void                     updateCreaturesAtPosition     (const Position& position);
-		bool                     updateRegisteredCreature      (const CreatureP& creature, const PositionEx& position);
-		CreatureValidationResult validateRegisteredCreature    (const CreatureP& creature, const PositionEx& previousPosition, const PositionEx& newPosition, bool mustExist, const char* callSource) const;
+		bool                     updateRegisteredCreature      (const CreatureP& creature, const StackPosition& position);
+		CreatureValidationResult validateRegisteredCreature    (const CreatureP& creature, const StackPosition& previousPosition, const StackPosition& newPosition, bool mustExist, const char* callSource) const;
 
 
 		LOGGER_DECLARATION;

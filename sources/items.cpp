@@ -85,7 +85,7 @@ ItemKind::ItemKind() :
 		ammoType(AMMO_NONE),
 		group(ITEM_GROUP_NONE),
 		slotPosition(SLOTP_HAND | SLOTP_AMMO),
-		wieldPosition(SLOT_HAND),
+		wieldPosition(slots_t::HAND),
 		type(ItemType::GENERIC),
 		charges(0),
 		transformUseTo {0, 0},
@@ -600,47 +600,47 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 					if(tmpStrValue == "head")
 					{
 						kind->slotPosition |= SLOTP_HEAD;
-						kind->wieldPosition = SLOT_HEAD;
+						kind->wieldPosition = slots_t::HEAD;
 					}
 					else if(tmpStrValue == "body")
 					{
 						kind->slotPosition |= SLOTP_ARMOR;
-						kind->wieldPosition = SLOT_ARMOR;
+						kind->wieldPosition = slots_t::ARMOR;
 					}
 					else if(tmpStrValue == "legs")
 					{
 						kind->slotPosition |= SLOTP_LEGS;
-						kind->wieldPosition = SLOT_LEGS;
+						kind->wieldPosition = slots_t::LEGS;
 					}
 					else if(tmpStrValue == "feet")
 					{
 						kind->slotPosition |= SLOTP_FEET;
-						kind->wieldPosition = SLOT_FEET;
+						kind->wieldPosition = slots_t::FEET;
 					}
 					else if(tmpStrValue == "backpack")
 					{
 						kind->slotPosition |= SLOTP_BACKPACK;
-						kind->wieldPosition = SLOT_BACKPACK;
+						kind->wieldPosition = slots_t::BACKPACK;
 					}
 					else if(tmpStrValue == "two-handed")
 					{
 						kind->slotPosition |= SLOTP_TWO_HAND;
-						kind->wieldPosition = SLOT_TWO_HAND;
+						kind->wieldPosition = slots_t::TWO_HAND;
 					}
 					else if(tmpStrValue == "necklace")
 					{
 						kind->slotPosition |= SLOTP_NECKLACE;
-						kind->wieldPosition = SLOT_NECKLACE;
+						kind->wieldPosition = slots_t::NECKLACE;
 					}
 					else if(tmpStrValue == "ring")
 					{
 						kind->slotPosition |= SLOTP_RING;
-						kind->wieldPosition = SLOT_RING;
+						kind->wieldPosition = slots_t::RING;
 					}
 					else if(tmpStrValue == "ammo")
-						kind->wieldPosition = SLOT_AMMO;
+						kind->wieldPosition = slots_t::AMMO;
 					else if(tmpStrValue == "hand")
-						kind->wieldPosition = SLOT_HAND;
+						kind->wieldPosition = slots_t::HAND;
 					else
 						LOGw("<item> <slottype> node has unknown value '" << strValue << "' for item " << kind->id << " in " << filePath << ".");
 				}

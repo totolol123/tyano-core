@@ -236,8 +236,8 @@ class Player : public Creature, public Cylinder
 		Item* getInventoryItem(slots_t slot) const;
 		Item* getEquippedItem(slots_t slot) const;
 
-		bool isItemAbilityEnabled(slots_t slot) const {return inventoryAbilities[slot];}
-		void setItemAbility(slots_t slot, bool enabled) {inventoryAbilities[slot] = enabled;}
+		bool isItemAbilityEnabled(slots_t slot) const {return inventoryAbilities[+slot];}
+		void setItemAbility(slots_t slot, bool enabled) {inventoryAbilities[+slot] = enabled;}
 
 		int32_t getVarSkill(skills_t skill) const {return varSkills[skill];}
 		void setVarSkill(skills_t skill, int32_t modifier) {varSkills[skill] += modifier;}

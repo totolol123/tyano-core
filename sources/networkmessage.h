@@ -22,10 +22,11 @@
 
 class Item;
 class Creature;
+class ExtendedPosition;
 class NetworkMessage;
 class Player;
 class Position;
-class PositionEx;
+class StackPosition;
 class RSA;
 
 typedef std::shared_ptr<NetworkMessage> NetworkMessage_ptr;
@@ -83,6 +84,7 @@ class NetworkMessage
 		std::string GetRaw() {return GetString(m_MsgSize - m_ReadPos);}
 
 		Position GetPosition();
+		ExtendedPosition GetExtendedPosition(bool detailed = true);
 		uint16_t GetSpriteId() {return GetU16();}
 
 		// simply write functions for outgoing message
@@ -119,7 +121,7 @@ class NetworkMessage
 
 		// write functions for complex types
 		void AddPosition(const Position &pos);
-		void AddPositionEx(const PositionEx& position);
+		void AddPositionEx(const StackPosition& position);
 		void AddItem(const Item *item);
 		void AddItemId(const Item *item);
 		void AddItemId(uint16_t itemId);
@@ -145,6 +147,12 @@ class NetworkMessage
 
 		uint8_t m_MsgBuf[NETWORKMESSAGE_MAXSIZE];
 		int32_t m_MsgSize, m_ReadPos;
+
+
+	private:
+
+		LOGGER_DECLARATION;
+
 };
 
 #endif // _NETWORKMESSAGE_H

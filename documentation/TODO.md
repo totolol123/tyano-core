@@ -31,3 +31,8 @@ TODO
 - use least-size integers instead of fixed-size ones
 - fix TODOs written in code comments
 - use `weak_ptr` where it makes sense (e.g. master->summon relationship and damage list to avoid cyclic references)
+
+Architecture
+------------
+* Use or develop new LUA framework.
+* Further consolidate `Position`, `StackPosition` and `ExtendedPosition`.

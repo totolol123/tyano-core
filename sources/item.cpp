@@ -366,7 +366,7 @@ std::string Item::getWeightDescription() const {
 Ammo_t Item::getAmmoType() const {return kind->ammoType;}
 WeaponType_t Item::getWeaponType() const {return kind->weaponType;}
 int32_t Item::getSlotPosition() const {return kind->slotPosition;}
-int32_t Item::getWieldPosition() const {return kind->wieldPosition;}
+slots_t Item::getWieldPosition() const {return kind->wieldPosition;}
 
 
 int32_t Item::getMaxWriteLength() const {return kind->maxTextLen;}

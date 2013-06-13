@@ -492,7 +492,12 @@ void ScriptEnviroment::streamVariant(std::stringstream& stream, const std::strin
 	if(!local.empty())
 		stream << "local " << local << " = {" << std::endl;
 
-	stream << "type = " << var.type;
+	uint32_t reportedType = var.type;
+	if (var.type == VARIANT_EXTENDEDPOSITION) {
+		reportedType = VARIANT_POSITION;
+	}
+
+	stream << "type = " << reportedType;
 	switch(var.type)
 	{
 		case VARIANT_NUMBER:
@@ -501,6 +506,13 @@ void ScriptEnviroment::streamVariant(std::stringstream& stream, const std::strin
 		case VARIANT_STRING:
 			stream << "," << std::endl << "string = \"" << var.text << "\"";
 			break;
+		case VARIANT_EXTENDEDPOSITION:
+		{
+			stream << "," << std::endl;
+			streamExtendedPosition(stream, "pos", var.epos);
+			break;
+		}
+
 		case VARIANT_TARGETPOSITION:
 		case VARIANT_POSITION:
 		{
@@ -581,6 +593,59 @@ void ScriptEnviroment::streamPosition(std::stringstream& stream, const std::stri
 	stream << "stackpos = " << stackpos << std::endl;
 	if(!local.empty())
 		stream << "}" << std::endl;
+}
+
+void ScriptEnviroment::streamExtendedPosition(std::stringstream& stream, const std::string& local, const ExtendedPosition& position)
+{
+	if(!local.empty())
+		stream << "local " << local << " = {" << std::endl;
+
+	auto data = extendedPositionToXYZI(position);
+
+	stream << "x = " << std::get<0>(data) << "," << std::endl;
+	stream << "y = " << std::get<1>(data) << "," << std::endl;
+	stream << "z = " << std::get<2>(data) << "," << std::endl;
+
+	stream << "stackpos = " << std::get<3>(data) << std::endl;
+	if(!local.empty())
+		stream << "}" << std::endl;
+}
+
+std::tuple<uint16_t,uint16_t,uint8_t,uint8_t> ScriptEnviroment::extendedPositionToXYZI(const ExtendedPosition& position) {
+	uint16_t x = 0;
+	uint16_t y = 0;
+	uint8_t z = 0;
+	uint8_t i = 0;
+
+	typedef ExtendedPosition::Type  Type;
+
+	switch (position.getType()) {
+	case Type::BACKPACK:
+		x = 0xFFFF;
+		y = 0x40 & position.getOpenedContainerId();
+		z = position.getContainerItemIndex();
+		break;
+
+	case Type::POSITION:
+	case Type::STACK_POSITION: {
+		StackPosition pos = position.getStackPosition(true);
+		x = pos.x;
+		y = pos.y;
+		z = pos.z;
+		i = pos.index;
+		break;
+	}
+
+	case Type::SLOT:
+		i = +position.getSlot();
+		break;
+
+	case Type::BACKPACK_SEARCH:
+	case Type::NOWHERE:
+		break;
+	}
+
+	return std::make_tuple(x, y, z, i);
 }
 
 void ScriptEnviroment::streamOutfit(std::stringstream& stream, const std::string& local, const Outfit_t& outfit)
@@ -1019,8 +1084,13 @@ void LuaScriptInterface::dumpStack(lua_State* L/* = nullptr*/)
 
 void LuaScriptInterface::pushVariant(lua_State* L, const LuaVariant& var)
 {
+	uint32_t reportedType = var.type;
+	if (var.type == VARIANT_EXTENDEDPOSITION) {
+		reportedType = VARIANT_POSITION;
+	}
+
 	lua_newtable(L);
-	setField(L, "type", var.type);
+	setField(L, "type", reportedType);
 	switch(var.type)
 	{
 		case VARIANT_NUMBER:
@@ -1029,6 +1099,13 @@ void LuaScriptInterface::pushVariant(lua_State* L, const LuaVariant& var)
 		case VARIANT_STRING:
 			setField(L, "string", var.text);
 			break;
+		case VARIANT_EXTENDEDPOSITION:
+		{
+			lua_pushstring(L, "pos");
+			pushExtendedPosition(L, var.epos);
+			pushTable(L);
+			break;
+		}
 		case VARIANT_TARGETPOSITION:
 		case VARIANT_POSITION:
 		{
@@ -1098,6 +1175,17 @@ void LuaScriptInterface::pushPosition(lua_State* L, const Position& position, ui
 	setField(L, "stackpos", stackpos);
 }
 
+void LuaScriptInterface::pushExtendedPosition(lua_State* L, const ExtendedPosition& position)
+{
+	auto data = ScriptEnviroment::extendedPositionToXYZI(position);
+
+	lua_newtable(L);
+	setField(L, "x", std::get<0>(data));
+	setField(L, "y", std::get<1>(data));
+	setField(L, "z", std::get<2>(data));
+	setField(L, "stackpos", std::get<3>(data));
+}
+
 void LuaScriptInterface::pushOutfit(lua_State* L, const Outfit_t& outfit)
 {
 	lua_newtable(L);
@@ -1144,7 +1232,7 @@ LuaVariant LuaScriptInterface::popVariant(lua_State* L)
 	return var;
 }
 
-void LuaScriptInterface::popPosition(lua_State* L, PositionEx& position)
+void LuaScriptInterface::popPosition(lua_State* L, StackPosition& position)
 {
 	if(!lua_isboolean(L, -1))
 	{
@@ -1161,9 +1249,14 @@ void LuaScriptInterface::popPosition(lua_State* L, PositionEx& position)
 		}
 
 		position.index = static_cast<uint8_t>(getField(L, "stackpos"));
+
+		if (!position.isValid()) {
+			LOGe("Invalid position " << position.x << "/" << position.y << "/" << position.z << "#" << position.index << " passed to LUA function.");
+			position = StackPosition();
+		}
 	}
 	else
-		position = PositionEx();
+		position = StackPosition();
 
 	lua_pop(L, 1); //table
 }
@@ -1175,6 +1268,11 @@ void LuaScriptInterface::popPosition(lua_State* L, Position& position)
 		position.x = getField(L, "x");
 		position.y = getField(L, "y");
 		position.z = getField(L, "z");
+
+		if (!position.isValid()) {
+			LOGe("Invalid position " << position.x << "/" << position.y << "/" << position.z << " passed to LUA function.");
+			position = Position();
+		}
 	}
 	else
 		position = Position();
@@ -1191,6 +1289,12 @@ void LuaScriptInterface::popPosition(lua_State* L, Position& position, uint32_t&
 		position.y = getField(L, "y");
 		position.z = getField(L, "z");
 		stackpos = getField(L, "stackpos");
+
+		if (!position.isValid()) {
+			LOGe("Invalid position " << position.x << "/" << position.y << "/" << position.z << "#" << stackpos << " passed to LUA function.");
+			position = Position();
+			stackpos = 0;
+		}
 	}
 	else
 		position = Position();
@@ -3336,7 +3440,7 @@ int32_t LuaScriptInterface::luaDoTeleportThing(lua_State* L)
 	if(lua_gettop(L) > 2)
 		pushMove = popNumber(L);
 
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	ScriptEnviroment* env = getEnv();
@@ -3388,7 +3492,7 @@ int32_t LuaScriptInterface::luaDoCreatureSay(lua_State* L)
 {
 	//doCreatureSay(uid, text[, type = SPEAK_SAY[, ghost = false[, cid = 0[, pos]]]])
 	uint32_t params = lua_gettop(L), cid = 0, uid = 0;
-	PositionEx pos;
+	StackPosition pos;
 	if(params > 5)
 		popPosition(L, pos);
 
@@ -3803,7 +3907,7 @@ int32_t LuaScriptInterface::luaDoTileAddItemEx(lua_State* L)
 {
 	//doTileAddItemEx(pos, uid)
 	uint32_t uid = (uint32_t)popNumber(L);
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	ScriptEnviroment* env = getEnv();
@@ -3840,10 +3944,10 @@ int32_t LuaScriptInterface::luaDoRelocate(lua_State* L)
 	if(lua_gettop(L) > 2)
 		creatures = popNumber(L);
 
-	PositionEx toPos;
+	StackPosition toPos;
 	popPosition(L, toPos);
 
-	PositionEx fromPos;
+	StackPosition fromPos;
 	popPosition(L, fromPos);
 
 	Tile* fromTile = server.game().getTile(fromPos.x, fromPos.y, fromPos.z);
@@ -3897,7 +4001,7 @@ int32_t LuaScriptInterface::luaDoCleanTile(lua_State* L)
 	if(lua_gettop(L) > 1)
 		forceMapLoaded = popNumber(L);
 
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	Tile* tile = server.game().getTile(pos);
@@ -4207,7 +4311,7 @@ int32_t LuaScriptInterface::luaGetThingFromPos(lua_State* L)
 	if(lua_gettop(L) > 1)
 		displayError = popNumber(L);
 
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	ScriptEnviroment* env = getEnv();
@@ -4255,7 +4359,7 @@ int32_t LuaScriptInterface::luaGetTileItemById(lua_State* L)
 		subType = (int32_t)popNumber(L);
 
 	int32_t itemId = (int32_t)popNumber(L);
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	Tile* tile = server.game().getTile(pos);
@@ -4287,7 +4391,7 @@ int32_t LuaScriptInterface::luaGetTileItemByType(lua_State* L)
 		return 1;
 	}
 
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	Tile* tile = server.game().getTile(pos);
@@ -4365,7 +4469,7 @@ int32_t LuaScriptInterface::luaGetTileItemByType(lua_State* L)
 int32_t LuaScriptInterface::luaGetTileThingByPos(lua_State* L)
 {
 	//getTileThingByPos(pos)
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	ScriptEnviroment* env = getEnv();
@@ -4405,7 +4509,7 @@ int32_t LuaScriptInterface::luaGetTileThingByPos(lua_State* L)
 int32_t LuaScriptInterface::luaGetTopCreature(lua_State* L)
 {
 	//getTopCreature(pos)
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	ScriptEnviroment* env = getEnv();
@@ -4431,7 +4535,7 @@ int32_t LuaScriptInterface::luaDoCreateItem(lua_State* L)
 {
 	//doCreateItem(itemid[, type/count], pos)
 	//Returns uid of the created item, only works on tiles.
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	uint32_t count = 1;
@@ -4541,9 +4645,9 @@ int32_t LuaScriptInterface::luaDoCreateItemEx(lua_State* L)
 int32_t LuaScriptInterface::luaDoCreateTeleport(lua_State* L)
 {
 	//doCreateTeleport(itemid, toPosition, fromPosition)
-	PositionEx createPos;
+	StackPosition createPos;
 	popPosition(L, createPos);
-	PositionEx toPos;
+	StackPosition toPos;
 	popPosition(L, toPos);
 
 	uint32_t itemId = (uint32_t)popNumber(L);
@@ -4647,7 +4751,7 @@ int32_t LuaScriptInterface::luaDoCreatureSetStorage(lua_State* L)
 int32_t LuaScriptInterface::luaGetTileInfo(lua_State* L)
 {
 	//getTileInfo(pos)
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 	if(Tile* tile = server.game().getMap()->getTile(pos))
 	{
@@ -4682,7 +4786,7 @@ int32_t LuaScriptInterface::luaGetTileInfo(lua_State* L)
 int32_t LuaScriptInterface::luaGetHouseFromPos(lua_State* L)
 {
 	//getHouseFromPos(pos)
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	Tile* tile = server.game().getMap()->getTile(pos);
@@ -4718,7 +4822,7 @@ int32_t LuaScriptInterface::luaDoCreateMonster(lua_State* L)
 	if(lua_gettop(L) > 2)
 		displayError = popNumber(L);
 
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	std::string name = popString(L);
@@ -4753,7 +4857,7 @@ int32_t LuaScriptInterface::luaDoCreateNpc(lua_State* L)
 	if(lua_gettop(L) > 2)
 		displayError = popNumber(L);
 
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	std::string name = popString(L);
@@ -5334,7 +5438,7 @@ int32_t LuaScriptInterface::luaDoTileQueryAdd(lua_State* L)
 	if(params > 2)
 		flags = popNumber(L);
 
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 	uint32_t uid = popNumber(L);
 
@@ -5932,7 +6036,7 @@ int32_t LuaScriptInterface::luaDoCombatAreaHealth(lua_State* L)
 	int32_t maxChange = (int32_t)popNumber(L), minChange = (int32_t)popNumber(L);
 	uint32_t areaId = popNumber(L);
 
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	CombatType_t combatType = (CombatType_t)popNumber(L);
@@ -6016,7 +6120,7 @@ int32_t LuaScriptInterface::luaDoCombatAreaMana(lua_State* L)
 	int32_t maxChange = (int32_t)popNumber(L), minChange = (int32_t)popNumber(L);
 	uint32_t areaId = popNumber(L);
 
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 	uint32_t cid = popNumber(L);
 
@@ -6092,7 +6196,7 @@ int32_t LuaScriptInterface::luaDoCombatAreaCondition(lua_State* L)
 	MagicEffect_t effect = (MagicEffect_t)popNumber(L);
 	uint32_t conditionId = popNumber(L), areaId = popNumber(L);
 
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 	uint32_t cid = popNumber(L);
 
@@ -6186,7 +6290,7 @@ int32_t LuaScriptInterface::luaDoCombatAreaDispel(lua_State* L)
 	ConditionType_t dispelType = (ConditionType_t)popNumber(L);
 	uint32_t areaId = popNumber(L);
 
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 	uint32_t cid = popNumber(L);
 
@@ -6741,7 +6845,7 @@ int32_t LuaScriptInterface::luaVariantToPosition(lua_State* L)
 	//luaVariantToPosition(var)
 	LuaVariant var = popVariant(L);
 
-	PositionEx pos(0, 0, 0, 0);
+	StackPosition pos(0, 0, 0, 0);
 	if(var.type == VARIANT_POSITION || var.type == VARIANT_TARGETPOSITION)
 		pos = var.pos;
 
@@ -7709,7 +7813,7 @@ int32_t LuaScriptInterface::luaDoPlayerAddMapMark(lua_State* L)
 		description = popString(L);
 
 	MapMarks_t type = (MapMarks_t)popNumber(L);
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	ScriptEnviroment* env = getEnv();
@@ -7950,7 +8054,7 @@ int32_t LuaScriptInterface::luaGetCreatureTarget(lua_State* L)
 int32_t LuaScriptInterface::luaIsSightClear(lua_State* L)
 {
 	//isSightClear(fromPos, toPos, floorCheck)
-	PositionEx fromPos, toPos;
+	StackPosition fromPos, toPos;
 	bool floorCheck = popNumber(L);
 
 	popPosition(L, toPos);
@@ -8288,7 +8392,7 @@ int32_t LuaScriptInterface::luaGetCreatureLookDirection(lua_State* L)
 	ScriptEnviroment* env = getEnv();
 
 	if(Creature* creature = env->getCreatureByUID(popNumber(L)))
-		lua_pushnumber(L, static_cast<std::underlying_type<Direction>::type>(creature->getDirection()));
+		lua_pushnumber(L, +creature->getDirection());
 	else
 	{
 		errorEx(getError(LUA_ERROR_CREATURE_NOT_FOUND));
@@ -8864,7 +8968,7 @@ int32_t LuaScriptInterface::luaGetSpectators(lua_State* L)
 		multifloor = popNumber(L);
 
 	uint32_t rangey = popNumber(L), rangex = popNumber(L);
-	PositionEx centerPos;
+	StackPosition centerPos;
 	popPosition(L, centerPos);
 
 	SpectatorList list;
@@ -8933,7 +9037,7 @@ int32_t LuaScriptInterface::luaGetWaypointPosition(lua_State* L)
 int32_t LuaScriptInterface::luaDoWaypointAddTemporial(lua_State* L)
 {
 	//doWaypointAddTemporial(name, pos)
-	PositionEx pos;
+	StackPosition pos;
 	popPosition(L, pos);
 
 	server.game().getMap()->getWaypoints().addWaypoint(WaypointPtr(new Waypoint(popString(L), pos)));
@@ -9167,7 +9271,7 @@ int32_t LuaScriptInterface::luaGetItemInfo(lua_State* L)
 	setField(L, "clientId", kind->clientId);
 	setField(L, "maxItems", kind->maxItems);
 	setField(L, "slotPosition", kind->slotPosition);
-	setField(L, "wieldPosition", kind->wieldPosition);
+	setField(L, "wieldPosition", +kind->wieldPosition);
 	setField(L, "speed", kind->speed);
 	setField(L, "maxTextLength", kind->maxTextLen);
 	setField(L, "writeOnceItemId", kind->writeOnceItemId);

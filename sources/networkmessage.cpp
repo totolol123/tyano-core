@@ -27,6 +27,11 @@
 #include "player.h"
 #include "server.h"
 
+
+LOGGER_DEFINITION(NetworkMessage);
+
+
+
 int32_t NetworkMessage::decodeHeader()
 {
 	int32_t size = (int32_t)(m_MsgBuf[0] | m_MsgBuf[1] << 8);
@@ -54,8 +59,101 @@ Position NetworkMessage::GetPosition()
 	pos.x = GetU16();
 	pos.y = GetU16();
 	pos.z = GetByte();
+
+	assert(pos.isValid());
+
 	return pos;
 }
+
+
+ExtendedPosition NetworkMessage::GetExtendedPosition(bool detailed /* = true */) {
+	uint16_t x = GetU16();
+	uint16_t y = GetU16();
+	uint8_t  z = GetByte();
+	uint16_t spriteId;
+	uint8_t index;
+
+	if (detailed) {
+		spriteId = GetSpriteId();
+		index = GetByte();
+	}
+	else {
+		spriteId = 0;
+		index = 0;
+	}
+
+	if (x == 0xFFFF) {
+		if ((y & 0x40) != 0) {
+			// index in backpack
+			// spriteId is set to the client's item kind ID - do we need that?
+
+			if (z != index) {
+				// this indeed happens, e.g. when moving items between contains ('z' is destination container item index, 'index' is origin container item index)
+			}
+
+			if ((y & ~0x4F) != 0) {
+				LOGw("Received invalid position " << x << "/" << y << "/" << z << " from player.");
+				return ExtendedPosition::nowhere();
+			}
+
+			uint8_t backpack = y & 0x0F;
+			index = z;
+
+			return ExtendedPosition::forBackpack(backpack, index);
+		}
+		else if (y == 0 && z == 0) {
+			// item to find in backpacks
+
+			if (!detailed) {
+				LOGw("Received unexpected backpack search from player.");
+				return ExtendedPosition::nowhere();
+			}
+
+			ItemKindPC kind = server.items().getKindByClientId(spriteId);
+			if (kind == nullptr) {
+				LOGw("Received backpack search for unknown client item kind ID " << spriteId << ".");
+				return ExtendedPosition::nowhere();
+			}
+
+			int8_t fluidType = -1;
+			if (kind->isFluidContainer()) {
+				if (index < sizeof(reverseFluidMap) / sizeof(int8_t)) {
+					fluidType = reverseFluidMap[index];
+				}
+				else {
+					LOGw("Received invalid fluid type " << index << " from player.");
+					fluidType = -1;
+				}
+			}
+
+			return ExtendedPosition::forBackpackSearch(spriteId, fluidType);
+		}
+		else {
+			// player slot
+
+			// spriteId is set to the client's item kind ID - do we need that?
+			assert(index == 0);
+
+			if (y < +slots_t::FIRST || y > +slots_t::LAST) {
+				LOGw("Received invalid slot " << y << " from player.");
+				return ExtendedPosition::nowhere();
+			}
+
+			return ExtendedPosition::forSlot(slots_t(y));
+		}
+	}
+
+	// spriteId is set to the client's item kind ID - do we need that?
+
+	if (!StackPosition::isValid(x, y, z, index)) {
+		LOGw("Received invalid position " << x << "/" << y << "/" << z << "#" << index << " from player.");
+		return ExtendedPosition::nowhere();
+	}
+
+	return ExtendedPosition::forStackPosition(StackPosition(x, y, z, index));
+}
+
+
 /******************************************************************************/
 
 void NetworkMessage::AddString(const char* value)
@@ -90,15 +188,15 @@ void NetworkMessage::AddPaddingBytes(uint32_t n)
 }
 
 void NetworkMessage::AddPosition(const Position& pos) {
-	assert(pos.x < 65000 && pos.y < 65000 && pos.z <= Map::maxZ);
+	assert(pos.isValid());
 
 	AddU16(pos.x);
 	AddU16(pos.y);
 	AddByte(pos.z);
 }
 
-void NetworkMessage::AddPositionEx(const PositionEx& position) {
-	assert(position.x < 65000 && position.y < 65000 && position.z <= Map::maxZ && position.index < 10);
+void NetworkMessage::AddPositionEx(const StackPosition& position) {
+	assert(position.isValid());
 
 	AddU16(position.x);
 	AddU16(position.y);

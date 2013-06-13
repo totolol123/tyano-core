@@ -116,7 +116,38 @@ typedef Clock::time_point          Time;
 typedef std::unique_ptr<xmlDoc>    xmlDocP;
 
 
+template<typename T>
+inline constexpr auto operator + (T value) -> typename std::underlying_type<T>::type {
+	return static_cast<typename std::underlying_type<T>::type>(value);
+}
+
+
+inline std::ostream& operator << (std::ostream& stream, int8_t value) {
+	return stream << static_cast<int_least16_t>(value);
+}
+
+
 inline std::ostream& operator << (std::ostream& stream, uint8_t value) {
+	return stream << static_cast<uint_least16_t>(value);
+}
+
+
+inline std::ostream& operator << (log4cxx::helpers::CharMessageBuffer& stream, int8_t value) {
+	return stream << static_cast<int_least16_t>(value);
+}
+
+
+inline std::ostream& operator << (log4cxx::helpers::CharMessageBuffer& stream, uint8_t value) {
+	return stream << static_cast<uint_least16_t>(value);
+}
+
+
+inline std::ostream& operator << (log4cxx::helpers::MessageBuffer& stream, int8_t value) {
+	return stream << static_cast<int_least16_t>(value);
+}
+
+
+inline std::ostream& operator << (log4cxx::helpers::MessageBuffer& stream, uint8_t value) {
 	return stream << static_cast<uint_least16_t>(value);
 }
 

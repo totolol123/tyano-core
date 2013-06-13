@@ -854,25 +854,24 @@ enum PlayerCustomFlags
 };
 
 
-enum slots_t
-{
-	SLOT_PRE_FIRST = 0,
-	SLOT_WHEREEVER = SLOT_PRE_FIRST,
-	SLOT_FIRST = 1,
-	SLOT_HEAD = SLOT_FIRST,
-	SLOT_NECKLACE = 2,
-	SLOT_BACKPACK = 3,
-	SLOT_ARMOR = 4,
-	SLOT_RIGHT = 5,
-	SLOT_LEFT = 6,
-	SLOT_LEGS = 7,
-	SLOT_FEET = 8,
-	SLOT_RING = 9,
-	SLOT_AMMO = 10,
-	SLOT_DEPOT = 11,
-	SLOT_LAST = SLOT_DEPOT,
-	SLOT_HAND = 12,
-	SLOT_TWO_HAND = SLOT_HAND
+enum class slots_t : uint8_t {
+	PRE_FIRST = 0,
+	WHEREEVER = PRE_FIRST,
+	FIRST = 1,
+	HEAD = FIRST,
+	NECKLACE = 2,
+	BACKPACK = 3,
+	ARMOR = 4,
+	RIGHT = 5,
+	LEFT = 6,
+	LEGS = 7,
+	FEET = 8,
+	RING = 9,
+	AMMO = 10,
+	DEPOT = 11,
+	LAST = DEPOT,
+	HAND = 12,
+	TWO_HAND = HAND
 };
 
 

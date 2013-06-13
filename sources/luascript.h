@@ -43,23 +43,26 @@ enum LuaVariantType_t
 	VARIANT_NUMBER,
 	VARIANT_POSITION,
 	VARIANT_TARGETPOSITION,
-	VARIANT_STRING
+	VARIANT_STRING,
+	VARIANT_EXTENDEDPOSITION,
 };
 
 
 struct LuaVariant
 {
 	LuaVariant()
+		: epos(ExtendedPosition::nowhere())
 	{
 		type = VARIANT_NONE;
 		text = "";
-		pos = PositionEx();
+		pos = StackPosition();
 		number = 0;
 	}
 
 	LuaVariantType_t type;
 	std::string text;
-	PositionEx pos;
+	ExtendedPosition epos;
+	StackPosition pos;
 	uint32_t number;
 };
 
@@ -139,12 +142,16 @@ class ScriptEnviroment
 
 		void streamVariant(std::stringstream& stream, const std::string& local, const LuaVariant& var);
 		void streamThing(std::stringstream& stream, const std::string& local, Thing* thing, uint32_t id = 0);
-		void streamPosition(std::stringstream& stream, const std::string& local, const PositionEx& position)
+		void streamPosition(std::stringstream& stream, const std::string& local, const StackPosition& position)
 			{streamPosition(stream, local, position, position.index);}
 		void streamPosition(std::stringstream& stream, const std::string& local, const Position& position, uint32_t stackpos);
+		void streamExtendedPosition(std::stringstream& stream, const std::string& local, const ExtendedPosition& position);
 		void streamOutfit(std::stringstream& stream, const std::string& local, const Outfit_t& outfit);
 
+		static std::tuple<uint16_t,uint16_t,uint8_t,uint8_t> extendedPositionToXYZI(const ExtendedPosition& position);
+
 	private:
+
 		typedef std::map<uint64_t, Thing*> ThingMap;
 		typedef std::vector<const LuaVariant*> VariantVector;
 		typedef std::map<uint32_t, std::string> StorageMap;
@@ -260,13 +267,14 @@ class LuaScriptInterface
 		//push/pop common structures
 		static void pushThing(lua_State* L, Thing* thing, uint32_t id = 0);
 		static void pushVariant(lua_State* L, const LuaVariant& var);
-		static void pushPosition(lua_State* L, const PositionEx& position) {pushPosition(L, position, position.index);}
+		static void pushPosition(lua_State* L, const StackPosition& position) {pushPosition(L, position, position.index);}
 		static void pushPosition(lua_State* L, const Position& position, uint32_t stackpos);
+		static void pushExtendedPosition(lua_State* L, const ExtendedPosition& position);
 		static void pushOutfit(lua_State* L, const Outfit_t& outfit);
 		static void pushCallback(lua_State* L, int32_t callback);
 
 		static LuaVariant popVariant(lua_State* L);
-		static void popPosition(lua_State* L, PositionEx& position);
+		static void popPosition(lua_State* L, StackPosition& position);
 		static void popPosition(lua_State* L, Position& position);
 		static void popPosition(lua_State* L, Position& position, uint32_t& stackpos);
 		static bool popBoolean(lua_State* L);

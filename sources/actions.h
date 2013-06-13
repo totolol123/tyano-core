@@ -44,12 +44,11 @@ class Actions : public BaseEvents<Action> {
 	public:
 		Actions();
 
-		bool useItem(Player* player, const Position& pos, uint8_t index, Item* item);
-		bool useItemEx(Player* player, const Position& fromPos, const Position& toPos,
-			uint8_t toStackPos, Item* item, bool isHotkey, uint32_t creatureId = 0);
+		bool useItem(Player* player, Item* item, const ExtendedPosition& origin, uint8_t openContainerId);
+		bool useItemEx(Player* player, const ExtendedPosition& origin, const ExtendedPosition& destination, Item* item, uint32_t creatureId = 0);
 
 		ReturnValue canUse(const Player* player, const Position& pos);
-		ReturnValue canUseEx(const Player* player, const Position& pos, const Item* item);
+		ReturnValue canUseEx(const Player* player, const ExtendedPosition& pos, const Item* item);
 		ReturnValue canUseFar(const Creature* creature, const Position& toPos, bool checkLineOfSight);
 		bool hasAction(const Item* item) const {return getAction(item, ACTION_ANY) != nullptr;}
 
@@ -73,13 +72,10 @@ class Actions : public BaseEvents<Action> {
 		ActionUseMap uniqueItemMap;
 		ActionUseMap actionItemMap;
 
-		bool executeUse(const ActionP& action, Player* player, Item* item, const PositionEx& posEx, uint32_t creatureId);
-		ReturnValue internalUseItem(Player* player, const Position& pos,
-			uint8_t index, Item* item, uint32_t creatureId);
-		bool executeUseEx(const ActionP& action, Player* player, Item* item, const PositionEx& fromPosEx,
-			const PositionEx& toPosEx, bool isHotkey, uint32_t creatureId);
-		ReturnValue internalUseItemEx(Player* player, const PositionEx& fromPosEx, const PositionEx& toPosEx,
-			Item* item, bool isHotkey, uint32_t creatureId);
+		bool executeUse(const ActionP& action, Player* player, Item* item, const ExtendedPosition& origin, uint32_t creatureId);
+		ReturnValue internalUseItem(Player* player, Item* item, const ExtendedPosition& origin, uint8_t openContainerId, uint32_t creatureId);
+		bool executeUseEx(const ActionP& action, Player* player, Item* item, const ExtendedPosition& origin, const ExtendedPosition& destination, uint32_t creatureId);
+		ReturnValue internalUseItemEx(Player* player, Item* item, const ExtendedPosition& origin, const ExtendedPosition& destination, uint32_t creatureId);
 
 		ActionP getAction(const Item* item, ActionType_t type) const;
 
@@ -89,7 +85,7 @@ class Actions : public BaseEvents<Action> {
 
 };
 
-typedef bool (ActionFunction)(Player* player, Item* item, const PositionEx& posFrom, const PositionEx& posTo, bool extendedUse, uint32_t creatureId);
+typedef bool (ActionFunction)(Player* player, Item* item, const ExtendedPosition& origin, const ExtendedPosition& destination, bool extendedUse, uint32_t creatureId);
 class Action : public Event
 {
 	public:
@@ -100,8 +96,7 @@ class Action : public Event
 		virtual bool loadFunction(const std::string& functionName);
 
 		//scripting
-		virtual bool executeUse(Player* player, Item* item, const PositionEx& posFrom,
-			const PositionEx& posTo, bool extendedUse, uint32_t creatureId);
+		virtual bool executeUse(Player* player, Item* item, const ExtendedPosition& origin, const ExtendedPosition& destination, bool extendedUse, uint32_t);
 
 		bool getAllowFarUse() const {return allowFarUse;}
 		void setAllowFarUse(bool v) {allowFarUse = v;}
@@ -109,7 +104,7 @@ class Action : public Event
 		bool getCheckLineOfSight() const {return checkLineOfSight;}
 		void setCheckLineOfSight(bool v) {checkLineOfSight = v;}
 
-		virtual ReturnValue canExecuteAction(const Player* player, const Position& pos);
+		virtual ReturnValue canExecuteAction(const Player* player, const ExtendedPosition& pos);
 		virtual bool hasOwnErrorHandler() {return false;}
 
 		ActionFunction* function;
