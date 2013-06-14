@@ -275,6 +275,7 @@ class LuaScriptInterface
 
 		static LuaVariant popVariant(lua_State* L);
 		static void popPosition(lua_State* L, StackPosition& position);
+		static std::tuple<Position,uint8_t> popPositionX(lua_State* L);
 		static void popPosition(lua_State* L, Position& position);
 		static void popPosition(lua_State* L, Position& position, uint32_t& stackpos);
 		static bool popBoolean(lua_State* L);

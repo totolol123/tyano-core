@@ -1390,6 +1390,12 @@ bool Game::playerMoveItem(uint32_t playerId, const ExtendedPosition& origin, con
 	if (destination.getType() == ExtendedPosition::Type::STACK_POSITION) {
 		destinationIndex = destination.getStackPosition().index;
 	}
+	else if (destination.getType() == ExtendedPosition::Type::BACKPACK) {
+		destinationIndex = destination.getContainerItemIndex();
+	}
+	else if (destination.getType() == ExtendedPosition::Type::SLOT) {
+		destinationIndex = +destination.getSlot();
+	}
 
 	ReturnValue ret = internalMoveItem(player, fromCylinder, toCylinder, destinationIndex, item, count, nullptr);
 	if(ret == RET_NOERROR)
@@ -1487,6 +1493,10 @@ ReturnValue Game::internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cyli
 
 	//remove the item
 	int32_t itemIndex = fromCylinder->__getIndexOfThing(item);
+	// requires netcode & container code update
+//	if (fromCylinder == toCylinder && index > itemIndex) {
+//		--index;
+//	}
 
 	autorelease(item);
 	fromCylinder->__removeThing(item, m);
@@ -1703,9 +1713,9 @@ Item* Game::findItemOfType(Cylinder* cylinder, uint16_t itemId,
 	return nullptr;
 }
 
-bool Game::removeItemOfType(Cylinder* cylinder, uint16_t itemId, int32_t count, int32_t subType /*= -1*/)
+bool Game::removeItemOfType(Cylinder* cylinder, uint16_t itemId, int32_t count, int32_t subType /*= -1*/, bool includeSlots /* = true */)
 {
-	if(!cylinder || ((int32_t)cylinder->__getItemTypeCount(itemId, subType) < count))
+	if(!cylinder || ((int32_t)cylinder->__getItemTypeCount(itemId, subType, true, includeSlots) < count))
 		return false;
 
 	if(count <= 0)
@@ -1714,13 +1724,15 @@ bool Game::removeItemOfType(Cylinder* cylinder, uint16_t itemId, int32_t count, 
 	std::list<Container*> listContainer;
 	Container* tmpContainer = nullptr;
 
+	Player* player = dynamic_cast<Player*>(cylinder);
+
 	Thing* thing = nullptr;
 	Item* item = nullptr;
 	for(int32_t i = cylinder->__getFirstIndex(); i < cylinder->__getLastIndex() && count > 0;)
 	{
 		if((thing = cylinder->__getThing(i)) && (item = thing->getItem()))
 		{
-			if(item->getId() == itemId)
+			if(item->getId() == itemId && (includeSlots || player == nullptr))
 			{
 				if(item->isStackable())
 				{
@@ -1740,6 +1752,8 @@ bool Game::removeItemOfType(Cylinder* cylinder, uint16_t itemId, int32_t count, 
 					--count;
 					internalRemoveItem(nullptr, item);
 				}
+				else
+					++i;
 			}
 			else
 			{
@@ -3354,17 +3368,11 @@ bool Game::playerLookAt(uint32_t playerId, const ExtendedPosition& position)
 	{
 		if(const Creature* creature = thing->getCreature())
 		{
-			ss << std::endl << "Health: [" << creature->getHealth() << " / " << creature->getMaxHealth() << "]";
-			if(creature->getMaxMana() > 0)
-				ss << ", Mana: [" << creature->getMana() << " / " << creature->getMaxMana() << "]";
+			ss << std::endl << "Health: " << creature->getHealth() << " / " << creature->getMaxHealth();
+			if (creature->getMaxMana() > 0)
+				ss << std::endl << "Mana: " << creature->getMana() << " / " << creature->getMaxMana();
 
-			ss << ".";
-			if(const Player* destPlayer = creature->getPlayer())
-			{
-				ss << std::endl << "IP: " << convertIPAddress(destPlayer->getIP()) << ", Client: " << destPlayer->getClientVersion() << ".";
-				if(destPlayer->isGhost())
-					ss << std::endl << "* Ghost mode *";
-			}
+			ss << std::endl << "ID: " << creature->getID();
 		}
 	}
 
@@ -4529,6 +4537,7 @@ void Game::checkDecay()
 
 	ItemList& items = decayItems[bucket];
 	if (items.empty()) {
+		cleanup();
 		return;
 	}
 

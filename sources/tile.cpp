@@ -519,6 +519,10 @@ void Tile::moveCreature(Creature* actor, Creature* creature, Cylinder* toCylinde
 ReturnValue Tile::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
 	uint32_t flags) const
 {
+	if (!hasRoomForThing(*thing)) {
+		return RET_TILEISFULL;
+	}
+
 	const CreatureVector* creatures = getCreatures();
 	const TileItemVector* items = getItemList();
 	if(const Creature* creature = thing->getCreature())
@@ -886,6 +890,10 @@ Cylinder* Tile::__queryDestination(int32_t& index, const Thing* thing, Item** de
 void Tile::__addThing(Creature* actor, int32_t index, Thing* thing)
 {
 	assert(thing->getParent() == nullptr || thing->getParent() == &VirtualCylinder::virtualCylinder);
+
+	if (!hasRoomForThing(*thing)) {
+		return;
+	}
 
 	if(Creature* creature = thing->getCreature())
 	{
@@ -1437,7 +1445,7 @@ int32_t Tile::__getIndexOfThing(const Thing* thing) const
 	return -1;
 }
 
-uint32_t Tile::__getItemTypeCount(uint16_t itemId, int32_t subType /*= -1*/, bool itemCount /*= true*/) const
+uint32_t Tile::__getItemTypeCount(uint16_t itemId, int32_t subType /*= -1*/, bool itemCount /*= true*/, bool) const
 {
 	uint32_t count = 0;
 	Thing* thing = nullptr;
@@ -1592,9 +1600,42 @@ void Tile::postRemoveNotification(Creature* actor, Thing* thing, const Cylinder*
 	}
 }
 
+
+bool Tile::hasRoomForThing(const Thing& thing) const {
+	if (thingCount >= StackPosition::MAX_INDEX) {
+		// we are full
+		return false;
+	}
+
+	if (thing.getCreature() != nullptr) {
+		// add creatures until we are full
+		return true;
+	}
+
+	if (thing.getItem() != nullptr) {
+		auto creatures = getCreatures();
+		if (creatures != nullptr && !creatures->empty()) {
+			// we have at least one creature - add items until we are full
+			return true;
+		}
+
+		if (thingCount + 1 >= StackPosition::MAX_INDEX) {
+			// we have no creatures - leave at least one spot free so that creatures can still walk over this tile
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
 void Tile::__internalAddThing(uint32_t index, Thing* thing)
 {
 	assert(thing->getParent() == nullptr);
+
+	if (!hasRoomForThing(*thing)) {
+		return;
+	}
 
 	if(Creature* creature = thing->getCreature())
 	{

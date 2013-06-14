@@ -122,7 +122,7 @@ bool Monster::challenge(const CreatureP& challenger) {
 		return false;
 	}
 
-	if (canBeChallengedBy(challenger)) {
+	if (!canBeChallengedBy(challenger)) {
 		return false;
 	}
 
@@ -449,7 +449,7 @@ bool Monster::shouldTeleportToMaster() const {
 
 	ConfigManager& config = server.configManager();
 	if (!config.getBool(ConfigManager::TELEPORT_SUMMONS) && (_master->getPlayer() == nullptr || !config.getBool(ConfigManager::TELEPORT_PLAYER_SUMMONS))) {
-		return true;
+		return false;
 	}
 
 	if (isMasterInRange()) {
@@ -668,20 +668,17 @@ void Monster::updateTarget() {
 }
 
 
-bool Monster::willRemove() {
-	if (!Creature::willRemove()) {
-		return false;
-	}
+void Monster::willRemove() {
+	killSummons();
 
 	target(nullptr);
 	follow(nullptr);
 
-	killSummons();
 	release();
 	removeFromSpawn();
 	removeFromRaid();
 
-	return true;
+	Creature::willRemove();
 }
 
 
@@ -943,11 +940,11 @@ void Monster::onThinkDefense(uint32_t interval)
 				{
 					if(boost::intrusive_ptr<Monster> summon = Monster::create(it->name))
 					{
-						addSummon(summon.get());
+						summon->setMaster(this);
 						if(server.game().placeCreature(summon.get(), getPosition()))
 							server.game().addMagicEffect(getPosition(), MAGIC_EFFECT_WRAPS_BLUE);
 						else
-							removeSummon(summon.get());
+							summon->setMaster(nullptr);
 					}
 				}
 			}

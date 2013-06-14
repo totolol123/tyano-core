@@ -65,7 +65,7 @@ public:
             bool       target             (const CreatureP& creature);
             bool       targetClosestEnemy ();
             bool       targetRandomEnemy  ();
-    virtual bool       willRemove         ();
+    virtual void       willRemove         ();
 
 
 protected:

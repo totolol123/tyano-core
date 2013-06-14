@@ -391,10 +391,10 @@ void Creature::think() {
 }
 
 
-bool Creature::willRemove() {
+void Creature::willRemove() {
 	if (_removed || _removing) {
 		assert(!_removed && !_removing);
-		return false;
+		return;
 	}
 
 	_removing = true;
@@ -403,10 +403,7 @@ bool Creature::willRemove() {
 	for (const auto& summon : summons) {
 		summon->release();
 	}
-
-	return true;
 }
-
 
 
 
@@ -1432,6 +1429,9 @@ void Creature::removeSummon(const MonsterP& creature) {
 bool Creature::addCondition(Condition* condition)
 {
 	if(!condition)
+		return false;
+
+	if(isSuppress(condition->getType()))
 		return false;
 
 	bool hadCondition = hasCondition(condition->getType(), -1, false);

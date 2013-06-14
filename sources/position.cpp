@@ -300,7 +300,7 @@ Position ExtendedPosition::getPosition(bool convertsStackPosititon) const {
 
 	case Type::STACK_POSITION:
 		if (!convertsStackPosititon) {
-			assert(getType() == Type::POSITION || (convertsStackPosititon || getType() == Type::STACK_POSITION));
+			assert(getType() == Type::POSITION || (convertsStackPosititon && getType() == Type::STACK_POSITION));
 			return Position();
 		}
 
@@ -313,7 +313,7 @@ Position ExtendedPosition::getPosition(bool convertsStackPosititon) const {
 		break;
 	}
 
-	assert(getType() == Type::POSITION || (convertsStackPosititon || getType() == Type::STACK_POSITION));
+	assert(getType() == Type::POSITION || (convertsStackPosititon && getType() == Type::STACK_POSITION));
 	return Position();
 }
 
@@ -335,7 +335,7 @@ StackPosition ExtendedPosition::getStackPosition(bool convertsPosititon) const {
 
 	case Type::POSITION:
 		if (!convertsPosititon) {
-			assert(getType() == Type::STACK_POSITION || (convertsPosititon || getType() == Type::POSITION));
+			assert(getType() == Type::STACK_POSITION || (convertsPosititon && getType() == Type::POSITION));
 			return StackPosition();
 		}
 
@@ -348,7 +348,7 @@ StackPosition ExtendedPosition::getStackPosition(bool convertsPosititon) const {
 		break;
 	}
 
-	assert(getType() == Type::STACK_POSITION || (convertsPosititon || getType() == Type::POSITION));
+	assert(getType() == Type::STACK_POSITION || (convertsPosititon && getType() == Type::POSITION));
 	return StackPosition();
 }
 

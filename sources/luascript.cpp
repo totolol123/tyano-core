@@ -1251,7 +1251,9 @@ void LuaScriptInterface::popPosition(lua_State* L, StackPosition& position)
 		position.index = static_cast<uint8_t>(getField(L, "stackpos"));
 
 		if (!position.isValid()) {
-			LOGe("Invalid position " << position.x << "/" << position.y << "/" << position.z << "#" << position.index << " passed to LUA function.");
+			std::ostringstream stream;
+			stream << "Invalid position " << position.x << "/" << position.y << "/" << position.z << "#" << position.index << " passed to LUA function.";
+			error(nullptr, stream.str());
 			position = StackPosition();
 		}
 	}
@@ -1259,6 +1261,48 @@ void LuaScriptInterface::popPosition(lua_State* L, StackPosition& position)
 		position = StackPosition();
 
 	lua_pop(L, 1); //table
+}
+
+
+std::tuple<Position,uint8_t> LuaScriptInterface::popPositionX(lua_State* L) {
+	uint16_t x = 0;
+	uint16_t y = 0;
+	uint8_t z = 0;
+	uint8_t index = 0;
+
+	if(!lua_isboolean(L, -1))
+	{
+		x = getField(L, "x");
+		y = getField(L, "y");
+		z = getField(L, "z");
+
+		int64_t stackpos = getField(L, "stackpos");
+		if (stackpos < 0) {
+			stackpos = 255;
+		}
+		else if (stackpos) {
+			stackpos = 254;
+		}
+
+		index = static_cast<uint8_t>(stackpos);
+
+		if (!Position::isValid(x,y,z) || (index < 253 && !StackPosition::isValid(x,y,z,index))) {
+			std::ostringstream stream;
+			stream << "Invalid position " << x << "/" << y << "/" << z << "#" << index << " passed to LUA function.";
+			error(nullptr, stream.str());
+
+			x = y = 0;
+			z = index = 0;
+		}
+	}
+	else {
+		x = y = 0;
+		z = index = 0;
+	}
+
+	lua_pop(L, 1); //table
+
+	return std::make_tuple(Position(x, y, z), index);
 }
 
 void LuaScriptInterface::popPosition(lua_State* L, Position& position)
@@ -1270,7 +1314,9 @@ void LuaScriptInterface::popPosition(lua_State* L, Position& position)
 		position.z = getField(L, "z");
 
 		if (!position.isValid()) {
-			LOGe("Invalid position " << position.x << "/" << position.y << "/" << position.z << " passed to LUA function.");
+			std::ostringstream stream;
+			stream << "Invalid position " << position.x << "/" << position.y << "/" << position.z << " passed to LUA function.";
+			error(nullptr, stream.str());
 			position = Position();
 		}
 	}
@@ -1291,7 +1337,9 @@ void LuaScriptInterface::popPosition(lua_State* L, Position& position, uint32_t&
 		stackpos = getField(L, "stackpos");
 
 		if (!position.isValid()) {
-			LOGe("Invalid position " << position.x << "/" << position.y << "/" << position.z << "#" << stackpos << " passed to LUA function.");
+			std::ostringstream stream;
+			stream << "Invalid position " << position.x << "/" << position.y << "/" << position.z << "#" << stackpos << " passed to LUA function.";
+			error(nullptr, stream.str());
 			position = Position();
 			stackpos = 0;
 		}
@@ -4311,14 +4359,15 @@ int32_t LuaScriptInterface::luaGetThingFromPos(lua_State* L)
 	if(lua_gettop(L) > 1)
 		displayError = popNumber(L);
 
-	StackPosition pos;
-	popPosition(L, pos);
+	auto positionX = popPositionX(L);
+	Position position = std::get<0>(positionX);
+	uint8_t index = std::get<1>(positionX);
 
 	ScriptEnviroment* env = getEnv();
 	Thing* thing = nullptr;
-	if(Tile* tile = server.game().getMap()->getTile(pos))
+	if(Tile* tile = server.game().getMap()->getTile(position))
 	{
-		if(pos.index == 255)
+		if(index == 255)
 		{
 			if(!(thing = tile->getTopCreature()))
 			{
@@ -4327,12 +4376,12 @@ int32_t LuaScriptInterface::luaGetThingFromPos(lua_State* L)
 					thing = item;
 			}
 		}
-		else if(pos.index == 254)
+		else if(index == 254)
 			thing = tile->getFieldItem();
-		else if(pos.index == 253)
+		else if(index == 253)
 			thing = tile->getTopCreature();
 		else
-			thing = tile->__getThing(pos.index);
+			thing = tile->__getThing(index);
 
 		if(thing)
 			pushThing(L, thing, env->addThing(thing));
@@ -4469,15 +4518,16 @@ int32_t LuaScriptInterface::luaGetTileItemByType(lua_State* L)
 int32_t LuaScriptInterface::luaGetTileThingByPos(lua_State* L)
 {
 	//getTileThingByPos(pos)
-	StackPosition pos;
-	popPosition(L, pos);
+	auto positionX = popPositionX(L);
+	Position position = std::get<0>(positionX);
+	uint8_t index = std::get<1>(positionX);
 
 	ScriptEnviroment* env = getEnv();
 
-	Tile* tile = server.game().getTile(pos.x, pos.y, pos.z);
+	Tile* tile = server.game().getTile(position);
 	if(!tile)
 	{
-		if(pos.index == 255)
+		if(index == 255)
 		{
 			lua_pushnumber(L, -1);
 			return 1;
@@ -4489,13 +4539,13 @@ int32_t LuaScriptInterface::luaGetTileThingByPos(lua_State* L)
 		}
 	}
 
-	if(pos.index == 255)
+	if(index == 255)
 	{
 		lua_pushnumber(L, tile->getThingCount());
 		return 1;
 	}
 
-	Thing* thing = tile->__getThing(pos.index);
+	Thing* thing = tile->__getThing(index);
 	if(!thing)
 	{
 		pushThing(L, nullptr, 0);

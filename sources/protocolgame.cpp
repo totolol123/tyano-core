@@ -1153,6 +1153,10 @@ void ProtocolGame::updateCreaturesAtPosition(const Position& position) {
 	CreatureVector* creatures = tile->getCreatures();
 	if (creatures != nullptr) {
 		for (const auto& creature : *creatures) {
+			if (!player->canSeeCreature(creature.get())) {
+				continue;
+			}
+
 			creaturePosition.index = tile->getClientIndexOfThing(player.get(), creature.get());
 			updateRegisteredCreature(creature, creaturePosition);
 		}
@@ -1166,6 +1170,8 @@ bool ProtocolGame::updateRegisteredCreature(const CreatureP& creature, const Sta
 		// creature is not known
 		return false;
 	}
+
+	LOGt("Update " << *creature << " to " << position);
 
 	_registeredCreatures[creature] = position;
 
@@ -1469,7 +1475,7 @@ void ProtocolGame::parseThrow(NetworkMessage& msg)
 	ExtendedPosition destination = msg.GetExtendedPosition(false);
 	uint8_t count = msg.GetByte();
 
-	if (origin.hasPosition(true) && destination.hasPosition(true) && origin.getPosition() == destination.getPosition()) {
+	if (origin.hasPosition(true) && destination.hasPosition(true) && origin.getPosition(true) == destination.getPosition(true)) {
 		return;
 	}
 
@@ -1743,7 +1749,7 @@ void ProtocolGame::sendOpenPrivateChannel(const std::string& receiver)
 
 void ProtocolGame::sendCreatureOutfit(const Creature* creature, const Outfit_t& outfit)
 {
-	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureOutfit(" << creature << ") - canSee = " << (canSee(creature) ? "true" : "false"));
+//	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureOutfit(" << creature << ") - canSee = " << (canSee(creature) ? "true" : "false"));
 
 	if(!canSee(creature))
 		return;
@@ -2443,6 +2449,10 @@ void ProtocolGame::sendAddTileItem(const Tile* tile, const StackPosition& positi
 		if (tile->getCreatures() != nullptr) {
 			StackPosition creaturePosition(position);
 			for (const auto& creature : boost::adaptors::reverse(*tile->getCreatures())) {
+				if (!player->canSeeCreature(creature.get())) {
+					continue;
+				}
+
 				creaturePosition.index = tile->getClientIndexOfThing(player.get(), creature.get());
 				if (position.index >= creaturePosition.index) {
 					continue;
@@ -2495,6 +2505,10 @@ void ProtocolGame::sendRemoveTileItem(const Tile* tile, const StackPosition& pos
 		if (tile->getCreatures() != nullptr) {
 			StackPosition creaturePosition(position);
 			for (const auto& creature : boost::adaptors::reverse(*tile->getCreatures())) {
+				if (!player->canSeeCreature(creature.get())) {
+					continue;
+				}
+
 				creaturePosition.index = tile->getClientIndexOfThing(player.get(), creature.get());
 				if (position.index > creaturePosition.index) {
 					// existing creature move down by 1 stackpos
@@ -2548,15 +2562,16 @@ void ProtocolGame::sendAddCreature(const CreatureP& creature, const StackPositio
 
 	LOGt("ProtocolGame(" << player->getName() << ")::sendAddCreature(" << creature << ", position = " << position << ") - canSee = " << (canSee(creature.get()) ? "true" : "false"));
 
-	CreatureValidationResult validationResult = validateRegisteredCreature(creature, position, position, false, callSource);
+	CreatureValidationResult validationResult = validateRegisteredCreature(creature, StackPosition::INVALID, position, false, callSource);
 	if (validationResult.registered) {
-		// the position is already known
-
 		if (validationResult.expectedPositionIsWrong) {
 			correctRegisteredCreature(creature, position, position, validationResult);
 		}
 
-		return;
+		if (validationResult.expectedPosition.isValid()) {
+			// the position is already known
+			return;
+		}
 	}
 
 	if(!canSee(creature.get()))
@@ -2626,7 +2641,7 @@ void ProtocolGame::sendAddCreature(const CreatureP& creature, const StackPositio
 void ProtocolGame::sendRemoveCreature(const CreatureP& creature, StackPosition position, const char* callSource) {
 	LOGt("ProtocolGame(" << player->getName() << ")::sendRemoveCreature(" << creature << ", position = " << position << ") - canSee = " << (canSee(creature.get()) ? "true" : "false"));
 
-	CreatureValidationResult validationResult = validateRegisteredCreature(creature, position, StackPosition(), true, callSource);
+	CreatureValidationResult validationResult = validateRegisteredCreature(creature, position, StackPosition::INVALID, false, callSource);
 	if (validationResult.expectedPositionIsWrong) {
 		correctRegisteredCreature(creature, position, position, validationResult);
 		return;

@@ -133,7 +133,7 @@ class Container : public Item, public Cylinder
 		virtual int32_t __getLastIndex() const;
 
 		virtual uint32_t __getItemTypeCount(uint16_t itemId, int32_t subType = -1,
-			bool itemCount = true) const;
+			bool itemCount = true, bool includeSlots = true) const;
 		virtual std::map<uint32_t, uint32_t>& __getAllItemTypeCount(std::map<uint32_t,
 			uint32_t>& countMap, bool itemCount = true) const;
 

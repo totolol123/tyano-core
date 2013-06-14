@@ -398,7 +398,7 @@ private:
 		virtual void onCreatureChangeOutfit(const Creature* creature, const Outfit_t& outfit) {}
 		virtual void onCreatureChangeVisible(const Creature* creature, Visible_t visible) {}
 		virtual void onPlacedCreature() {}
-		virtual bool willRemove();
+		virtual void willRemove();
 		virtual void didRemove();
 
 		virtual WeaponType_t getWeaponType() {return WEAPON_NONE;}

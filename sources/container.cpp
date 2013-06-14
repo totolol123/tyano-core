@@ -488,6 +488,17 @@ void Container::__addThing(Creature* actor, int32_t index, Thing* thing)
 #endif
 
 	item->setParent(this);
+
+	/*
+	// needs netcode update!
+	if (index > 0 && static_cast<uint32_t>(index) > itemlist.size()) {
+		itemlist.push_back(item);
+	}
+	else {
+		itemlist.insert(std::next(itemlist.begin(), index), item);
+	}
+	*/
+
 	itemlist.push_front(item);
 
 	totalWeight += item->getWeight();
@@ -701,7 +712,7 @@ int32_t Container::__getLastIndex() const
 	return size();
 }
 
-uint32_t Container::__getItemTypeCount(uint16_t itemId, int32_t subType /*= -1*/, bool itemCount /*= true*/) const
+uint32_t Container::__getItemTypeCount(uint16_t itemId, int32_t subType /*= -1*/, bool itemCount /*= true*/, bool) const
 {
 	uint32_t count = 0;
 

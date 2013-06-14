@@ -203,7 +203,7 @@ class Cylinder
 		  * \param returns the amount of items of the asked item type
 		  */
 		virtual uint32_t __getItemTypeCount(uint16_t itemId, int32_t subType = -1,
-			bool itemCount = true) const {return 0;}
+			bool itemCount = true, bool includeSlots = true) const {return 0;}
 
 		/**
 		  * Get the amount of items of a all types

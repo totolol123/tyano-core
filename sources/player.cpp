@@ -2073,7 +2073,7 @@ BlockType_t Player::blockHit(Creature* attacker, CombatType_t combatType, int32_
 	if(damage > 0)
 	{
 		Item* item = nullptr;
-		int32_t blocked = 0, reflected = 0;
+		double blocked = 0, reflected = 0;
 		for(int32_t slot = +slots_t::FIRST; slot < +slots_t::LAST; ++slot)
 		{
 			if(!(item = getInventoryItem((slots_t)slot)) || (server.moveEvents().hasEquipEvent(item)
@@ -2085,7 +2085,7 @@ BlockType_t Player::blockHit(Creature* attacker, CombatType_t combatType, int32_
 			int16_t absorb = kind->abilities.getAbsorb(combatType);
 			if(absorb > 0)
 			{
-				blocked += (int32_t)std::ceil((double)(damage * absorb) / 100.);
+				blocked += damage * absorb / 100.;
 				if(item->hasCharges())
 					server.game().transformItem(item, item->getId(), std::max((int32_t)0, (int32_t)item->getCharges() - 1));
 			}
@@ -2094,7 +2094,7 @@ BlockType_t Player::blockHit(Creature* attacker, CombatType_t combatType, int32_
 			if (reflectPercent > 0) {
 				int16_t reflectChance = kind->abilities.getReflect(combatType, REFLECT_CHANCE);
 				if (reflectChance > random_range(0, 100)) {
-					reflected += (int32_t)std::ceil((double)(damage * reflectPercent) / 100.);
+					reflected += damage * reflectPercent / 100.;
 					if(item->hasCharges() && absorb <= 0)
 						server.game().transformItem(item, item->getId(), std::max((int32_t)0, (int32_t)item->getCharges() - 1));
 				}
@@ -2105,33 +2105,32 @@ BlockType_t Player::blockHit(Creature* attacker, CombatType_t combatType, int32_
 		{
 			uint32_t tmp = Outfits::getInstance()->getOutfitAbsorb(defaultOutfit.lookType, sex, combatType);
 			if(tmp)
-				blocked += (int32_t)std::ceil((double)(damage * tmp) / 100.);
+				blocked += damage * tmp / 100.;
 
 			tmp = Outfits::getInstance()->getOutfitReflect(defaultOutfit.lookType, sex, combatType);
 			if(tmp)
-				reflected += (int32_t)std::ceil((double)(damage * tmp) / 100.);
+				reflected += damage * tmp / 100.;
 		}
 
 		if(vocation->getAbsorb(combatType))
-			blocked += (int32_t)std::ceil((double)(damage * vocation->getAbsorb(combatType)) / 100.);
+			blocked += damage * vocation->getAbsorb(combatType) / 100.;
 
 		if(vocation->getReflect(combatType))
-			reflected += (int32_t)std::ceil((double)(damage * vocation->getReflect(combatType)) / 100.);
+			reflected += damage * vocation->getReflect(combatType) / 100.;
 
-		damage -= blocked;
+		damage -= static_cast<int32_t>(std::round(blocked));
 		if(damage <= 0)
 		{
 			damage = 0;
 			blockType = BLOCK_DEFENSE;
 		}
 
-		if(reflected)
-		{
+		if (reflected != 0) {
 			CombatType_t reflectType = combatType;
 			if(reflected <= 0)
 				reflectType = COMBAT_HEALING;
 
-			server.game().combatChangeHealth(reflectType, nullptr, attacker, -reflected);
+			server.game().combatChangeHealth(reflectType, nullptr, attacker, -static_cast<int32_t>(std::round(reflected)));
 		}
 	}
 
@@ -3063,7 +3062,7 @@ int32_t Player::__getLastIndex() const
 	return +slots_t::LAST;
 }
 
-uint32_t Player::__getItemTypeCount(uint16_t itemId, int32_t subType /*= -1*/, bool itemCount /*= true*/) const
+uint32_t Player::__getItemTypeCount(uint16_t itemId, int32_t subType /*= -1*/, bool itemCount /*= true*/, bool includeSlots /* = true */) const
 {
 	Item* item = nullptr;
 	Container* container = nullptr;
@@ -3074,7 +3073,7 @@ uint32_t Player::__getItemTypeCount(uint16_t itemId, int32_t subType /*= -1*/, b
 		if(!(item = inventory[i].get()))
 			continue;
 
-		if(item->getId() == itemId)
+		if(includeSlots && item->getId() == itemId)
 			count += Item::countByType(item, subType, itemCount);
 
 		if(!(container = item->getContainer()))

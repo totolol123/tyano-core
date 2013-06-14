@@ -764,9 +764,11 @@ void Combat::CombatFunc(Creature* caster, const Position& pos, const CombatArea*
 			continue;
 
 		bool skip = true;
-		if(CreatureVector* creatures = tile->getCreatures())
+
+		if(CreatureVector* creatures2 = tile->getCreatures())
 		{
-			for(CreatureVector::iterator cit = creatures->begin(), cend = creatures->end(); skip && cit != cend; ++cit)
+			auto creatures = *creatures2;
+			for(CreatureVector::iterator cit = creatures.begin(), cend = creatures.end(); skip && cit != cend; ++cit)
 			{
 				if(params.targetPlayersOrSummons && !(*cit)->getPlayer() && !(*cit)->hasController())
 					continue;

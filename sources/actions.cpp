@@ -696,7 +696,7 @@ bool Action::decreaseItemId(Player* player, Item* item, const ExtendedPosition& 
 
 ReturnValue Action::canExecuteAction(const Player* player, const ExtendedPosition& toPos)
 {
-	if (toPos.hasPosition(true)) {
+	if (!toPos.hasPosition(true)) {
 		return RET_NOERROR;
 	}
 
