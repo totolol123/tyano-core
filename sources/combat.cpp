@@ -294,10 +294,14 @@ ReturnValue Combat::canDoCombat(const Creature* attacker, const Creature* target
 				return RET_YOUMAYNOTATTACKTHISPLAYER;
 		}
 	}
-	else if(target->getMonster())
+	else if(const Monster* targetMonster = target->getMonster())
 	{
 		if(!target->isAttackable())
 			return RET_YOUMAYNOTATTACKTHISCREATURE;
+
+		if (attackerMonster != nullptr && !attackerMonster->hasController() && !targetMonster->hasController()) {
+			return RET_YOUMAYNOTATTACKTHISCREATURE;
+		}
 
 		const Player* attackerPlayer = nullptr;
 		if((attackerPlayer = attacker->getPlayer()) || (attackerMonster != nullptr && attackerMonster->getMaster()
@@ -756,6 +760,8 @@ void Combat::CombatFunc(Creature* caster, const Position& pos, const CombatArea*
 	SpectatorList list;
 	server.game().getSpectators(list, pos, false, true, maxX + Map::maxViewportX, maxX + Map::maxViewportX,
 		maxY + Map::maxViewportY, maxY + Map::maxViewportY);
+
+	MonsterP monsterCaster = caster->getMonster();
 
 	Tile* tile = nullptr;
 	for(std::list<Tile*>::iterator it = tileList.begin(); it != tileList.end(); ++it)
