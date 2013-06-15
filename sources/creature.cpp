@@ -1098,8 +1098,9 @@ BlockType_t Creature::blockHit(Creature* attacker, CombatType_t combatType, int3
 	return blockType;
 }
 
-bool Creature::setAttackedCreature(Creature* creature)
-{
+bool Creature::setAttackedCreature(Creature* creature) {
+	LOGt(*this << "::setAttackedCreature(" << creature << ")");
+
 	if(creature)
 	{
 		const Position& creaturePos = creature->getPosition();
@@ -1162,8 +1163,9 @@ Position Creature::getPosition() const {
 }
 
 
-bool Creature::setFollowCreature(Creature* creature, bool fullPathSearch /*= false*/)
-{
+bool Creature::setFollowCreature(Creature* creature, bool fullPathSearch /*= false*/) {
+	LOGt(*this << "::setFollowCreature(" << creature << ")");
+
 	if(creature)
 	{
 		if(followCreature == creature)
