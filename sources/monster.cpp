@@ -262,11 +262,16 @@ bool Monster::isEnemy(const CreaturePC& creature) const {
 		return false;
 	}
 
-	if (!creature->hasController()) {
+	PlayerPC controller = creature->getController();
+	if (controller == nullptr) {
 		return false;
 	}
 
-	if (creature->getController()->hasFlag(PlayerFlag_IgnoredByMonsters)) {
+	if (controller->hasFlag(PlayerFlag_IgnoredByMonsters)) {
+		return false;
+	}
+
+	if (controller->isGhost()) {
 		return false;
 	}
 
