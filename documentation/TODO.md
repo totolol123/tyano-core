@@ -31,6 +31,8 @@ TODO
 - use least-size integers instead of fixed-size ones
 - fix TODOs written in code comments
 - use `weak_ptr` where it makes sense (e.g. master->summon relationship and damage list to avoid cyclic references)
+- check out LLVM as compiler (esp. static analysis)
+- check useful optimization flags (fast math, LTO, etc.)
 
 Architecture
 ------------
