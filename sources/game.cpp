@@ -4043,6 +4043,29 @@ void Game::internalCreatureChangeVisible(Creature* creature, Visible_t visible)
 		return;
 	}
 
+	if (logger->isTraceEnabled()) {
+		std::string visibleString = "?";
+		switch (visible) {
+		case VISIBLE_NONE:
+			visibleString = "none";
+			break;
+		case VISIBLE_APPEAR:
+			visibleString = "appear";
+			break;
+		case VISIBLE_DISAPPEAR:
+			visibleString = "disappear";
+			break;
+		case VISIBLE_GHOST_APPEAR:
+			visibleString = "ghost-appear";
+			break;
+		case VISIBLE_GHOST_DISAPPEAR:
+			visibleString = "ghost-disappear";
+			break;
+		}
+
+		LOGt("Game::internalCreatureChangeVisible(" << creature << ", visible = " << visibleString << ")");
+	}
+
 	const SpectatorList& list = getSpectators(creature->getPosition());
 	SpectatorList::const_iterator it;
 

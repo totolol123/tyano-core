@@ -486,6 +486,8 @@ void Tile::moveCreature(Creature* actor, Creature* creature, Cylinder* toCylinde
 	//add the creature
 	newTile->__addThing(actor, creature);
 
+	LOGt(creature << " moved from " << pos << " to " << newPos << ".");
+
 	//switch the node ownership
 	server.game().getMap()->onCreatureMoved(creature, this, newTile);
 

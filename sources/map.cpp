@@ -738,40 +738,40 @@ void Map::getSpectators(SpectatorList& spectators, const Position& center, bool 
 	uint32_t yBlocks = _creatureBlockCountY;
 	uint32_t zBlocks = _creatureBlockCountZ;
 
-	uint32_t indexStepX = zBlocks * yBlocks;
-	uint32_t indexStepY = zBlocks;
+	auto indexStepX = zBlocks * yBlocks;
+	auto indexStepY = zBlocks;
 
-	int32_t basicMinX = static_cast<int32_t>(center.x) + minOffsetX;
-	int32_t basicMaxX = static_cast<int32_t>(center.x) + maxOffsetX;
-	int32_t basicMinY = static_cast<int32_t>(center.y) + minOffsetY;
-	int32_t basicMaxY = static_cast<int32_t>(center.y) + maxOffsetY;
+	auto basicMinX = static_cast<int32_t>(center.x) + minOffsetX;
+	auto basicMaxX = static_cast<int32_t>(center.x) + maxOffsetX;
+	auto basicMinY = static_cast<int32_t>(center.y) + minOffsetY;
+	auto basicMaxY = static_cast<int32_t>(center.y) + maxOffsetY;
 
-	for (uint16_t z = minZ; z <= maxZ; ++z) {
-		int32_t deltaZ = std::abs(static_cast<int32_t>(center.z) - static_cast<int32_t>(z));
+	for (auto z = minZ; z <= maxZ; ++z) {
+		auto deltaZ = center.z - z;
 
-		uint16_t minX = static_cast<uint16_t>(std::max(0, std::min(basicMinX + deltaZ, static_cast<int32_t>(Map::maxX))));
-		uint16_t maxX = static_cast<uint16_t>(std::max(0, std::min(basicMaxX + deltaZ, static_cast<int32_t>(Map::maxX))));
-		uint16_t minY = static_cast<uint16_t>(std::max(0, std::min(basicMinY + deltaZ, static_cast<int32_t>(Map::maxY))));
-		uint16_t maxY = static_cast<uint16_t>(std::max(0, std::min(basicMaxY + deltaZ, static_cast<int32_t>(Map::maxY))));
+		auto minX = static_cast<uint16_t>(std::max(0, std::min(basicMinX + deltaZ, static_cast<int32_t>(Map::maxX))));
+		auto maxX = static_cast<uint16_t>(std::max(0, std::min(basicMaxX + deltaZ, static_cast<int32_t>(Map::maxX))));
+		auto minY = static_cast<uint16_t>(std::max(0, std::min(basicMinY + deltaZ, static_cast<int32_t>(Map::maxY))));
+		auto maxY = static_cast<uint16_t>(std::max(0, std::min(basicMaxY + deltaZ, static_cast<int32_t>(Map::maxY))));
 
 		if (maxX < minX || maxY < minY) {
 			continue;
 		}
 
-		uint32_t minIndexX = indexStepX * (minX / Map::creaturesBlockSize);
-		uint32_t maxIndexX = indexStepX * (maxX / Map::creaturesBlockSize);
-		uint32_t minIndexY = indexStepY * (minY / Map::creaturesBlockSize);
-		uint32_t maxIndexY = indexStepY * (maxY / Map::creaturesBlockSize);
+		auto minIndexX = indexStepX * (minX / Map::creaturesBlockSize);
+		auto maxIndexX = indexStepX * (maxX / Map::creaturesBlockSize);
+		auto minIndexY = indexStepY * (minY / Map::creaturesBlockSize);
+		auto maxIndexY = indexStepY * (maxY / Map::creaturesBlockSize);
 
-		for (uint32_t indexX = minIndexX; indexX <= maxIndexX; indexX += indexStepX) {
-			for (uint32_t indexY = minIndexY; indexY <= maxIndexY; indexY += indexStepY) {
-				uint32_t index = indexX + indexY + z;
+		for (auto indexX = minIndexX; indexX <= maxIndexX; indexX += indexStepX) {
+			for (auto indexY = minIndexY; indexY <= maxIndexY; indexY += indexStepY) {
+				auto index = indexX + indexY + z;
 
-				CreatureList& creatures = _creatures[index];
-				for (CreatureList::const_iterator it = creatures.begin(); it != creatures.end(); ++it) {
-					Creature* creature = (*it).get();
+				const auto& creatures = _creatures[index];
+				for (auto it = creatures.begin(); it != creatures.end(); ++it) {
+					auto creature = (*it).get();
 
-					const Position& position = creature->getPosition();
+					const auto& position = creature->getPosition();
 					if (position.x < minX || position.x > maxX || position.y < minY || position.y > maxY) {
 						continue;
 					}
