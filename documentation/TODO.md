@@ -1,6 +1,8 @@
 TODO
 ====
 
+- improve autowalk (lagging when clicking multiple times, random lagging when there are creatures in the path, re-routing)
+- add little randomization  to think interval so that the CPU load distributes as much as possible
 - migrate walking to thinking
 - stop NPCs from walking while no player is around
 - check use of `rand()` C functions as they are not thread-safe
