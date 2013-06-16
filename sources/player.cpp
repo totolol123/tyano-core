@@ -5012,6 +5012,13 @@ void Player::setFlags(uint64_t flags) {if(group) group->setFlags(flags);}
 bool Player::hasFlag(PlayerFlags value) const {return group != nullptr && group->hasFlag(value);}
 void Player::setCustomFlags(uint64_t flags) {if(group) group->setCustomFlags(flags);}
 bool Player::hasCustomFlag(PlayerCustomFlags value) const {return group != nullptr && group->hasCustomFlag(value);}
+
+
+bool Player::hasSomethingToThinkAbout() const {
+	return true;
+}
+
+
 uint16_t Player::getAccess() const {return group ? group->getAccess() : 0;}
 uint16_t Player::getGhostAccess() const {return group ? group->getGhostAccess() : 0;}
 

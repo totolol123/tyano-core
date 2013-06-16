@@ -130,6 +130,8 @@ class Player : public Creature, public Cylinder
 		void setCustomFlags(uint64_t flags);
 		bool hasCustomFlag(PlayerCustomFlags value) const;
 
+		bool hasSomethingToThinkAbout () const;
+
 		void addBlessing(int16_t blessing) {blessings += blessing;}
 		bool hasBlessing(int16_t value) const {return (blessings & ((int16_t)1 << value));}
 		uint16_t getBlessings() const;
