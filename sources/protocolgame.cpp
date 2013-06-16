@@ -501,6 +501,8 @@ bool ProtocolGame::parseFirstPacket(NetworkMessage& msg)
 		return false;
 	}
 
+	LOGi("Account '" << name << "' is trying to log in...");
+
 	std::string hash;
 	if(!IOLoginData::getInstance()->getPassword(id, hash, character) || !encryptTest(password, hash))
 	{
