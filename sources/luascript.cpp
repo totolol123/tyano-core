@@ -1285,11 +1285,8 @@ std::tuple<Position,uint8_t> LuaScriptInterface::popPositionX(lua_State* L) {
 		z = getField(L, "z");
 
 		int64_t stackpos = getField(L, "stackpos");
-		if (stackpos < 0) {
+		if (stackpos < 0 || stackpos > 255) {
 			stackpos = 255;
-		}
-		else if (stackpos) {
-			stackpos = 254;
 		}
 
 		index = static_cast<uint8_t>(stackpos);
