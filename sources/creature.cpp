@@ -332,7 +332,7 @@ void Creature::startThinking(bool forced) {
 	_lastThinkTime = Time::clock::now();
 	_thinkDuration = THINK_DURATION;
 
-	server.dispatcher().addTask(Task::create(std::bind(&Creature::think, this)));
+	server.dispatcher().addTask(Task::create(std::bind(&Creature::think, boost::intrusive_ptr<Creature>(this))));
 }
 
 
@@ -386,7 +386,7 @@ void Creature::think() {
 	}
 
 	if (_thinkTaskId == 0) {
-		_thinkTaskId = server.scheduler().addTask(SchedulerTask::create(THINK_INTERVAL, std::bind(&Creature::think, this)));
+		_thinkTaskId = server.scheduler().addTask(SchedulerTask::create(THINK_INTERVAL, std::bind(&Creature::think, boost::intrusive_ptr<Creature>(this))));
 	}
 }
 
