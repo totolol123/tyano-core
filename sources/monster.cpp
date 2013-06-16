@@ -38,7 +38,14 @@ LOGGER_DEFINITION(Monster);
 
 
 Monster::~Monster() {
+	if (_spawn != nullptr) {
+		assert(_spawn == nullptr);
+		_spawn->removeMonster(this);
+		_spawn->startEvent();
+	}
+
 	if (_raid != nullptr) {
+		assert(_raid == nullptr);
 		_raid->unRef();
 	}
 }
@@ -711,8 +718,8 @@ AutoList<Monster>Monster::autoList;
 
 Monster::Monster(MonsterType* __type, Raid* raid, Spawn* spawn)
 	: Creature(),
-	  _raid(nullptr),
-	  _spawn(nullptr)
+	  _raid(raid),
+	  _spawn(spawn)
 {
 	_type = __type;
 	defaultOutfit = _type->outfit;
