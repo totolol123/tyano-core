@@ -1272,7 +1272,7 @@ void Tile::__removeThing(Thing* thing, uint32_t count)
 				continue;
 
 			const SpectatorList& list = server.game().getSpectators(pos);
-			std::vector<uint32_t> oldStackposVector;
+			std::vector<int32_t> oldStackposVector;
 
 			Player* tmpPlayer = nullptr;
 			for(SpectatorList::const_iterator iit = list.begin(); iit != list.end(); ++iit)
@@ -1311,7 +1311,7 @@ void Tile::__removeThing(Thing* thing, uint32_t count)
 			else
 			{
 				const SpectatorList& list = server.game().getSpectators(pos);
-				std::vector<uint32_t> oldStackposVector;
+				std::vector<int32_t> oldStackposVector;
 
 				Player* tmpPlayer = nullptr;
 				for(SpectatorList::const_iterator iit = list.begin(); iit != list.end(); ++iit)
