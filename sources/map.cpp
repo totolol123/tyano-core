@@ -1131,7 +1131,7 @@ void Map::setSize(uint16_t width, uint16_t height) {
 
 bool Map::setTile(uint16_t x, uint16_t y, uint16_t z, Tile* tile) {
 	if (x >= _width || y >= _height || z > Map::maxZ) {
-		LOGt("Cannot set tile at invalid map coordinate " << x << "/" << y << "/" << z);
+		LOGe("Cannot set tile at invalid map coordinate " << x << "/" << y << "/" << z);
 		return false;
 	}
 
@@ -1287,7 +1287,7 @@ void MapLayer::prepareWithSize(uint16_t width, uint16_t height) {
 bool MapLayer::setTile(uint16_t x, uint16_t y, Tile* tile) {
 	int32_t index = indexForPosition(x, y);
 	if (index < 0) {
-		LOGt("Cannot set tile at invalid map coordinate " << x << "/" << y << "/" << _z);
+		LOGe("Cannot set tile at invalid map coordinate " << x << "/" << y << "/" << _z);
 		return false;
 	}
 

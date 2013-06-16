@@ -192,11 +192,6 @@ class Game
 		Tile* getTile(const Position& pos) {return map->getTile(pos);}
 
 		/**
-		  * Set a single tile of the map, position is read from this tile
-		  */
-		bool setTile(Tile* tile);
-
-		/**
 		  * Returns a creature based on the unique creature identifier
 		  * \param id is the unique creature id to get a creature pointer to
 		  * \returns A Creature pointer to the creature

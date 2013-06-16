@@ -6112,18 +6112,3 @@ uint32_t Game::getPlayersOnline() {return (uint32_t)Player::autoList.size();}
 uint32_t Game::getMonstersOnline() {return (uint32_t)Monster::autoList.size();}
 uint32_t Game::getNpcsOnline() {return (uint32_t)Npc::autoList.size();}
 uint32_t Game::getCreaturesOnline() {return (uint32_t)autoList.size();}
-
-
-bool Game::setTile(Tile* tile) {
-	if (map == nullptr) {
-		delete tile;
-		return false;
-	}
-
-	if (!map->setTile(tile->getPosition(), tile)) {
-		delete tile;
-		return false;
-	}
-
-	return true;
-}

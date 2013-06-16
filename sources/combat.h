@@ -218,6 +218,9 @@ class CombatArea
 		void clear();
 
 	protected:
+
+		LOGGER_DECLARATION;
+
 		enum MatrixOperation_t
 		{
 			MATRIXOPERATION_COPY,

@@ -708,8 +708,7 @@ bool Spell::playerInstantSpellCheck(Player* player, Creature* creature)
 	Tile* tile = server.game().getTile(toPos);
 	if(!tile)
 	{
-		tile = new StaticTile(toPos.x, toPos.y, toPos.z);
-		server.game().setTile(tile);
+		return false;
 	}
 
 	ReturnValue ret;
@@ -796,8 +795,7 @@ bool Spell::playerInstantSpellCheck(Player* player, const Position& toPos)
 	Tile* tile = server.game().getTile(toPos);
 	if(!tile)
 	{
-		tile = new StaticTile(toPos.x, toPos.y, toPos.z);
-		server.game().setTile(tile);
+		return false;
 	}
 
 	ReturnValue ret;

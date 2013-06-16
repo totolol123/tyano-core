@@ -144,13 +144,9 @@ void Combat::getCombatArea(const Position& centerPos, const Position& targetPos,
 	else if(targetPos.z < MAP_MAX_LAYERS)
 	{
 		Tile* tile = server.game().getTile(targetPos);
-		if(!tile)
-		{
-			tile = new StaticTile(targetPos.x, targetPos.y, targetPos.z);
-			server.game().setTile(tile);
+		if (tile != nullptr) {
+			list.push_back(tile);
 		}
-
-		list.push_back(tile);
 	}
 }
 
@@ -1119,6 +1115,8 @@ void TargetCallback::onTargetCombat(Creature* creature, Creature* target) const
 
 // **********************************************************
 
+LOGGER_DEFINITION(CombatArea);
+
 void CombatArea::clear()
 {
 	for(CombatAreas::iterator it = areas.begin(); it != areas.end(); ++it)
@@ -1134,46 +1132,57 @@ CombatArea::CombatArea(const CombatArea& rhs)
 		areas[it->first] = new MatrixArea(*it->second);
 }
 
-bool CombatArea::getList(const Position& centerPos, const Position& targetPos, std::list<Tile*>& list) const
-{
-	Tile* tile = server.game().getTile(targetPos);
-	const MatrixArea* area = getArea(centerPos, targetPos);
-	if(!area)
-		return false;
 
-	uint16_t tmpX = targetPos.x, tmpY = targetPos.y, centerY = 0, centerX = 0;
-	size_t cols = area->getCols(), rows = area->getRows();
+bool CombatArea::getList(const Position& origin, const Position& destination, std::list<Tile*>& list) const {
+	Game& game = server.game();
+
+	const MatrixArea* area = getArea(origin, destination);
+	if (area == nullptr) {
+		return false;
+	}
+
+	uint16_t sizeX = area->getCols();
+	if (sizeX == 0) {
+		return true;
+	}
+
+	uint16_t sizeY = area->getRows();
+	if (sizeY == 0) {
+		return true;
+	}
+
+	uint16_t centerX;
+	uint16_t centerY;
 	area->getCenter(centerY, centerX);
 
-	tmpX -= centerX;
-	tmpY -= centerY;
-	for(size_t y = 0; y < rows; ++y)
-	{
-		for(size_t x = 0; x < cols; ++x)
-		{
-			if(area->getValue(y, x) != 0)
-			{
-				if(targetPos.z < MAP_MAX_LAYERS && server.game().isSightClear(targetPos, Position(tmpX, tmpY, targetPos.z), true))
-				{
-					if(!(tile = server.game().getTile(tmpX, tmpY, targetPos.z)))
-					{
-						tile = new StaticTile(tmpX, tmpY, targetPos.z);
-						server.game().setTile(tile);
-					}
+	int32_t maxOffsetX = std::min(sizeX - centerX - 1, Position::MAX_X - destination.x);
+	int32_t maxOffsetY = std::min(sizeY - centerY - 1, Position::MAX_Y - destination.y);
+	int32_t minOffsetX = -std::min(centerX, destination.x);
+	int32_t minOffsetY = -std::min(centerY, destination.y);
 
-					list.push_back(tile);
-				}
+	for (auto offsetY = minOffsetY; offsetY <= maxOffsetY; ++offsetY) {
+		for (auto offsetX = minOffsetX; offsetX <= maxOffsetX; ++offsetX) {
+			if (area->getValue(centerX + offsetX, centerY + offsetY) == 0) {
+				continue;
 			}
 
-			tmpX++;
-		}
+			Position position(destination.x + offsetX, destination.y + offsetY, destination.z);
+			if (!game.isSightClear(destination, position, true)) {
+				continue;
+			}
 
-		tmpX -= cols;
-		tmpY++;
+			Tile* tile = game.getTile(position);
+			if (tile == nullptr) {
+				continue;
+			}
+
+			list.push_back(tile);
+		}
 	}
 
 	return true;
 }
+
 
 void CombatArea::copyArea(const MatrixArea* input, MatrixArea* output, MatrixOperation_t op) const
 {
@@ -1337,7 +1346,7 @@ void CombatArea::setupArea(int32_t length, int32_t spread)
 
 void CombatArea::setupArea(int32_t radius)
 {
-	int32_t area[13][13] =
+	const int32_t area[13][13] =
 	{
 		{0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0},
 		{0, 0, 0, 0, 8, 8, 7, 8, 8, 0, 0, 0, 0},

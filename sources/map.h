@@ -130,8 +130,8 @@ class Map {
 public:
 
 	static const uint16_t creaturesBlockSize = 100;
-	static const uint16_t maxX = 0xFFFF;
-	static const uint16_t maxY = 0xFFFF;
+	static const uint16_t maxX = 60000;
+	static const uint16_t maxY = 60000;
 	static const uint16_t maxZ = 15;
 	static const uint16_t maxViewportX = 11;
 	static const uint16_t maxViewportY = 11;
