@@ -408,7 +408,7 @@ void Tile::onUpdateTileItem(Item* oldItem, const ItemKindPC& oldType, Item* newI
 		(*it)->onUpdateTileItem(this, cylinderMapPos, oldItem, oldType, newItem, newType);
 }
 
-void Tile::onRemoveTileItem(const SpectatorList& list, std::vector<uint32_t>& oldStackposVector, Item* item)
+void Tile::onRemoveTileItem(const SpectatorList& list, std::vector<int32_t>& oldStackposVector, Item* item)
 {
 	updateTileFlags(item, true);
 	const Position& cylinderMapPos = pos;
@@ -420,8 +420,14 @@ void Tile::onRemoveTileItem(const SpectatorList& list, std::vector<uint32_t>& ol
 	uint32_t i = 0;
 	for(it = list.begin(); it != list.end(); ++it)
 	{
-		if((tmpPlayer = (*it)->getPlayer()))
-			tmpPlayer->sendRemoveTileItem(this, cylinderMapPos, oldStackposVector[i++], item, BOOST_CURRENT_FUNCTION);
+		if((tmpPlayer = (*it)->getPlayer())) {
+			int32_t index = oldStackposVector[i++];
+			if (index < 0) {
+				continue;
+			}
+
+			tmpPlayer->sendRemoveTileItem(this, StackPosition(cylinderMapPos, index), item, BOOST_CURRENT_FUNCTION);
+		}
 	}
 
 	//event methods
@@ -1237,7 +1243,7 @@ void Tile::__removeThing(Thing* thing, uint32_t count)
 	if(item == ground)
 	{
 		const SpectatorList& list = server.game().getSpectators(pos);
-		std::vector<uint32_t> oldStackposVector;
+		std::vector<int32_t> oldStackposVector;
 
 		Player* tmpPlayer = nullptr;
 		for(SpectatorList::const_iterator it = list.begin(); it != list.end(); ++it)

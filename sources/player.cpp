@@ -5025,12 +5025,43 @@ uint16_t Player::getGhostAccess() const {return group ? group->getGhostAccess() 
 void Player::disconnect() {if(client) client->disconnect();}
 
 
-void Player::sendAddTileItem(const Tile* tile, const Position& pos, const Item* item, const char* callSource)
-	{if(client) client->sendAddTileItem(tile, StackPosition(pos, tile->getClientIndexOfThing(this, item)), item, callSource);}
-void Player::sendUpdateTileItem(const Tile* tile, const Position& pos, const Item* oldItem, const Item* newItem)
-	{if(client) client->sendUpdateTileItem(tile, StackPosition(pos, tile->getClientIndexOfThing(this, oldItem)), newItem);}
-void Player::sendRemoveTileItem(const Tile* tile, const Position& pos, uint32_t stackpos, const Item* item, const char* callSource)
-	{if(client) client->sendRemoveTileItem(tile, StackPosition(pos, stackpos), item, callSource);}
+void Player::sendAddTileItem(const Tile* tile, const Position& pos, const Item* item, const char* callSource) {
+	if (client == nullptr) {
+		return;
+	}
+
+	int32_t index = tile->getClientIndexOfThing(this, item);
+	if (index < 0) {
+		return;
+	}
+
+	client->sendAddTileItem(tile, StackPosition(pos, index), item, callSource);
+}
+
+
+void Player::sendUpdateTileItem(const Tile* tile, const Position& pos, const Item* oldItem, const Item* newItem) {
+	if (client == nullptr) {
+		return;
+	}
+
+	int32_t index = tile->getClientIndexOfThing(this, newItem);
+	if (index < 0) {
+		return;
+	}
+
+	client->sendUpdateTileItem(tile, StackPosition(pos, index), newItem);
+}
+
+
+void Player::sendRemoveTileItem(const Tile* tile, const StackPosition& position, const Item* item, const char* callSource) {
+	if (client == nullptr) {
+		return;
+	}
+
+	client->sendRemoveTileItem(tile, position, item, callSource);
+}
+
+
 void Player::sendUpdateTile(const Tile* tile, const Position& pos)
 	{if(client) client->sendUpdateTile(tile, pos);}
 

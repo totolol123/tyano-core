@@ -410,7 +410,7 @@ class Player : public Creature, public Cylinder
 		//send methods
 		void sendAddTileItem(const Tile* tile, const Position& pos, const Item* item, const char* callSource);
 		void sendUpdateTileItem(const Tile* tile, const Position& pos, const Item* oldItem, const Item* newItem);
-		void sendRemoveTileItem(const Tile* tile, const Position& pos, uint32_t stackpos, const Item* item, const char* callSource);
+		void sendRemoveTileItem(const Tile* tile, const StackPosition& position, const Item* item, const char* callSource);
 		void sendUpdateTile(const Tile* tile, const Position& pos);
 
 		void sendChannelMessage(std::string author, std::string text, SpeakClasses type, uint8_t channel);
