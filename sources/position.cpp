@@ -141,7 +141,7 @@ StackPosition::StackPosition()
 
 StackPosition::StackPosition(uint16_t x, uint16_t y, uint8_t z, uint8_t index)
 	: Position(x, y, z),
-	  index(0)
+	  index(index)
 {}
 
 
