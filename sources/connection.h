@@ -31,14 +31,6 @@ typedef std::shared_ptr<ServiceBase>   Service_ptr;
 typedef std::shared_ptr<ServicePort>   ServicePort_ptr;
 
 
-#ifdef __DEBUG_NET__
-#define PRINT_ASIO_ERROR(description) \
-	LOGt("[" << __FUNCTION__ << "] " << description << " - " \
-		<< error.message() << " (" << error.message() << ")");
-#else
-#define PRINT_ASIO_ERROR(x)
-#endif
-
 struct LoginBlock
 {
 	int32_t lastLogin, lastProtocol, loginsAmount;

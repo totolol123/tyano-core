@@ -98,9 +98,6 @@ void ServicePort::close()
 	{
 		boost::system::error_code error;
 		m_acceptor->close(error);
-		if(error) {
-			PRINT_ASIO_ERROR("Closing listen socket");
-		}
 	}
 
 	delete m_acceptor;
@@ -131,9 +128,6 @@ void ServicePort::handle(boost::asio::ip::tcp::socket* socket, const boost::syst
 	{
 		if(m_services.empty())
 		{
-#ifdef __DEBUG_NET__
-			LOGe("[ServerPort::handle] No services running!");
-#endif
 			return;
 		}
 
@@ -163,14 +157,10 @@ void ServicePort::handle(boost::asio::ip::tcp::socket* socket, const boost::syst
 			delete socket;
 		}
 
-#ifdef __DEBUG_NET_DETAIL__
-		LOGt("[ServerPort::handle] OK");
-#endif
 		accept();
 	}
 	else if(error != boost::asio::error::operation_aborted)
 	{
-		PRINT_ASIO_ERROR("Handling");
 		close();
 		if(!m_pendingStart)
 		{
@@ -179,10 +169,6 @@ void ServicePort::handle(boost::asio::ip::tcp::socket* socket, const boost::syst
 				&ServicePort::onOpen, std::weak_ptr<ServicePort>(shared_from_this()), m_serverPort)));
 		}
 	}
-#ifdef __DEBUG_NET__
-	else
-		LOGe("[ServerPort::handle] Operation aborted.");
-#endif
 }
 
 std::string ServicePort::getProtocolNames() const

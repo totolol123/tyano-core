@@ -230,25 +230,12 @@ void Connection::closeSocket()
 	m_connectionLock.lock();
 	if(m_socket->is_open())
 	{
-		#ifdef __DEBUG_NET_DETAIL__
-		LOGt("Closing socket");
-		#endif
 		m_pendingRead = m_pendingWrite = 0;
 		try
 		{
 			boost::system::error_code error;
 			m_socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both, error);
-			if(error)
-			{
-				if(error != boost::asio::error::not_connected) {
-					PRINT_ASIO_ERROR("Shutdown");
-				}
-			}
-
 			m_socket->close(error);
-			if(error) {
-				PRINT_ASIO_ERROR("Close");
-			}
 		}
 		catch(boost::system::system_error& e)
 		{
@@ -495,9 +482,6 @@ bool Connection::send(OutputMessage_ptr msg)
 		if(msg->getProtocol())
 			msg->getProtocol()->onSendMessage(msg);
 
-		#ifdef __DEBUG_NET_DETAIL__
-		LOGt("Connection::send " << msg->getMessageLength());
-		#endif
 		internalSend(msg);
 	}
 	else if(m_pendingWrite > 100 && server.configManager().getBool(ConfigManager::FORCE_CLOSE_SLOW_CONNECTION))
@@ -507,9 +491,6 @@ bool Connection::send(OutputMessage_ptr msg)
 	}
 	else
 	{	
-		#ifdef __DEBUG_NET__
-		LOGt("Connection::send Adding to queue " << msg->getMessageLength());
-		#endif
 		OutputMessagePool::getInstance()->autoSend(msg);
 	}
 
@@ -549,7 +530,6 @@ uint32_t Connection::getIP() const
 	if(!error)
 		return htonl(ip.address().to_v4().to_ulong());
 
-	PRINT_ASIO_ERROR("Getting remote ip");
 	return 0;
 }
 
@@ -582,9 +562,6 @@ void Connection::handleReadError(const boost::system::error_code& error)
 {
 	LOGt("Connection::handleReadError()");
 
-	#ifdef __DEBUG_NET_DETAIL__
-	PRINT_ASIO_ERROR("Reading - detail");
-	#endif
 	boost::recursive_mutex::scoped_lock lockClass(m_connectionLock);
 	if(error == boost::asio::error::operation_aborted) //Operation aborted because connection will be closed
 		{}
@@ -597,7 +574,6 @@ void Connection::handleReadError(const boost::system::error_code& error)
 	}
 	else
 	{
-		PRINT_ASIO_ERROR("Reading");
 		close();
 	}
 
@@ -631,18 +607,12 @@ void Connection::handleReadTimeout(std::weak_ptr<Connection> weak, const boost::
 
 	if(std::shared_ptr<Connection> connection = weak.lock())
 	{
-		#ifdef __DEBUG_NET_DETAIL__
-		LOGt("Connection::handleReadTimeout");
-		#endif
 		connection->onReadTimeout();
 	}
 }
 
 void Connection::handleWriteError(const boost::system::error_code& error)
 {
-	#ifdef __DEBUG_NET_DETAIL__
-	PRINT_ASIO_ERROR("Writing - detail");
-	#endif
 	boost::recursive_mutex::scoped_lock lockClass(m_connectionLock);
 	if(error == boost::asio::error::operation_aborted) //Operation aborted because connection will be closed
 		{}
@@ -655,7 +625,6 @@ void Connection::handleWriteError(const boost::system::error_code& error)
 	}
 	else
 	{
-		PRINT_ASIO_ERROR("Writing");
 		close();
 	}
 
@@ -669,9 +638,6 @@ void Connection::handleWriteTimeout(std::weak_ptr<Connection> weak, const boost:
 
 	if(std::shared_ptr<Connection> connection = weak.lock())
 	{
-		#ifdef __DEBUG_NET_DETAIL__
-		LOGt("Connection::handleWriteTimeout");
-		#endif
 		connection->onWriteTimeout();
 	}
 }

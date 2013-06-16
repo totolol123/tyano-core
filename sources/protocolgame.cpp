@@ -1242,11 +1242,6 @@ bool ProtocolGame::canSee(const Position& pos) const
 
 bool ProtocolGame::canSee(uint16_t x, uint16_t y, uint16_t z) const
 {
-#ifdef __DEBUG__
-	if(z < 0 || z >= MAP_MAX_LAYERS)
-		LOGe("[ProtocolGame::canSee] Z-value is out of range!");
-#endif
-
 	const Position& myPos = player->getPosition();
 	if(myPos.z <= 7)
 	{

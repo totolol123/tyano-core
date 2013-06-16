@@ -423,12 +423,6 @@ bool CombatSpell::executeCastSpell(Creature* creature, const LuaVariant& var)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[60];
-			sprintf(desc, "onCastSpell - %s", creature->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 			lua_State* L = m_interface->getState();
@@ -1280,12 +1274,6 @@ bool InstantSpell::executeCastSpell(Creature* creature, const LuaVariant& var)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[60];
-			sprintf(desc, "onCastSpell - %s", creature->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 			lua_State* L = m_interface->getState();
@@ -2081,12 +2069,6 @@ bool RuneSpell::executeCastSpell(Creature* creature, const LuaVariant& var)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[60];
-			sprintf(desc, "onCastSpell - %s", creature->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 			lua_State* L = m_interface->getState();

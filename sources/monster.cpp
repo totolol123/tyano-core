@@ -828,11 +828,6 @@ void Monster::doAttacking(uint32_t interval)
 				it->spell->castSpell(this, attackedCreature);
 				if(it->isMelee)
 					extraMeleeAttack = false;
-#ifdef __DEBUG__
-				static uint64_t prevTicks = OTSYS_TIME();
-				LOGt("doAttacking ticks: " << OTSYS_TIME() - prevTicks);
-				prevTicks = OTSYS_TIME();
-#endif
 			}
 		}
 
@@ -1119,10 +1114,6 @@ bool Monster::getNextStep(Direction& dir, uint32_t& flags)
 			if(canPushCreatures())
 				pushCreatures(tile);
 		}
-#ifdef __DEBUG__
-		else
-			LOGt("[Monster::getNextStep] no tile found.");
-#endif
 	}
 
 	return result;

@@ -398,9 +398,6 @@ bool House::getAccessList(uint32_t listId, std::string& list) const
 	if(Door* door = getDoorByNumber(listId))
 		return door->getAccessList(list);
 
-	#ifdef __DEBUG_HOUSES__
-	LOGt("[House::getAccessList] door == nullptr, listId = " << listId);
-	#endif
 	return false;
 }
 
@@ -414,10 +411,6 @@ void House::setAccessList(uint32_t listId, const std::string& textlist, bool tel
 	{
 		if(Door* door = getDoorByNumber(listId))
 			door->setAccessList(textlist);
-		#ifdef __DEBUG_HOUSES__
-		else
-			LOGt("[House::setAccessList] door == nullptr, listId = " << listId);
-		#endif
 
 		return;
 	}

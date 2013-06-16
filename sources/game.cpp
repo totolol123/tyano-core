@@ -2197,9 +2197,6 @@ bool Game::playerOpenChannel(uint32_t playerId, uint16_t channelId)
 	ChatChannel* channel = server.chat().addUserToChannel(player, channelId);
 	if(!channel)
 	{
-		#ifdef __DEBUG_CHAT__
-		LOGt("Game::playerOpenChannel - failed adding user to channel.");
-		#endif
 		return false;
 	}
 

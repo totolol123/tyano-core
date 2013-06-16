@@ -368,12 +368,6 @@ uint32_t CreatureEvent::executeLogin(Player* player)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -420,12 +414,6 @@ uint32_t CreatureEvent::executeLogout(Player* player, bool forceLogout)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -477,12 +465,6 @@ uint32_t CreatureEvent::executeChannelJoin(Player* player, uint16_t channelId, U
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -543,12 +525,6 @@ uint32_t CreatureEvent::executeChannelLeave(Player* player, uint16_t channelId, 
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -608,12 +584,6 @@ uint32_t CreatureEvent::executeAdvance(Player* player, skills_t skill, uint32_t 
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -667,12 +637,6 @@ uint32_t CreatureEvent::executeMailSend(Player* player, Player* receiver, Item* 
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[30];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -726,12 +690,6 @@ uint32_t CreatureEvent::executeMailReceive(Player* player, Player* sender, Item*
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[30];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -784,12 +742,6 @@ uint32_t CreatureEvent::executeTradeRequest(Player* player, Player* target, Item
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -840,12 +792,6 @@ uint32_t CreatureEvent::executeTradeAccept(Player* player, Player* target, Item*
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -898,12 +844,6 @@ uint32_t CreatureEvent::executeLook(Player* player, Thing* thing, const Position
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[30];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -956,12 +896,6 @@ uint32_t CreatureEvent::executeDirection(Creature* creature, Direction old, Dire
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[30];
-			sprintf(desc, "%s", creature->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1012,12 +946,6 @@ uint32_t CreatureEvent::executeOutfit(Creature* creature, const Outfit_t& old, c
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[30];
-			sprintf(desc, "%s", creature->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1067,12 +995,6 @@ uint32_t CreatureEvent::executeThink(Creature* creature, uint32_t interval)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", creature->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1125,12 +1047,6 @@ uint32_t CreatureEvent::executeStatsChange(Creature* creature, Creature* attacke
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", creature->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1185,12 +1101,6 @@ uint32_t CreatureEvent::executeCombatArea(Creature* creature, Tile* tile, bool a
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
-			desc << creature->getName();
-			env->setEventDesc(desc.str());
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1242,12 +1152,6 @@ uint32_t CreatureEvent::executeCombat(Creature* creature, Creature* target)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
-			desc << creature->getName();
-			env->setEventDesc(desc.str());
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1296,12 +1200,6 @@ uint32_t CreatureEvent::executeAttack(Creature* creature, Creature* target)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
-			desc << creature->getName();
-			env->setEventDesc(desc.str());
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1354,12 +1252,6 @@ uint32_t CreatureEvent::executeCast(Creature* creature, Creature* target/* = nul
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
-			desc << creature->getName();
-			env->setEventDesc(desc.str());
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1409,12 +1301,6 @@ uint32_t CreatureEvent::executeKill(Creature* creature, Creature* target, bool l
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
-			desc << creature->getName();
-			env->setEventDesc(desc.str());
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1475,12 +1361,6 @@ uint32_t CreatureEvent::executeDeath(Creature* creature, Item* corpse, DeathList
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", creature->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1552,12 +1432,6 @@ uint32_t CreatureEvent::executePrepareDeath(Creature* creature, DeathList deathL
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", creature->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1620,12 +1494,6 @@ uint32_t CreatureEvent::executeTextEdit(Player* player, Item* item, std::string 
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -1675,12 +1543,6 @@ uint32_t CreatureEvent::executeReportBug(Player* player, std::string comment)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[35];
-			sprintf(desc, "%s", player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -1729,12 +1591,6 @@ uint32_t CreatureEvent::executePush(Player* player, Creature* target)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
-			desc << player->getName();
-			env->setEventDesc(desc.str());
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 
@@ -1783,12 +1639,6 @@ uint32_t CreatureEvent::executeTarget(Creature* creature, Creature* target)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
-			desc << creature->getName();
-			env->setEventDesc(desc.str());
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 
@@ -1837,12 +1687,6 @@ uint32_t CreatureEvent::executeFollow(Creature* creature, Creature* target)
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
-			desc << creature->getName();
-			env->setEventDesc(desc.str());
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 

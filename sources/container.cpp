@@ -458,34 +458,14 @@ void Container::__addThing(Creature* actor, int32_t index, Thing* thing)
 {
 	if(index >= (int32_t)capacity())
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGt("Failure: [Container::__addThing], index:" << index << ", index >= capacity()");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
 	Item* item = thing->getItem();
 	if(item == nullptr)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGt("Failure: [Container::__addThing] item == nullptr");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
-
-#ifdef __DEBUG_MOVESYS__
-	if(index != INDEX_WHEREEVER)
-	{
-		if(size() >= capacity())
-		{
-			LOGt("Failure: [Container::__addThing] size() >= capacity()");
-			DEBUG_REPORT
-			return /*RET_CONTAINERNOTENOUGHROOM*/;
-		}
-	}
-#endif
 
 	item->setParent(this);
 
@@ -515,20 +495,12 @@ void Container::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
 	int32_t index = __getIndexOfThing(thing);
 	if(index == -1)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGt("Failure: [Container::__updateThing] index == -1");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
 	Item* item = thing->getItem();
 	if(item == nullptr)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGt("Failure: [Container::__updateThing] item == nullptr");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
@@ -557,10 +529,6 @@ void Container::__replaceThing(uint32_t index, Thing* thing)
 	Item* item = thing->getItem();
 	if(item == nullptr)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGt("Failure: [Container::__replaceThing] item == nullptr");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
@@ -576,10 +544,6 @@ void Container::__replaceThing(uint32_t index, Thing* thing)
 
 	if(cit == itemlist.end())
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGt("Failure: [Container::__updateThing] item not found");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
@@ -609,30 +573,18 @@ void Container::__removeThing(Thing* thing, uint32_t count)
 	Item* item = thing->getItem();
 	if(item == nullptr)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGt("Failure: [Container::__removeThing] item == nullptr");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
 	int32_t index = __getIndexOfThing(thing);
 	if(index == -1)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGt("Failure: [Container::__removeThing] index == -1");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
 	ItemList::iterator cit = std::find(itemlist.begin(), itemlist.end(), thing);
 	if(cit == itemlist.end())
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGt("Failure: [Container::__removeThing] item not found");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
@@ -806,18 +758,12 @@ void Container::__internalAddThing(Thing* thing)
 
 void Container::__internalAddThing(uint32_t index, Thing* thing)
 {
-#ifdef __DEBUG_MOVESYS__
-	LOGt("[Container::__internalAddThing] index: " << index);
-#endif
 	if(!thing)
 		return;
 
 	Item* item = thing->getItem();
 	if(item == nullptr)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGt("Failure: [Container::__internalAddThing] item == nullptr");
-#endif
 		return;
 	}
 

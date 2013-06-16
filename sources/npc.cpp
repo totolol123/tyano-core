@@ -2984,12 +2984,6 @@ void NpcScript::onCreatureAppear(const Creature* creature)
 		ScriptEnviroment* env = m_interface->getEnv();
 		lua_State* L = m_interface->getState();
 
-		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
-		desc << "npc " << m_npc->getName();
-		env->setEventDesc(desc.str());
-		#endif
-
 		env->setScriptId(m_onCreatureAppear, m_interface);
 		env->setRealPos(m_npc->getPosition());
 		env->setNpc(m_npc);
@@ -3015,12 +3009,6 @@ void NpcScript::onCreatureDisappear(const Creature* creature)
 		ScriptEnviroment* env = m_interface->getEnv();
 		lua_State* L = m_interface->getState();
 
-		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
-		desc << "npc " << m_npc->getName();
-		env->setEventDesc(desc.str());
-		#endif
-
 		env->setScriptId(m_onCreatureDisappear, m_interface);
 		env->setRealPos(m_npc->getPosition());
 		env->setNpc(m_npc);
@@ -3045,12 +3033,6 @@ void NpcScript::onCreatureMove(const Creature* creature, const Position& oldPos,
 	{
 		ScriptEnviroment* env = m_interface->getEnv();
 		lua_State* L = m_interface->getState();
-
-		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
-		desc << "npc " << m_npc->getName();
-		env->setEventDesc(desc.str());
-		#endif
 
 		env->setScriptId(m_onCreatureMove, m_interface);
 		env->setRealPos(m_npc->getPosition());
@@ -3080,12 +3062,6 @@ void NpcScript::onCreatureSay(const Creature* creature, SpeakClasses type, const
 		ScriptEnviroment* env = m_interface->getEnv();
 		lua_State* L = m_interface->getState();
 
-		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
-		desc << "npc " << m_npc->getName();
-		env->setEventDesc(desc.str());
-		#endif
-
 		env->setScriptId(m_onCreatureSay, m_interface);
 		env->setRealPos(m_npc->getPosition());
 		env->setNpc(m_npc);
@@ -3114,12 +3090,6 @@ void NpcScript::onPlayerTrade(const Player* player, int32_t callback, uint16_t i
 	{
 		ScriptEnviroment* env = m_interface->getEnv();
 		lua_State* L = m_interface->getState();
-
-		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
-		desc << "npc " << m_npc->getName();
-		env->setEventDesc(desc.str());
-		#endif
 
 		env->setScriptId(-1, m_interface);
 		env->setRealPos(m_npc->getPosition());
@@ -3202,12 +3172,6 @@ void NpcScript::onThink()
 	if(m_interface->reserveEnv())
 	{
 		ScriptEnviroment* env = m_interface->getEnv();
-
-		#ifdef __DEBUG_LUASCRIPTS__
-		std::stringstream desc;
-		desc << "npc " << m_npc->getName();
-		env->setEventDesc(desc.str());
-		#endif
 
 		env->setScriptId(m_onThink, m_interface);
 		env->setRealPos(m_npc->getPosition());

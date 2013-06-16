@@ -303,12 +303,6 @@ int32_t TalkAction::executeSay(Creature* creature, const std::string& words, std
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[125];
-			sprintf(desc, "%s - %s- %s", creature->getName().c_str(), words.c_str(), param.c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(creature->getPosition());
 

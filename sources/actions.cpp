@@ -741,12 +741,6 @@ bool Action::executeUse(Player* player, Item* item, const ExtendedPosition& orig
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			std::stringstream desc;
-			desc << player->getName() << " - " << item->getID() << " " << fromPos << "|" << toPos;
-			env->setEventDesc(desc.str());
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			env->setRealPos(player->getPosition());
 

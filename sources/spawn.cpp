@@ -403,10 +403,6 @@ void Spawn::checkSpawn()
 
 	if(spawnedMap.size() < spawnMap.size())
 		checkSpawnEvent = server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(getInterval()), std::bind(&Spawn::checkSpawn, this)));
-#ifdef __DEBUG_SPAWN__
-	else
-		LOGt("Spawn::checkSpawn stopped " << this);
-#endif
 }
 
 bool Spawn::addMonster(const std::string& _name, const Position& _pos, Direction _dir, uint32_t _interval)

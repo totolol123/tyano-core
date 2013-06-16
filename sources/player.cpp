@@ -746,9 +746,6 @@ int32_t Player::getContainerID(const Container* container) const
 
 void Player::addContainer(uint32_t cid, Container* container)
 {
-#ifdef __DEBUG__
-	LOGt(getName() << ", addContainer: " << (int32_t)cid);
-#endif
 	if(cid > 0xF)
 		return;
 
@@ -774,10 +771,6 @@ void Player::closeContainer(uint32_t cid)
 			break;
 		}
 	}
-
-#ifdef __DEBUG__
-	LOGt(getName() << ", closeContainer: " << (int32_t)cid);
-#endif
 }
 
 bool Player::canOpenCorpse(uint32_t ownerId)
@@ -1488,10 +1481,6 @@ void Player::onCreatureDisappear(const Creature* creature, bool isLogout)
 	{
 		if(IOLoginData::getInstance()->savePlayer(this))
 			saved = true;
-#ifdef __DEBUG__
-		else
-			LOGe("Error while saving player: " << getName() << ", strike " << tries << ".");
-#endif
 	}
 
 	if(!saved)
@@ -2861,29 +2850,17 @@ void Player::__addThing(Creature* actor, int32_t index, Thing* thing)
 {
 	if(index < 0 || index > 11)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("[Player::__addThing], " << "player: " << getName() << ", index: " << index << ", index < 0 || index > 11");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
 	if(index == 0)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("[Player::__addThing], " << "player: " << getName() << ", index == 0");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTENOUGHROOM*/;
 	}
 
 	Item* item = thing->getItem();
 	if(!item)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("[Player::__addThing], " << "player: " << getName() << ", item == nullptr");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
@@ -2902,20 +2879,12 @@ void Player::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
 	int32_t index = __getIndexOfThing(thing);
 	if(index == -1)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("F[Player::__updateThing], " << "player: " << getName() << ", index == -1");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
 	Item* item = thing->getItem();
 	if(item == nullptr)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("[Player::__updateThing], " << "player: " << getName() << ", item == nullptr");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
@@ -2938,30 +2907,18 @@ void Player::__replaceThing(uint32_t index, Thing* thing)
 {
 	if(index > 11)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("[Player::__replaceThing], " << "player: " << getName() << ", index: " << index << ", index < 0 || index > 11");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
 	Item* oldItem = getInventoryItem((slots_t)index);
 	if(!oldItem)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("[Player::__updateThing], " << "player: " << getName() << ", oldItem == nullptr");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
 	Item* item = thing->getItem();
 	if(!item)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("[Player::__updateThing], " << "player: " << getName() << ", item == nullptr");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
@@ -2982,20 +2939,12 @@ void Player::__removeThing(Thing* thing, uint32_t count)
 	Item* item = thing->getItem();
 	if(!item)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("[Player::__removeThing], " << "player: " << getName() << ", item == nullptr");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
 	int32_t index = __getIndexOfThing(thing);
 	if(index == -1)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("[Player::__removeThing], " << "player: " << getName() << ", index == -1");
-		DEBUG_REPORT
-#endif
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
@@ -3225,26 +3174,15 @@ void Player::__internalAddThing(Thing* thing)
 
 void Player::__internalAddThing(uint32_t index, Thing* thing)
 {
-#ifdef __DEBUG_MOVESYS__
-	LOGt("[Player::__internalAddThing] index: " << index);
-#endif
-
 	Item* item = thing->getItem();
 	if(!item)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("[Player::__internalAddThing] item == nullptr");
-#endif
 		return;
 	}
 
 	//index == 0 means we should equip this item at the most appropiate slot
 	if(index == 0)
 	{
-#ifdef __DEBUG_MOVESYS__
-		LOGe("[Player::__internalAddThing] index == 0");
-		DEBUG_REPORT
-#endif
 		return;
 	}
 
@@ -3252,10 +3190,6 @@ void Player::__internalAddThing(uint32_t index, Thing* thing)
 	{
 		if(inventory[index])
 		{
-#ifdef __DEBUG_MOVESYS__
-			LOGe("[Player::__internalAddThing], player: " << getName() << ", items[index] is not empty.");
-			//DEBUG_REPORT
-#endif
 			return;
 		}
 

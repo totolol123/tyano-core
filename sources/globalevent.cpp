@@ -293,12 +293,6 @@ int32_t GlobalEvent::executeThink(uint32_t interval, uint32_t lastExecution, uin
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[125];
-			sprintf(desc, "%s - %i (%i)", getName().c_str(), interval, lastExecution);
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			lua_State* L = m_interface->getState();
 
@@ -346,12 +340,6 @@ int32_t GlobalEvent::executeRecord(uint32_t current, uint32_t old, Player* playe
 		}
 		else
 		{
-			#ifdef __DEBUG_LUASCRIPTS__
-			char desc[125];
-			sprintf(desc, "%s - %i to %i (%i)", getName().c_str(), old, current, player->getName().c_str());
-			env->setEventDesc(desc);
-			#endif
-
 			env->setScriptId(m_scriptId, m_interface);
 			lua_State* L = m_interface->getState();
 

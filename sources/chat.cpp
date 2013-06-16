@@ -134,9 +134,6 @@ bool ChatChannel::addUser(Player* player)
 	ChatChannel* channel = server.chat().getChannel(player, m_id);
 	if(!channel)
 	{
-		#ifdef __DEBUG_CHAT__
-		LOGt("ChatChannel::addUser - failed retrieving channel.");
-		#endif
 		return false;
 	}
 
@@ -1125,9 +1122,6 @@ ChannelList Chat::getChannelList(Player* player)
 
 ChatChannel* Chat::getChannel(Player* player, uint16_t channelId)
 {
-	#ifdef __DEBUG_CHAT__
-	LOGt("Chat::getChannel - getChannel id " << channelId);
-	#endif
 	if(!player || player->isRemoved())
 		return nullptr;
 
@@ -1155,26 +1149,17 @@ ChatChannel* Chat::getChannel(Player* player, uint16_t channelId)
 	NormalChannelMap::iterator nit = m_normalChannels.find(channelId);
 	if(nit != m_normalChannels.end())
 	{
-		#ifdef __DEBUG_CHAT__
-		LOGt("Chat::getChannel - found normal channel");
-		#endif
 		ChatChannel* tmpChannel = nit->second;
 		if(!tmpChannel || !tmpChannel->hasFlag(CHANNELFLAG_ENABLED) || player->getAccess() < tmpChannel->getAccess()
 			|| (!player->hasCustomFlag(PlayerCustomFlag_GamemasterPrivileges) && !tmpChannel->checkVocation(
 			player->getVocationId())))
 		{
-			#ifdef __DEBUG_CHAT__
-			LOGt("Chat::getChannel - cannot access normal channel");
-			#endif
 			return nullptr;
 		}
 
 		if(channelId == CHANNEL_RVR && !player->hasFlag(PlayerFlag_CanAnswerRuleViolations))
 			return nullptr;
 
-		#ifdef __DEBUG_CHAT__
-		LOGt("Chat::getChannel - endpoint return");
-		#endif
 		return tmpChannel;
 	}
 

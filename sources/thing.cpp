@@ -72,15 +72,6 @@ const Cylinder* Thing::getTopParent() const
 Tile* Thing::getTile()
 {
 	Cylinder* cylinder = getTopParent();
-#ifdef __DEBUG_MOVESYS__
-	if(!cylinder)
-	{
-		LOGe("[Thing::getTile] nullptr tile");
-		DEBUG_REPORT
-		return &(Tile::nullTile);
-	}
-#endif
-
 	if(cylinder->getParent())
 		cylinder = cylinder->getParent();
 
@@ -90,15 +81,6 @@ Tile* Thing::getTile()
 const Tile* Thing::getTile() const
 {
 	const Cylinder* cylinder = getTopParent();
-#ifdef __DEBUG_MOVESYS__
-	if(!cylinder)
-	{
-		LOGe("[Thing::getTile] nullptr tile");
-		DEBUG_REPORT
-		return &(Tile::nullTile);
-	}
-#endif
-
 	if(cylinder->getParent())
 		cylinder = cylinder->getParent();
 

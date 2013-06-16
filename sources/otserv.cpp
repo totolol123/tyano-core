@@ -276,50 +276,6 @@ bool otserv(StringVector args, ServiceManager* services) {
 			startupErrorMessage("Aborted.");
 	}
 
-	std::stringstream ss;
-	#ifdef __DEBUG__
-	ss << " GLOBAL";
-	#endif
-	#ifdef __DEBUG_MOVESYS__
-	ss << " MOVESYS";
-	#endif
-	#ifdef __DEBUG_CHAT__
-	ss << " CHAT";
-	#endif
-	#ifdef __DEBUG_HOUSES__
-	ss << " HOUSES";
-	#endif
-	#ifdef __DEBUG_LUASCRIPTS__
-	ss << " LUA-SCRIPTS";
-	#endif
-	#ifdef __DEBUG_MAILBOX__
-	ss << " MAILBOX";
-	#endif
-	#ifdef __DEBUG_NET__
-	ss << " NET";
-	#endif
-	#ifdef __DEBUG_NET_DETAIL__
-	ss << " NET-DETAIL";
-	#endif
-	#ifdef __DEBUG_RAID__
-	ss << " RAIDS";
-	#endif
-	#ifdef __DEBUG_SCHEDULER__
-	ss << " SCHEDULER";
-	#endif
-	#ifdef __DEBUG_SPAWN__
-	ss << " SPAWNS";
-	#endif
-	#ifdef __SQL_QUERY_DEBUG__
-	ss << " SQL-QUERIES";
-	#endif
-
-	std::string debug = ss.str();
-	if(!debug.empty())
-	{
-		LOGd("Debugging:" << debug << ".");
-	}
-
 	LOGi("Loading configuration...");
 	if(!configManager.load())
 		startupErrorMessage("Unable to load " + configManager.getString(ConfigManager::CONFIG_FILE) + "!");
