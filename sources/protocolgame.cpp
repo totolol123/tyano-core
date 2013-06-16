@@ -325,7 +325,7 @@ bool ProtocolGame::logout(bool displayEffect, bool forceLogout)
 		{
 			if(!IOLoginData::getInstance()->hasCustomFlag(player->getAccount(), PlayerCustomFlag_CanLogoutAnytime))
 			{
-				if(player->getTile()->hasFlag(TILESTATE_NOLOGOUT))
+				if(player->getTile() != nullptr && player->getTile()->hasFlag(TILESTATE_NOLOGOUT))
 				{
 					player->sendCancelMessage(RET_YOUCANNOTLOGOUTHERE);
 					return false;

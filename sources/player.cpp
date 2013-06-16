@@ -1718,6 +1718,11 @@ uint32_t Player::getNextActionTime() const
 void Player::onThink(Duration elapsedTime)
 {
 	Creature::onThink(elapsedTime);
+
+	if (!isAlive()) {
+		return;
+	}
+
 	int64_t timeNow = OTSYS_TIME();
 	if(timeNow - lastPing >= 5000)
 	{
