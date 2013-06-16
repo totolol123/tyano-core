@@ -268,6 +268,7 @@ class LuaScriptInterface
 		static void pushThing(lua_State* L, Thing* thing, uint32_t id = 0);
 		static void pushVariant(lua_State* L, const LuaVariant& var);
 		static void pushPosition(lua_State* L, const StackPosition& position) {pushPosition(L, position, position.index);}
+		static void pushPosition(lua_State* L, const Position& position);
 		static void pushPosition(lua_State* L, const Position& position, uint32_t stackpos);
 		static void pushExtendedPosition(lua_State* L, const ExtendedPosition& position);
 		static void pushOutfit(lua_State* L, const Outfit_t& outfit);

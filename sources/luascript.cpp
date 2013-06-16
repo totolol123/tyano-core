@@ -1166,6 +1166,14 @@ void LuaScriptInterface::pushThing(lua_State* L, Thing* thing, uint32_t id/* = 0
 	}
 }
 
+void LuaScriptInterface::pushPosition(lua_State* L, const Position& position)
+{
+	lua_newtable(L);
+	setField(L, "x", position.x);
+	setField(L, "y", position.y);
+	setField(L, "z", position.z);
+}
+
 void LuaScriptInterface::pushPosition(lua_State* L, const Position& position, uint32_t stackpos)
 {
 	lua_newtable(L);
@@ -3469,7 +3477,7 @@ int32_t LuaScriptInterface::luaGetClosestFreeTile(lua_State* L)
 	{
 		Position newPos = server.game().getClosestFreeTile(creature, pos, extended, ignoreHouse);
 		if(newPos.x != 0)
-			pushPosition(L, newPos, 0);
+			pushPosition(L, newPos);
 		else
 			lua_pushboolean(L, false);
 	}
@@ -5175,7 +5183,7 @@ int32_t LuaScriptInterface::luaGetHouseInfo(lua_State* L)
 	setField(L, "owner", house->getOwner());
 
 	lua_pushstring(L, "entry");
-	pushPosition(L, house->getEntry(), 0);
+	pushPosition(L, house->getEntry());
 	pushTable(L);
 
 	setField(L, "rent", house->getRent());
@@ -7925,7 +7933,7 @@ int32_t LuaScriptInterface::luaGetCreatureLastPosition(lua_State* L)
 	ScriptEnviroment* env = getEnv();
 
 	if(Creature* creature = env->getCreatureByUID(popNumber(L)))
-		pushPosition(L, creature->getLastPosition(), 0);
+		pushPosition(L, creature->getLastPosition());
 	else
 	{
 		errorEx(getError(LUA_ERROR_CREATURE_NOT_FOUND));
@@ -8981,7 +8989,7 @@ int32_t LuaScriptInterface::luaGetTownTemplePosition(lua_State* L)
 
 	uint32_t townId = popNumber(L);
 	if(Town* town = server.towns().getTown(townId))
-		pushPosition(L, town->getPosition(), 255);
+		pushPosition(L, town->getPosition());
 	else
 		lua_pushboolean(L, false);
 
@@ -9077,7 +9085,7 @@ int32_t LuaScriptInterface::luaGetWaypointPosition(lua_State* L)
 {
 	//getWaypointPosition(name)
 	if(WaypointPtr waypoint = server.game().getMap()->getWaypoints().getWaypointByName(popString(L)))
-		pushPosition(L, waypoint->pos, 0);
+		pushPosition(L, waypoint->pos);
 	else
 		lua_pushboolean(L, false);
 

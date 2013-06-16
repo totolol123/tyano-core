@@ -1062,7 +1062,7 @@ void TileCallback::onTileCombat(Creature* creature, Tile* tile) const
 		lua_State* L = m_interface->getState();
 
 		lua_pushnumber(L, creature ? env->addThing(creature) : 0);
-		m_interface->pushPosition(L, tile->getPosition(), 0);
+		m_interface->pushPosition(L, tile->getPosition());
 
 		m_interface->callFunction(2);
 		env->resetCallback();

@@ -3041,8 +3041,8 @@ void NpcScript::onCreatureMove(const Creature* creature, const Position& oldPos,
 		m_interface->pushFunction(m_onCreatureMove);
 		lua_pushnumber(L, env->addThing(const_cast<Creature*>(creature)));
 
-		LuaScriptInterface::pushPosition(L, oldPos, 0);
-		LuaScriptInterface::pushPosition(L, newPos, 0);
+		LuaScriptInterface::pushPosition(L, oldPos);
+		LuaScriptInterface::pushPosition(L, newPos);
 
 		m_interface->callFunction(3);
 		m_interface->releaseEnv();

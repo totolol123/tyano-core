@@ -1075,10 +1075,10 @@ uint32_t MoveEvent::executeStep(Creature* actor, Creature* creature, Item* item,
 			lua_pushnumber(L, env->addThing(creature));
 
 			LuaScriptInterface::pushThing(L, item, env->addThing(item));
-			LuaScriptInterface::pushPosition(L, pos, 0);
-			LuaScriptInterface::pushPosition(L, creature->getLastPosition(), 0);
-			LuaScriptInterface::pushPosition(L, fromPos, 0);
-			LuaScriptInterface::pushPosition(L, toPos, 0);
+			LuaScriptInterface::pushPosition(L, pos);
+			LuaScriptInterface::pushPosition(L, creature->getLastPosition());
+			LuaScriptInterface::pushPosition(L, fromPos);
+			LuaScriptInterface::pushPosition(L, toPos);
 
 			lua_pushnumber(L, env->addThing(actor));
 			bool result = m_interface->callFunction(7);
@@ -1200,7 +1200,7 @@ uint32_t MoveEvent::executeAddRemItem(Creature* actor, Item* item, Item* tileIte
 
 			LuaScriptInterface::pushThing(L, item, env->addThing(item));
 			LuaScriptInterface::pushThing(L, tileItem, env->addThing(tileItem));
-			LuaScriptInterface::pushPosition(L, pos, 0);
+			LuaScriptInterface::pushPosition(L, pos);
 
 			lua_pushnumber(L, env->addThing(actor));
 			bool result = m_interface->callFunction(4);

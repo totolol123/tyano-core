@@ -1110,7 +1110,7 @@ uint32_t CreatureEvent::executeCombatArea(Creature* creature, Tile* tile, bool a
 			lua_pushnumber(L, env->addThing(creature));
 			LuaScriptInterface::pushThing(L, tile->ground.get(), env->addThing(tile->ground.get()));
 
-			LuaScriptInterface::pushPosition(L, tile->getPosition(), 0);
+			LuaScriptInterface::pushPosition(L, tile->getPosition());
 			lua_pushboolean(L, aggressive);
 
 			bool result = m_interface->callFunction(4);
