@@ -671,9 +671,6 @@ void Monster::updateTarget() {
 	if (hasMaster()) {
 		target(_master->getAttackedCreature());
 	}
-	else if (isFleeing()) {
-		target(nullptr);
-	}
 	else if (attackedCreature == nullptr || (!attackedCreature->isAlive() || !isEnemy(attackedCreature))) {
 		retarget();
 	}
