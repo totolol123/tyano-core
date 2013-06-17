@@ -329,7 +329,7 @@ void Creature::startThinking(bool forced) {
 		return;
 	}
 
-	_lastThinkTime = Time::clock::now();
+	_previousThinkTime = Clock::now();
 	_thinkDuration = THINK_DURATION;
 
 	server.dispatcher().addTask(Task::create(std::bind(&Creature::think, boost::intrusive_ptr<Creature>(this))));
@@ -356,10 +356,10 @@ void Creature::think() {
 		return;
 	}
 
-	Time now = Clock::now();
+	Time thinkTime = Clock::now();
 
-	Duration elapsedTime = now - _lastThinkTime;
-	_lastThinkTime = now;
+	Duration elapsedTime = thinkTime - _previousThinkTime;
+	_previousThinkTime = thinkTime;
 	_thinkTaskId = 0;
 
 	if (!isAlive()) {

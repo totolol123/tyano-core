@@ -160,7 +160,7 @@ private:
 	static const Duration THINK_DURATION;
 	static const Duration THINK_INTERVAL;
 
-	Time              _lastThinkTime;
+	Time              _previousThinkTime;
 	bool              _removed;
 	bool              _removing;
 	Duration          _thinkDuration;
