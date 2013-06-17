@@ -1162,7 +1162,7 @@ bool CombatArea::getList(const Position& origin, const Position& destination, st
 
 	for (auto offsetY = minOffsetY; offsetY <= maxOffsetY; ++offsetY) {
 		for (auto offsetX = minOffsetX; offsetX <= maxOffsetX; ++offsetX) {
-			if (area->getValue(centerX + offsetX, centerY + offsetY) == 0) {
+			if (area->getValue(centerY + offsetY, centerX + offsetX) == 0) {
 				continue;
 			}
 
