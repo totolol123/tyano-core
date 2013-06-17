@@ -1,43 +1,50 @@
 TODO
 ====
 
-- improve autowalk (lagging when clicking multiple times, random lagging when there are creatures in the path, re-routing)
-- add little randomization  to think interval so that the CPU load distributes as much as possible
-- migrate walking to thinking
-- stop NPCs from walking while no player is around
-- check use of `rand()` C functions as they are not thread-safe
-- fix leaking boost sockets
-- update remaining documentation located in `documentation/fixme`
-- get rid of `__LOGIN_SERVER__` preprocessor macro and allow changing the login behavior by configuration
-- re-order all class and struct members to minimize padding
-- complete item attribute refactoring (make it easier to use and use more templating)
-- refactor item structure:
-    - `Class`: describes a class of items, e.g. Bed, Container, Key, etc.
-    - `Kind`: describes a single item, e.g. Bed #543, Container #140, Key #364, etc.  
-              One sub-class per `Class` to save memory and improve structure!
-    - `Item` (i.e. an instance of Bed 543, Container 150, Key 364, etc.)  
-              One sub-class per `Kind`.
-- restructure source code (use namespaces, use .hpp instead of .h, etc.)
-- make raids.xml easier to understand and document how it works
-- allow non-ref'd raid monsters and items to disappear when the raid ended
-- instead of regulary cleaning the map - decay the items (including corpses) after a while relative to the time they dropped
-- item client id must not be >= 0xFF00 || (>= 0x61 && <= 0x63)  -- all reserved for netcode
-- cannot move creature in ProtocolGame::GetTileDescription - fix that!
-- figure out what to do if the stackpos of a creature is invalid
-- check whether summons/master should start thinking depending on what the other one does
-- check which creature/monster/player methods need `startThinking()`
-- replace boost::intrusive\_ptr by boost::shared\_ptr
-- make monster attack other target if they cannot attack their current one
-- set `BOOST_DISABLE_ASSERTS` and `NDEBUG` for release
-- update `hasToThinkAboutCreature` to take a monster's targeting distance into account
-- find out what `Map::checkSightLine` does and why it swaps x and z coordinates, which aren't type compatible
-- use least-size integers instead of fixed-size ones
-- fix TODOs written in code comments
-- use `weak_ptr` where it makes sense (e.g. master->summon relationship and damage list to avoid cyclic references)
-- check out LLVM as compiler (esp. static analysis)
-- check useful optimization flags (fast math, LTO, etc.)
+Urgent
+------
 
-Architecture
+- Nothing is urgent right now! :)
+
+
+Important
+---------
+
+- Migrate creature walking code to thinking cycles.
+- Make NPCs walk only while there are players nearby.
+
+
+Soon
+----
+
+- Fix that one boost network socket leaks every time a new connection is accepted.
+- Complete item structure refactoring.
+- Find to-dos written directly in the code and migrate them here.
+
+
+Improvements
 ------------
-* Use or develop new LUA framework.
-* Further consolidate `Position`, `StackPosition` and `ExtendedPosition`.
+
+- Improve autowalking. Currently you lag when clicking multiple times and the walking randomly ends, e.g. when a creature walks into the path.
+- Add randomization to the think intervals to distribute CPU load as much as possible.
+- Use C++11 random number generators. Also check if the random number generating functions are not used concurrently.
+- Update remaining documentation files located in `documentation/fixme`.
+- Make login server functionality a run-time option instead of a compile-time option and get rid of `__LOGIN_SERVER__`.
+- Restructure old sourcecode (e.g. using namespaces and using `.hpp` instead of `.h` etc.).
+- Refactor raid system to be much more reliable and easier to use. Also make non-ref's raid monsters and items disappear when the raid ended.
+- Use `Scheduler` for decaying items instead of a regular task in `Game` to better distribute CPU load.
+- Make items automatically disappear after a while on the ground instead of regulary cleaning the map to distribute CPU load.
+- Validate that all client IDs for items are valid (`< 0xFF00 && (< 0x61 || > 0x63)`, i.e. not reserved by netcode) and have no duplicates.
+- Revisit relationship between master and summon creatures regarding thinking-logic and automatic targeting.
+- Replace `boots::intrusive_ptr` by `std::shared_ptr`.
+- Make monsters attack other targets if they are unable to reach their current one.
+- Set `BOOST_DISABLE_ASSERTS` and `NDEBUG` for release build.
+- Obey a monster's targeting range when choosing a target.
+- Find out what `Map::checkSightLine` does and why it swaps `x` and `z` coordinates which aren't type compatible.
+- Revisit all types used for integral numbers. `intXY_t` vs. `int_leastXY_t` etc. for speed vs. memory vs. compatibility.
+- Use `std::weak_ptr` where it makes sense (e.g. master->summon relationship and damage list) to avoid cyclic references.
+- Check out LLVM as compiler, esp. static analysis.
+- Check out useful optimization flags (fast-math, LTO, etc.).
+- Use or develop a LUA framework.
+- Further consolidate `Position`, `StackPosition` and `ExtendedPosition`.
+- Migrate `TODO.md` to GitHub issues.
