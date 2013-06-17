@@ -5,29 +5,29 @@
 	to output additional information during server startup.
 -->
 <log4j:configuration debug="false" xmlns:log4j="http://jakarta.apache.org/log4j/">
+	<appender name="allFile" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="append" value="true"/>
+		<param name="datePattern" value=".yyyy-MM-dd"/>
+		<param name="file" value="logs/all.log"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="conversionPattern" value="%d | %5p | %m%n"/>
+		</layout>
+	</appender>
 	<appender name="errorFile" class="org.apache.log4j.DailyRollingFileAppender">
 		<param name="append" value="true"/>
 		<param name="datePattern" value=".yyyy-MM-dd"/>
 		<param name="file" value="logs/errors.log"/>
 		<param name="threshold" value="warn"/>
 		<layout class="org.apache.log4j.PatternLayout">
-			<param name="conversionPattern" value="%d{ISO8601} %c %t%n%p: %m%n"/>
-		</layout>
-	</appender>
-	<appender name="fullFile" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="append" value="true"/>
-		<param name="datePattern" value=".yyyy-MM-dd"/>
-		<param name="file" value="logs/full.log"/>
-		<layout class="org.apache.log4j.PatternLayout">
-			<param name="conversionPattern" value="%d{ISO8601} %c %t%n%p: %m%n"/>
-		</layout>
-	</appender>
-	<appender name="lightFile" class="org.apache.log4j.DailyRollingFileAppender">
-		<param name="append" value="true"/>
-		<param name="datePattern" value=".yyyy-MM-dd"/>
-		<param name="file" value="logs/light.log"/>
-		<layout class="org.apache.log4j.PatternLayout">
 			<param name="conversionPattern" value="%d | %5p | %m%n"/>
+		</layout>
+	</appender>
+	<appender name="extendedFile" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="append" value="true"/>
+		<param name="datePattern" value=".yyyy-MM-dd"/>
+		<param name="file" value="logs/extended.log"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="conversionPattern" value="%d{ISO8601} %c %t%n%p: %m%n"/>
 		</layout>
 	</appender>
 	<appender name="outputConsole" class="org.apache.log4j.ConsoleAppender">
@@ -48,10 +48,10 @@
 	</appender>
 	<root>
 		<level value="debug"/>
+		<appender-ref ref="allFile"/>
 		<appender-ref ref="errorConsole"/>
 		<appender-ref ref="errorFile"/>
-		<appender-ref ref="fullFile"/>
-		<appender-ref ref="lightFile"/>
+		<appender-ref ref="extendedFile"/>
 		<appender-ref ref="outputConsole"/>
 	</root>
 </log4j:configuration>
