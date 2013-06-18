@@ -122,6 +122,7 @@ public:
             bool       canMoveTo               (Direction direction) const;
             bool       canMoveTo               (const Position& position) const;
 	virtual bool       canMoveTo               (const Tile& tile) const;
+	        bool       canStep                 () const;
 	        PlayerP    getController           ();
 	        PlayerPC   getController           () const;
 	virtual CreatureP  getDirectOwner          () = 0;
@@ -149,20 +150,23 @@ public:
 	virtual void       onCreatureMove          (const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
 			void       releaseSummons          ();
 	        bool       remove                  ();
+	        Direction  route                   ();
+	        Direction  stagger                 ();
 	        void       setDefaultOutfit        (Outfit_t defaultOutfit);
 	        void       startRouting            (const Route& route);
 	    	void       startThinking           (bool forced = false);
 	        void       startWandering          ();
-	    	Direction  step                    ();
 	    	bool       stepInDirection         (Direction direction);
 	    	void       stopRouting             ();
 			void       stopThinking            ();
 	        void       stopWandering           ();
+	        Direction  wander                  ();
 
 
 protected:
 
-	virtual Direction getNextStepDirection     () const;
+	virtual Direction getWanderingDirection    () const;
+	virtual Duration  getWanderingInterval     () const;
 	virtual bool      hasSomethingToThinkAbout () const;
 	virtual bool      hasToThinkAboutCreature  (const CreaturePC& creature) const;
 	virtual void      onMonsterMasterChanged   (const MonsterP& monster, const CreatureP& previousMaster);
@@ -178,8 +182,9 @@ protected:
 
 private:
 
+	bool shouldStagger  () const;
 	void think          ();
-	void updateMovement ();
+	void updateMovement (Time now);
 
 
 	LOGGER_DECLARATION;
@@ -188,6 +193,7 @@ private:
 	static const Duration THINK_INTERVAL;
 
 	Time              _nextMoveTime;
+	Time              _nextWanderingTime;
 	Time              _previousThinkTime;
 	bool              _removed;
 	bool              _removing;

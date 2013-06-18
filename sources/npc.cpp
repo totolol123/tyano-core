@@ -68,21 +68,12 @@ CreaturePC Npc::getDirectOwner() const {
 }
 
 
-Direction Npc::getNextStepDirection() const {
-	Direction direction = Creature::getNextStepDirection();
-	if (direction != Direction::NONE) {
-		return direction;
-	}
-
-	if (!isAlive()) {
-		return Direction::NONE;
-	}
-
+Duration Npc::getWanderingInterval() const {
 	if (focusCreature > 0) {
-		return Direction::NONE;
+		return Duration::zero();
 	}
 
-	return getRandomStepDirection();
+	return std::chrono::milliseconds(walkTicks);
 }
 
 
@@ -2004,6 +1995,8 @@ void Npc::setCreatureFocus(Creature* creature)
 	if(!creature)
 	{
 		focusCreature = 0;
+		startWandering();
+
 		return;
 	}
 
@@ -2027,6 +2020,8 @@ void Npc::setCreatureFocus(Creature* creature)
 		dir = Direction::NORTH;
 
 	focusCreature = creature->getID();
+	stopWandering();
+
 	server.game().internalCreatureTurn(this, dir);
 }
 

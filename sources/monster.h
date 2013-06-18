@@ -75,7 +75,8 @@ public:
 
 protected:
 
-	virtual Direction getNextStepDirection     () const;
+	virtual Direction getWanderingDirection    () const;
+	virtual Duration  getWanderingInterval     () const;
     virtual bool      hasSomethingToThinkAbout () const;
 	virtual bool      hasToThinkAboutCreature  (const CreaturePC& creature) const;
 	virtual void      onThink                  (Duration elapsedTime);
@@ -96,7 +97,6 @@ private:
 	bool teleportToMaster       ();
 	void updateBabbling         (Duration elapsedTime);
 	void updateFollowing        ();
-	void updateMovement         ();
 	void updateRelationship     ();
 	void updateRetargeting      (Duration elapsedTime);
 	void updateTarget           ();

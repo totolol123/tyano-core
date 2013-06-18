@@ -309,7 +309,7 @@ public:
 
 protected:
 
-	virtual Direction getNextStepDirection    () const;
+	virtual Duration  getWanderingInterval    () const;
 	virtual bool      hasToThinkAboutCreature (const CreaturePC& creature) const;
 	virtual void      onThinkingStarted       ();
 

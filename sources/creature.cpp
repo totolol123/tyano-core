@@ -96,6 +96,23 @@ bool Creature::canMoveTo(const Tile& tile) const {
 }
 
 
+bool Creature::canStep() const {
+	if (!isAlive()) {
+		return false;
+	}
+
+	if (cannotMove) {
+		return false;
+	}
+
+	if (getStepDuration() <= Duration::zero()) {
+		return false;
+	}
+
+	return true;
+}
+
+
 void Creature::didRemove() {
 	if (!_removing) {
 		return;
@@ -259,11 +276,6 @@ Time Creature::getNextMoveTime() const {
 }
 
 
-Direction Creature::getNextStepDirection() const {
-	return Direction::NONE;
-}
-
-
 Direction Creature::getRandomStepDirection() const {
 	if (!isAlive()) {
 		return Direction::NONE;
@@ -301,6 +313,16 @@ Direction Creature::getRandomStepDirection() const {
 	}
 
 	return Direction::NONE;
+}
+
+
+Direction Creature::getWanderingDirection() const {
+	return getRandomStepDirection();
+}
+
+
+Duration Creature::getWanderingInterval() const {
+	return Duration::zero();
 }
 
 
@@ -442,7 +464,7 @@ void Creature::onRoutingStopped(bool preliminary) {
 
 
 void Creature::onThinkingStarted() {
-	// override in subclasses
+	startWandering();
 }
 
 
@@ -482,8 +504,55 @@ bool Creature::remove() {
 }
 
 
+Direction Creature::route() {
+	if (!isRouting()) {
+		return Direction::NONE;
+	}
+
+	if (!canStep()) {
+		return Direction::NONE;
+	}
+
+	Direction direction = _route.front();
+	_route.pop_front();
+
+	// TODO re-route on failure
+
+	if (!stepInDirection(direction)) {
+		forceUpdateFollowPath = true;
+		stopRouting();
+
+		return Direction::NONE;
+	}
+
+	return direction;
+}
+
+
 void Creature::setDefaultOutfit(Outfit_t defaultOutfit) {
 	this->defaultOutfit = defaultOutfit;
+}
+
+
+bool Creature::shouldStagger() const {
+	// 25% chance when drunk
+	return (isDrunk() && random_range(1, 100) <= 25);
+}
+
+
+Direction Creature::stagger() {
+	if (!canStep()) {
+		return Direction::NONE;
+	}
+
+	server.game().internalCreatureSay(this, SPEAK_MONSTER_SAY, "Hicks!", isGhost());
+
+	Direction direction = getRandomStepDirection();
+	if (!stepInDirection(direction)) {
+		return Direction::NONE;
+	}
+
+	return direction;
 }
 
 
@@ -530,7 +599,14 @@ void Creature::startWandering() {
 		return;
 	}
 
+	Duration interval = getWanderingInterval();
+	if (interval <= Duration::zero()) {
+		return;
+	}
+
 	_wandering = true;
+	_nextWanderingTime = Clock::now() + interval;
+
 	onWanderingStarted();
 }
 
@@ -567,53 +643,6 @@ void Creature::stopWandering() {
 
 	_wandering = false;
 	onWanderingStopped();
-}
-
-
-Direction Creature::step() {
-	if (!isAlive()) {
-		return Direction::NONE;
-	}
-
-	if (!_wandering && _route.empty()) {
-		return Direction::NONE;
-	}
-
-	bool isRoute = false;
-
-	Direction direction;
-	if (isDrunk() && random_range(1, 100) <= 25) {
-		// 25% chance of doing a random step
-		server.game().internalCreatureSay(this, SPEAK_MONSTER_SAY, "Hicks!", isGhost());
-
-		direction = getRandomStepDirection();
-	}
-	else {
-		if (_route.empty()) {
-			direction = getNextStepDirection();
-		}
-		else {
-			direction = _route.front();
-			_route.pop_front();
-
-			isRoute = true;
-		}
-	}
-
-	if (!stepInDirection(direction)) {
-		if (isRoute) {
-			forceUpdateFollowPath = true;
-			stopRouting();
-		}
-
-		return Direction::NONE;
-	}
-
-	if (isRoute && _route.empty()) {
-		onRoutingStopped(false);
-	}
-
-	return direction;
 }
 
 
@@ -671,14 +700,60 @@ void Creature::think() {
 }
 
 
-void Creature::updateMovement() {
-	if (_nextMoveTime > Clock::now()) {
+void Creature::updateMovement(Time now) {
+	if (_nextMoveTime > now) {
 		return;
 	}
 
-	if (getStepDuration() > Duration::zero()) {
-		step();
+	if (isRouting()) {
+		if (shouldStagger()) {
+			stagger();
+			return;
+		}
+
+		route();
+		return;
 	}
+
+	if (isWandering()) {
+		if (_nextWanderingTime > now) {
+			return;
+		}
+
+		if (shouldStagger()) {
+			stagger();
+			return;
+		}
+
+		wander();
+		return;
+	}
+}
+
+
+Direction Creature::wander() {
+	if (!isWandering()) {
+		return Direction::NONE;
+	}
+
+	if (!canStep()) {
+		return Direction::NONE;
+	}
+
+	Direction direction = getWanderingDirection();
+	if (!stepInDirection(direction)) {
+		return Direction::NONE;
+	}
+
+	Duration interval = getWanderingInterval();
+	if (interval > Duration::zero()) {
+		_nextWanderingTime = Clock::now() + getWanderingInterval();
+	}
+	else {
+		stopWandering();
+	}
+
+	return direction;
 }
 
 
@@ -807,7 +882,7 @@ bool Creature::canSeeCreature(const CreatureP& creature) const
 
 
 void Creature::onThink(Duration elapsedTime) {
-	updateMovement();
+	updateMovement(Clock::now());
 
 	if(followCreature && !canSeeCreature(followCreature))
 		internalCreatureDisappear(followCreature, false);
