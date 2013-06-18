@@ -17,9 +17,12 @@ Important
 Soon
 ----
 
+- Broadcast message with pop-up because a server-wide red chat message will actually not be read by most players.
+- Refactor talkaction system to unify commands & help system.
 - Fix that one boost network socket leaks every time a new connection is accepted.
 - Complete item structure refactoring.
 - Find to-dos written directly in the code and migrate them here.
+- Refactor chat messages to be more visible (e.g. gamemaster broadcasts, etc.)
 
 
 Improvements
@@ -44,7 +47,6 @@ Improvements
 - Revisit all types used for integral numbers. `intXY_t` vs. `int_leastXY_t` etc. for speed vs. memory vs. compatibility.
 - Use `std::weak_ptr` where it makes sense (e.g. master->summon relationship and damage list) to avoid cyclic references.
 - Check out LLVM as compiler, esp. static analysis.
-- Check out useful optimization flags (fast-math, LTO, etc.).
 - Use or develop a LUA framework.
 - Further consolidate `Position`, `StackPosition` and `ExtendedPosition`.
 - Migrate `TODO.md` to GitHub issues.

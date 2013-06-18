@@ -83,7 +83,7 @@ AM_PATH_XML2([2.6.5], [LIBS="$XML_LIBS $LIBS"], AC_MSG_ERROR([*** Cannot find wo
 
 
 # apply arguments
-AS_IF([test "x${enable_optimizations:=yes}" = "xyes"], [CXXFLAGS="$CXXFLAGS -O3"], [CXXFLAGS="$CXXFLAGS -O0"])
+AS_IF([test "x${enable_optimizations:=yes}" = "xyes"], [CXXFLAGS="$CXXFLAGS -Ofast -flto -fwhole-program -funroll-loops -mtune=native -march=native"], [CXXFLAGS="$CXXFLAGS -O0"])
 AS_IF([test "x${enable_profiling:=no}" = "xyes"], [CXXFLAGS="$CXXFLAGS -pg"])
 AS_IF([test "x${enable_debugging_symbols:=yes}" = "xyes"], [CXXFLAGS="$CXXFLAGS -g"], [CXXFLAGS="$CXXFLAGS -s"])
 
