@@ -907,6 +907,10 @@ bool Game::placeCreature(const CreatureP& creature, const Position& pos, bool ex
 		return false;
 	}
 
+	if (!creature->isAlive()) {
+		return false;
+	}
+
 	SpectatorList::iterator it;
 	SpectatorList list;
 
