@@ -905,6 +905,10 @@ bool Game::placeCreature(Creature* creature, const Position& pos, bool extendedP
 	if(!internalPlaceCreature(creature, pos, extendedPos, forced))
 		return false;
 
+	if (!creature->isAlive()) {
+		return false;
+	}
+
 	SpectatorList::iterator it;
 	SpectatorList list;
 
@@ -917,6 +921,10 @@ bool Game::placeCreature(Creature* creature, const Position& pos, bool extendedP
 
 	for(it = list.begin(); it != list.end(); ++it)
 		(*it)->onCreatureAppear(creature);
+
+	if (!creature->isAlive()) {
+		return false;
+	}
 
 	creature->setLastPosition(pos);
 	creature->getParent()->postAddNotification(nullptr, creature, nullptr, creature->getParent()->__getIndexOfThing(creature));
