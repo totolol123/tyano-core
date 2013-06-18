@@ -2399,7 +2399,7 @@ bool Game::playerUseItemEx(uint32_t playerId, const ExtendedPosition& origin, co
 
 	if(ret != RET_NOERROR)
 	{
-		if(ret == RET_TOOFARAWAY && destination.hasPosition(true))
+		if(ret == RET_TOOFARAWAY && origin.hasPosition(true) && destination.hasPosition(true))
 		{
 			ExtendedPosition position = origin;
 			if(Position::areInRange<1,1,0>(origin.getPosition(true), player->getPosition())
