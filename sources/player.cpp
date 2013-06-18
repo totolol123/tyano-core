@@ -54,7 +54,6 @@
 LOGGER_DEFINITION(Player);
 
 
-
 CreatureP Player::getDirectOwner() {
 	return nullptr;
 }
@@ -72,6 +71,14 @@ bool Player::isEnemy(const CreaturePC& creature) const {
 	}
 
 	return creature->isEnemy(this);
+}
+
+
+void Player::onFollowingStopped(bool prelimiary) {
+	if (prelimiary) {
+		sendTextMessage(MSG_STATUS_SMALL, "Target lost.");
+		sendCancelTarget();
+	}
 }
 
 
@@ -1422,13 +1429,6 @@ void Player::onAttackedCreatureDisappear(bool isLogout)
 		sendTextMessage(MSG_STATUS_SMALL, "Target lost.");
 }
 
-void Player::onFollowCreatureDisappear(bool isLogout)
-{
-	sendCancelTarget();
-	if(!isLogout)
-		sendTextMessage(MSG_STATUS_SMALL, "Target lost.");
-}
-
 void Player::onChangeZone(ZoneType_t zone)
 {
 	if(attackedCreature && zone == ZONE_PROTECTION && !hasFlag(PlayerFlag_IgnoreProtectionZone))
@@ -1556,8 +1556,7 @@ bool Player::canShopItem(uint16_t itemId, uint8_t subType, ShopEvent_t event)
 }
 
 
-void Player::onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport)
-{
+void Player::onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport) {
 	Creature::onCreatureMove(creature, origin, originTile, destination, destinationTile, teleport);
 	if(creature != this)
 		return;
@@ -3216,29 +3215,6 @@ void Player::__internalAddThing(uint32_t index, Thing* thing)
 	}
 }
 
-bool Player::setFollowCreature(Creature* creature, bool fullPathSearch /*= false*/)
-{
-	bool deny = false;
-	CreatureEventList followEvents = getCreatureEvents(CREATURE_EVENT_FOLLOW);
-	for(CreatureEventList::iterator it = followEvents.begin(); it != followEvents.end(); ++it)
-	{
-		if(creature && !(*it)->executeFollow(this, creature))
-			deny = true;
-	}
-
-	if(deny || !Creature::setFollowCreature(creature, fullPathSearch))
-	{
-		setFollowCreature(nullptr);
-		setAttackedCreature(nullptr);
-		if(!deny)
-			sendCancelMessage(RET_THEREISNOWAY);
-
-		sendCancelTarget();
-		return false;
-	}
-
-	return true;
-}
 
 bool Player::setAttackedCreature(Creature* creature)
 {
@@ -3248,13 +3224,11 @@ bool Player::setAttackedCreature(Creature* creature)
 		return false;
 	}
 
-	if(chaseMode == CHASEMODE_FOLLOW && creature)
-	{
-		if(followCreature != creature) //chase opponent
-			setFollowCreature(creature);
+	if(chaseMode == CHASEMODE_FOLLOW && creature) {
+		startFollowing(creature);
 	}
 	else
-		setFollowCreature(nullptr);
+		stopFollowing();
 
 	if(creature)
 		server.dispatcher().addTask(Task::create(std::bind(&Game::checkCreatureAttack, &server.game(), getID())));
@@ -3332,9 +3306,6 @@ double Player::getGainedExperience(Creature* attacker) const
 		* std::max((double)0, ((double)(1 - (((double)a / b))))) * 0.05 * c)) * rate;
 }
 
-void Player::onFollowCreature(const Creature* creature)
-{
-}
 
 void Player::setChaseMode(chaseMode_t mode)
 {
@@ -3344,14 +3315,14 @@ void Player::setChaseMode(chaseMode_t mode)
 	if(prevChaseMode == chaseMode)
 		return;
 
-	if(chaseMode == CHASEMODE_FOLLOW)
-	{
-		if(!followCreature && attackedCreature) //chase opponent
-			setFollowCreature(attackedCreature);
-	}
-	else if(attackedCreature)
-	{
-		setFollowCreature(nullptr);
+	if (attackedCreature) {
+		if(chaseMode == CHASEMODE_FOLLOW) {
+			startFollowing(attackedCreature);
+		}
+		else
+		{
+			stopFollowing();
+		}
 	}
 }
 

@@ -116,51 +116,58 @@ class Creature : public AutoId, public Thing {
 
 public:
 
-	typedef std::deque<Direction>  Route;
+	typedef std::deque<Direction>  DirectionRoute;
+	typedef std::deque<Position>   Route;
 
 
-            bool       canMoveTo               (Direction direction) const;
-            bool       canMoveTo               (const Position& position) const;
-	virtual bool       canMoveTo               (const Tile& tile) const;
-	        bool       canStep                 () const;
-	        PlayerP    getController           ();
-	        PlayerPC   getController           () const;
-	virtual CreatureP  getDirectOwner          () = 0;
-	virtual CreaturePC getDirectOwner          () const = 0;
-	        CreatureP  getFinalOwner           ();
-	        CreaturePC getFinalOwner           () const;
-	        Time       getNextMoveTime         () const;
-	        Direction  getRandomStepDirection  () const;
-			bool       hasController           () const;
-	        bool       hasDirectOwner          () const;
-	        bool       isAlive                 () const;
-	        bool       isDrunk                 () const;
-	virtual bool       isEnemy                 (const CreaturePC& creature) const = 0;
-    		bool       isMonster               () const;
-    		bool       isNpc                   () const;
-	        bool       isPlayer                () const;
-	        bool       isRemoved               () const;
-	        bool       isRemoving              () const;
-	        bool       isRouting               () const;
-	        bool       isThinking              () const;
-	        bool       isWandering             () const;
-			void       killSummons             ();
-	        bool       moveTo                  (Tile& tile);
-	virtual void       onCreatureAppear        (const CreatureP& creature);
-	virtual void       onCreatureMove          (const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
-			void       releaseSummons          ();
-	        bool       remove                  ();
-	        Direction  route                   ();
-	        Direction  stagger                 ();
-	        void       setDefaultOutfit        (Outfit_t defaultOutfit);
-	        void       startRouting            (const Route& route);
-	    	void       startThinking           (bool forced = false);
-	        void       startWandering          ();
-	    	bool       stepInDirection         (Direction direction);
-	    	void       stopRouting             ();
-			void       stopThinking            ();
-	        void       stopWandering           ();
-	        Direction  wander                  ();
+	virtual bool         canFollow               (const CreatureP& target) const;
+            bool         canMoveTo               (Direction direction) const;
+            bool         canMoveTo               (const Position& position) const;
+	virtual bool         canMoveTo               (const Tile& tile) const;
+	        bool         canStep                 () const;
+	        PlayerP      getController           ();
+	        PlayerPC     getController           () const;
+	virtual CreatureP    getDirectOwner          () = 0;
+	virtual CreaturePC   getDirectOwner          () const = 0;
+	        CreatureP    getFinalOwner           ();
+	        CreaturePC   getFinalOwner           () const;
+	        CreatureP    getFollowedCreature     () const;
+	        Time         getNextMoveTime         () const;
+	        Direction    getRandomStepDirection  () const;
+	        const Route& getRoute                () const;
+			bool         hasController           () const;
+	        bool         hasDirectOwner          () const;
+	        bool         isAlive                 () const;
+	        bool         isDrunk                 () const;
+	virtual bool         isEnemy                 (const CreaturePC& creature) const = 0;
+	        bool         isFollowing             () const;
+    		bool         isMonster               () const;
+    		bool         isNpc                   () const;
+	        bool         isPlayer                () const;
+	        bool         isRemoved               () const;
+	        bool         isRemoving              () const;
+	        bool         isRouting               () const;
+	        bool         isThinking              () const;
+	        bool         isWandering             () const;
+			void         killSummons             ();
+	        bool         moveTo                  (Tile& tile);
+	virtual void         onCreatureAppear        (const CreatureP& creature);
+	virtual void         onCreatureMove          (const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
+			void         releaseSummons          ();
+	        bool         remove                  ();
+	        Direction    route                   ();
+	        Direction    stagger                 ();
+	        void         setDefaultOutfit        (Outfit_t defaultOutfit);
+	    	bool         startFollowing          (const CreatureP& target);
+	        bool         startRouting            (const DirectionRoute& route);
+	        bool         startThinking           (bool forced = false);
+	        bool         startWandering          ();
+	    	bool         stepInDirection         (Direction direction);
+	    	void         stopFollowing           ();
+	    	void         stopRouting             ();
+			void         stopThinking            ();
+	        void         stopWandering           ();
+	        Direction    wander                  ();
 
 
 protected:
@@ -169,6 +176,8 @@ protected:
 	virtual Duration  getWanderingInterval     () const;
 	virtual bool      hasSomethingToThinkAbout () const;
 	virtual bool      hasToThinkAboutCreature  (const CreaturePC& creature) const;
+	virtual void      onFollowingStarted       ();
+	virtual void      onFollowingStopped       (bool preliminary);
 	virtual void      onMonsterMasterChanged   (const MonsterP& monster, const CreatureP& previousMaster);
 	virtual void      onMove                   (Tile& originTile, Tile& destinationTile);
 	virtual void      onRoutingStarted         ();
@@ -182,9 +191,11 @@ protected:
 
 private:
 
-	bool shouldStagger  () const;
-	void think          ();
-	void updateMovement (Time now);
+	bool shouldStagger   () const;
+	void stopFollowing   (bool preliminary);
+	void think           ();
+	void updateFollowing ();
+	void updateMovement  (Time now);
 
 
 	LOGGER_DECLARATION;
@@ -192,6 +203,8 @@ private:
 	static const Duration THINK_DURATION;
 	static const Duration THINK_INTERVAL;
 
+	CreatureP         _followedCreature;
+	bool              _needsNewRouteToFollowedCreature;
 	Time              _nextMoveTime;
 	Time              _nextWanderingTime;
 	Time              _previousThinkTime;
@@ -207,8 +220,6 @@ private:
 
 
 
-
-	uint64_t walkUpdateTicks;
 
 
 	protected:
@@ -274,7 +285,6 @@ private:
 		Duration getStepDuration(Direction dir) const;
 		Duration getStepDuration() const;
 
-		void getPathToFollowCreature();
 		virtual int32_t getStepSpeed() const {return getSpeed();}
 
 		int32_t getSpeed() const {return baseSpeed + varSpeed;}
@@ -302,15 +312,7 @@ private:
 		ZoneType_t getZone() const;
 
 		//walk functions
-		bool startAutoWalk(const Route& route);
-
-		//follow functions
-		virtual Creature* getFollowCreature() const {return followCreature;}
-		virtual bool setFollowCreature(Creature* creature, bool fullPathSearch = false);
-
-		//follow events
-		virtual void onFollowCreature(const Creature* creature) {}
-		virtual void onFollowCreatureComplete(const Creature* creature) {}
+		bool startAutoWalk(const DirectionRoute& route);
 
 		//combat functions
 		Creature* getAttackedCreature() {return attackedCreature;}
@@ -409,7 +411,6 @@ private:
 		virtual void onCreatureDisappear(const Creature* creature, bool isLogout);
 
 		virtual void onAttackedCreatureDisappear(bool isLogout) {}
-		virtual void onFollowCreatureDisappear(bool isLogout) {}
 
 		virtual void onCreatureTurn(const Creature* creature) {}
 		virtual void onCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text,
@@ -440,7 +441,7 @@ private:
 
 		//creature script events
 		bool registerCreatureEvent(const std::string& name);
-		CreatureEventList getCreatureEvents(CreatureEventType_t type);
+		CreatureEventList getCreatureEvents(CreatureEventType_t type) const;
 
 		virtual void setParent(Cylinder* cylinder);
 
@@ -455,7 +456,6 @@ private:
 	protected:
 
 		uint32_t id;
-		bool isUpdatingPath;
 		StorageMap storageMap;
 
 		int32_t health, healthMax;
@@ -482,11 +482,6 @@ private:
 
 		//summon variables
 		MonsterList summons;
-
-		//follow variables
-		Creature* followCreature;
-		bool hasFollowPath;
-		bool forceUpdateFollowPath;
 
 		//combat variables
 		Creature* attackedCreature;

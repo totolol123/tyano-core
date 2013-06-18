@@ -86,7 +86,6 @@ protected:
 private:
 
 	void babble                 ();
-	void follow                 (const CreatureP& creature);
 	bool isMasterInRange        () const;
 	void notifyMasterChanged    (const CreatureP& previousMaster);
 	void retarget               ();

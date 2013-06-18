@@ -51,9 +51,10 @@ class Player : public Creature, public Cylinder {
 
 protected:
 
-	virtual void onMove           (Tile& originTile, Tile& destinationTile);
-	virtual void onRoutingStarted ();
-	virtual void onRoutingStopped (bool preliminary);
+	virtual void onFollowingStopped (bool preliminary);
+	virtual void onMove             (Tile& originTile, Tile& destinationTile);
+	virtual void onRoutingStarted   ();
+	virtual void onRoutingStopped   (bool preliminary);
 
 
 
@@ -311,12 +312,6 @@ protected:
 		bool removeVIP(uint32_t guid);
 		bool addVIP(uint32_t guid, std::string& name, bool isOnline, bool internal = false);
 
-		//follow functions
-		virtual bool setFollowCreature(Creature* creature, bool fullPathSearch = false);
-
-		//follow events
-		virtual void onFollowCreature(const Creature* creature);
-
 		void openShopWindow();
 		void closeShopWindow(Npc* npc = nullptr, int32_t onBuy = -1, int32_t onSell = -1);
 		bool canShopItem(uint16_t itemId, uint8_t subType, ShopEvent_t event);
@@ -455,7 +450,6 @@ protected:
 		virtual void onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
 
 		virtual void onAttackedCreatureDisappear(bool isLogout);
-		virtual void onFollowCreatureDisappear(bool isLogout);
 
 		//cylinder implementations
 		virtual Cylinder* getParent() {return Creature::getParent();}

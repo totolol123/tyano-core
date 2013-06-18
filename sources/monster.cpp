@@ -199,11 +199,6 @@ MonsterP Monster::create(const std::string& name) {
 }
 
 
-void Monster::follow(const CreatureP& creature) {
-	setFollowCreature(creature.get());
-}
-
-
 CreatureP Monster::getDirectOwner() {
 	return _master;
 }
@@ -225,21 +220,15 @@ Direction Monster::getWanderingDirection() const {
 	}
 
 	Direction direction = Direction::NONE;
-	if((!followCreature || !hasFollowPath) && !hasMaster())
-	{
-		if(followCreature)
-			direction = getRandomStepDirection();
-	}
-	else if(hasMaster() || followCreature)
-	{
+	if (attackedCreature != nullptr) {
 		//target dancing
-		if(attackedCreature && attackedCreature == followCreature)
-		{
-			if(isFleeing())
-				direction = getDanceStep(false, false);
-			else if(_type->staticAttackChance < (uint32_t)random_range(1, 100))
-				direction = getDanceStep();
-		}
+		if(isFleeing())
+			direction = getDanceStep(false, false);
+		else if(_type->staticAttackChance < (uint32_t)random_range(1, 100))
+			direction = getDanceStep();
+	}
+	else {
+		direction = getRandomStepDirection();
 	}
 
 	if(direction != Direction::NONE && (canPushItems() || canPushCreatures()))
@@ -511,7 +500,7 @@ void Monster::setMaster(const CreatureP& master) {
 		setLossSkill(false);
 	}
 
-	follow(nullptr);
+	stopFollowing();
 	target(nullptr);
 
 	notifyMasterChanged(previousMaster);
@@ -552,6 +541,8 @@ bool Monster::shouldTeleportToMaster() const {
 
 // TODO move to creature
 bool Monster::target(const CreatureP& creature) {
+	LOGt(this << "::target(" << creature.get() << ")");
+
 	if (creature == this || creature == _master) {
 		if (attackedCreature == nullptr) {
 			return true;
@@ -692,13 +683,13 @@ void Monster::updateBabbling(Duration elapsedTime) {
 
 void Monster::updateFollowing() {
 	if (attackedCreature != nullptr) {
-		follow(attackedCreature);
+		startFollowing(attackedCreature);
 	}
 	else if (hasMaster()) {
-		follow(_master.get());
+		startFollowing(_master.get());
 	}
 	else {
-		follow(nullptr);
+		stopFollowing();
 	}
 }
 
@@ -754,7 +745,6 @@ void Monster::willRemove() {
 	killSummons();
 
 	target(nullptr);
-	follow(nullptr);
 
 	release();
 	removeFromSpawn();

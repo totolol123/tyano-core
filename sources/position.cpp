@@ -71,9 +71,11 @@ bool Position::areInRange(const Position& range, const Position& a, const Positi
 
 
 uint32_t Position::distanceTo(const Position& position) const {
-	return std::abs(static_cast<int32_t>(position.x) - static_cast<int32_t>(x))
-	     + std::abs(static_cast<int32_t>(position.y) - static_cast<int32_t>(y))
-	     + std::abs(static_cast<int32_t>(position.z) - static_cast<int32_t>(z));
+	auto dx = std::abs(position.x - x);
+	auto dy = std::abs(position.y - y);
+	auto dz = std::abs(position.z - z);
+
+	return std::max(dx, std::max(dy, dz));
 }
 
 
