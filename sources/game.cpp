@@ -2109,7 +2109,7 @@ bool Game::playerMove(uint32_t playerId, Direction dir)
 		return false;
 	}
 
-	player->setFollowCreature(nullptr);
+	player->stopFollowing();
 	player->setIdleTime(0);
 
 	return internalMoveCreature(player, dir) == RET_NOERROR;
@@ -3464,7 +3464,14 @@ bool Game::playerFollowCreature(uint32_t playerId, uint32_t creatureId)
 		followCreature = getCreatureByID(creatureId);
 
 	player->setAttackedCreature(nullptr);
-	return player->setFollowCreature(followCreature);
+
+	if (followCreature != nullptr) {
+		return player->startFollowing(followCreature);
+	}
+	else {
+		player->stopFollowing();
+		return true;
+	}
 }
 
 bool Game::playerSetFightModes(uint32_t playerId, fightMode_t fightMode, chaseMode_t chaseMode, secureMode_t secureMode)

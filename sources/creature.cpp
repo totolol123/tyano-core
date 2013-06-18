@@ -42,6 +42,33 @@ const Duration Creature::THINK_INTERVAL = std::chrono::milliseconds(100);
 LOGGER_DEFINITION(Creature);
 
 
+bool Creature::canFollow(const CreatureP& target) const {
+	if (target == nullptr) {
+		assert(target != nullptr);
+		return false;
+	}
+
+	if (target == this) {
+		return false;
+	}
+
+	if (!isThinking()) {
+		return false;
+	}
+
+	if (!canStep()) {
+		return false;
+	}
+
+	const Position& desination = target->getPosition();
+	if (desination.z != getPosition().z || !canSee(desination)) {
+		return false;
+	}
+
+	return true;
+}
+
+
 bool Creature::canMoveTo(Direction direction) const {
 	if (direction == Direction::NONE) {
 		return false;
@@ -165,6 +192,11 @@ CreaturePC Creature::getFinalOwner() const {
 }
 
 
+CreatureP Creature::getFollowedCreature() const {
+	return _followedCreature;
+}
+
+
 bool Creature::hasController() const {
 	return (getController() != nullptr);
 }
@@ -177,10 +209,6 @@ bool Creature::hasDirectOwner() const {
 
 bool Creature::hasSomethingToThinkAbout() const {
 	if (attackedCreature != nullptr) {
-		return true;
-	}
-
-	if (followCreature != nullptr) {
 		return true;
 	}
 
@@ -204,9 +232,6 @@ bool Creature::hasToThinkAboutCreature(const CreaturePC& creature) const {
 	if (creature == attackedCreature) {
 		return true;
 	}
-	if (creature == followCreature) {
-		return true;
-	}
 
 	return false;
 }
@@ -219,6 +244,11 @@ bool Creature::isAlive() const {
 
 bool Creature::isDrunk() const {
 	return hasCondition(CONDITION_DRUNK);
+}
+
+
+bool Creature::isFollowing() const {
+	return (_followedCreature != nullptr);
 }
 
 
@@ -316,6 +346,11 @@ Direction Creature::getRandomStepDirection() const {
 }
 
 
+auto Creature::getRoute() const -> const Route& {
+	return _route;
+}
+
+
 Direction Creature::getWanderingDirection() const {
 	return getRandomStepDirection();
 }
@@ -351,6 +386,8 @@ bool Creature::moveTo(Tile& tile) {
 
 
 void Creature::onCreatureAppear(const CreatureP& creature) {
+	LOGt(this << "::onCreatureAppear(" << creature.get() << ")");
+
 	assert(creature != nullptr);
 
 	if (creature == this) {
@@ -359,6 +396,23 @@ void Creature::onCreatureAppear(const CreatureP& creature) {
 	else if (hasToThinkAboutCreature(creature)) {
 		startThinking(true);
 	}
+}
+
+
+void Creature::onFollowingStarted() {
+	LOGt(this << "::onFollowingStarted(" << _followedCreature.get() << ")");
+
+	CreatureP followedCreature = _followedCreature;
+
+	CreatureEventList events = getCreatureEvents(CREATURE_EVENT_FOLLOW);
+	for (const auto& event : events) {
+		event->executeFollow(this, followedCreature.get());
+	}
+}
+
+
+void Creature::onFollowingStopped(bool preliminary) {
+	LOGt(this << "::onFollowingStopped(preliminary = " << (preliminary ? "true" : "false") << ")");
 }
 
 
@@ -389,17 +443,47 @@ void Creature::onCreatureMove(const CreatureP& creature, const Position& origin,
 
 		if(destinationTile->getZone() != originTile->getZone())
 			onChangeZone(getZone());
-	}
 
-	if(creature == followCreature || (creature == this && followCreature))
-	{
-		if(hasFollowPath)
-		{
-			isUpdatingPath = true;
+		if (isRouting()) {
+			auto iterator = std::find(_route.rbegin(), _route.rend(), destination);
+			if (iterator == _route.rend()) {
+				stopRouting();
+			}
+			else {
+				_route.erase(_route.begin(), iterator.base());
+				if (_route.empty()) {
+					onRoutingStopped(false);
+				}
+			}
 		}
-
-		if(destination.z != origin.z || !canSee(followCreature->getPosition()))
-			internalCreatureDisappear(followCreature, false);
+	}
+	else if (creature == _followedCreature) {
+		if (canFollow(creature)) {
+			if (isRouting()) {
+				auto iterator = std::find(_route.begin(), _route.end(), destination);
+				if (iterator == _route.end()) {
+					stopRouting();
+				}
+				else {
+					_route.erase(iterator, _route.end());
+					if (_route.empty()) {
+						onRoutingStopped(false);
+					}
+				}
+			}
+			else if (getPosition().distanceTo(destination) > 1) {
+				_needsNewRouteToFollowedCreature = true;
+			}
+		}
+		else {
+			stopFollowing(true);
+		}
+	}
+	else {
+		if (isFollowing() && !isRouting()) {
+			// someone may have blocked us earlier and the way may now be free
+			_needsNewRouteToFollowedCreature = true;
+		}
 	}
 
 	if(creature == attackedCreature || (creature == this && attackedCreature))
@@ -454,12 +538,27 @@ void Creature::onMove(Tile& originTile, Tile& destinationTile) {
 
 
 void Creature::onRoutingStarted() {
-	// override in subclasses
+	if (logger->isTraceEnabled()) {
+		std::ostringstream positions;
+		for (Position position : _route) {
+			if (positions.tellp() > 0) {
+				positions << ", ";
+			}
+
+			positions << position;
+		}
+
+		LOGt(this << "::onRoutingStarted(" << positions.str() << ")");
+	}
 }
 
 
 void Creature::onRoutingStopped(bool preliminary) {
-	// override in subclasses
+	LOGt(this << "::onRoutingStopped(preliminary = " << (preliminary ? "true" : "false") << ")");
+
+	if (isFollowing()) {
+		_needsNewRouteToFollowedCreature = true;
+	}
 }
 
 
@@ -469,6 +568,7 @@ void Creature::onThinkingStarted() {
 
 
 void Creature::onThinkingStopped() {
+	stopFollowing(false);
 	stopRouting();
 	stopWandering();
 
@@ -513,15 +613,22 @@ Direction Creature::route() {
 		return Direction::NONE;
 	}
 
-	Direction direction = _route.front();
-	_route.pop_front();
+	Position nextPosition = _route.front();
+	if (getPosition().distanceTo(nextPosition) != 1) {
+		LOGw(this << " routing broken. Check this!");
 
-	// TODO re-route on failure
-
-	if (!stepInDirection(direction)) {
-		forceUpdateFollowPath = true;
 		stopRouting();
+		return Direction::NONE;
+	}
 
+	Tile* nextTile = server.game().getTile(nextPosition);
+	if (nextTile == nullptr) {
+		stopRouting();
+		return Direction::NONE;
+	}
+
+	if (!moveTo(*nextTile)) {
+		stopRouting();
 		return Direction::NONE;
 	}
 
@@ -556,29 +663,66 @@ Direction Creature::stagger() {
 }
 
 
-void Creature::startRouting(const Route& route) {
-	if (!isThinking()) {
-		return;
+bool Creature::startFollowing(const CreatureP& target) {
+	if (!canFollow(target)) {
+		stopFollowing(true);
+		return false;
+	}
+
+	if (target == _followedCreature) {
+		return true;
 	}
 
 	stopRouting();
 
-	_route = route;
-	onRoutingStarted();
+	_followedCreature = target;
+	_needsNewRouteToFollowedCreature = (target != nullptr);
+
+	onFollowingStarted();
+	return true;
 }
 
 
-void Creature::startThinking(bool forced) {
+bool Creature::startRouting(const DirectionRoute& directionRoute) {
+	if (!isThinking()) {
+		stopRouting();
+		return false;
+	}
+
+	stopRouting();
+
+	if (directionRoute.empty()) {
+		_route.clear();
+	}
+	else {
+		Route route;
+
+		Position position = getPosition();
+		for (Direction direction : directionRoute) {
+			position = getNextPosition(direction, position);
+			route.push_back(position);
+		}
+
+		_route = route;
+
+		onRoutingStarted();
+	}
+
+	return true;
+}
+
+
+bool Creature::startThinking(bool forced) {
 	if (isThinking()) {
-		return;
+		return true;
 	}
 
 	if (!isAlive()) {
-		return;
+		return false;
 	}
 
 	if (!forced && !hasSomethingToThinkAbout()) {
-		return;
+		return false;
 	}
 
 	_previousThinkTime = Clock::now();
@@ -587,27 +731,49 @@ void Creature::startThinking(bool forced) {
 	server.dispatcher().addTask(Task::create(std::bind(&Creature::think, boost::intrusive_ptr<Creature>(this))));
 
 	onThinkingStarted();
+	return true;
 }
 
 
-void Creature::startWandering() {
+bool Creature::startWandering() {
 	if (!isThinking()) {
-		return;
+		stopWandering();
+		return false;
 	}
 
 	if (_wandering) {
-		return;
+		return true;
 	}
 
 	Duration interval = getWanderingInterval();
 	if (interval <= Duration::zero()) {
-		return;
+		return false;
 	}
 
 	_wandering = true;
 	_nextWanderingTime = Clock::now() + interval;
 
 	onWanderingStarted();
+	return true;
+}
+
+
+void Creature::stopFollowing() {
+	stopFollowing(false);
+}
+
+
+void Creature::stopFollowing(bool preliminary) {
+	if (_followedCreature == nullptr) {
+		return;
+	}
+
+	_followedCreature = nullptr;
+	_needsNewRouteToFollowedCreature = false;
+
+	stopRouting();
+
+	onFollowingStopped(preliminary);
 }
 
 
@@ -700,6 +866,42 @@ void Creature::think() {
 }
 
 
+void Creature::updateFollowing() {
+	if (!_needsNewRouteToFollowedCreature) {
+		return;
+	}
+
+	_needsNewRouteToFollowedCreature = false;
+
+	if (!isFollowing()) {
+		return;
+	}
+
+	if (!_followedCreature->isAlive()) {
+		stopFollowing(false);
+		return;
+	}
+
+	if (getPosition().distanceTo(_followedCreature->getPosition()) <= 1) {
+		return;
+	}
+
+	FindPathParams parameters;
+	getPathSearchParams(_followedCreature.get(), parameters);
+
+	DirectionRoute route;
+	if (server.game().getPathToEx(this, _followedCreature->getPosition(), route, parameters)) {
+		startRouting(route);
+	}
+	else {
+		stopRouting();
+	}
+
+	// set to true by onRoutingStopped()
+	_needsNewRouteToFollowedCreature = false;
+}
+
+
 void Creature::updateMovement(Time now) {
 	if (_nextMoveTime > now) {
 		return;
@@ -765,6 +967,7 @@ void Creature::willRemove() {
 
 	_removing = true;
 
+	stopThinking();
 	releaseSummons();
 }
 
@@ -790,7 +993,8 @@ AutoId::List AutoId::list;
 
 
 Creature::Creature()
-	: _removed(false),
+	: _needsNewRouteToFollowedCreature(false),
+	  _removed(false),
 	  _removing(false),
 	  _thinkTaskId(0),
 	  _tile(nullptr),
@@ -816,17 +1020,11 @@ Creature::Creature()
 	masterRadius = -1;
 	masterPosition = Position();
 
-	followCreature = nullptr;
-	hasFollowPath = false;
-	forceUpdateFollowPath = false;
-	isUpdatingPath = false;
-
 	attackedCreature = nullptr;
 	lastHitCreature = 0;
 	lastDamageSource = COMBAT_NONE;
 	blockCount = 0;
 	blockTicks = 0;
-	walkUpdateTicks = 0;
 
 	scriptEventsBitField = 0;
 }
@@ -882,10 +1080,8 @@ bool Creature::canSeeCreature(const CreatureP& creature) const
 
 
 void Creature::onThink(Duration elapsedTime) {
+	updateFollowing();
 	updateMovement(Clock::now());
-
-	if(followCreature && !canSeeCreature(followCreature))
-		internalCreatureDisappear(followCreature, false);
 
 	if(attackedCreature && !canSeeCreature(attackedCreature))
 		internalCreatureDisappear(attackedCreature, false);
@@ -895,23 +1091,6 @@ void Creature::onThink(Duration elapsedTime) {
 	{
 		blockCount = std::min((uint32_t)blockCount + 1, (uint32_t)2);
 		blockTicks = 0;
-	}
-
-	if(followCreature)
-	{
-		walkUpdateTicks += std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
-		if(forceUpdateFollowPath || walkUpdateTicks >= 2000)
-		{
-			walkUpdateTicks = 0;
-			forceUpdateFollowPath = false;
-			isUpdatingPath = true;
-		}
-	}
-
-	if(isUpdatingPath)
-	{
-		isUpdatingPath = false;
-		getPathToFollowCreature();
 	}
 
 	onAttacking(std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count());
@@ -944,7 +1123,7 @@ void Creature::onAttacking(uint32_t interval)
 }
 
 
-bool Creature::startAutoWalk(const Route& route)
+bool Creature::startAutoWalk(const DirectionRoute& route)
 {
 	if(getPlayer() && getPlayer()->getNoMove())
 	{
@@ -962,12 +1141,6 @@ void Creature::internalCreatureDisappear(const Creature* creature, bool isLogout
 	{
 		setAttackedCreature(nullptr);
 		onAttackedCreatureDisappear(isLogout);
-	}
-
-	if(followCreature == creature)
-	{
-		setFollowCreature(nullptr);
-		onFollowCreatureDisappear(isLogout);
 	}
 }
 
@@ -1011,6 +1184,16 @@ void Creature::onAttackedCreatureChangeZone(ZoneType_t zone)
 void Creature::onCreatureDisappear(const Creature* creature, bool isLogout)
 {
 	LOGt(this << "::onCreatureDisappear(" << creature << ")");
+
+	if (creature == _followedCreature) {
+		stopFollowing(true);
+	}
+	else {
+		if (isFollowing() && !isRouting()) {
+			// someone may have blocked us earlier and the way may now be free
+			_needsNewRouteToFollowedCreature = true;
+		}
+	}
 
 	internalCreatureDisappear(creature, true);
 }
@@ -1384,28 +1567,10 @@ bool Creature::setAttackedCreature(Creature* creature) {
 
 void Creature::getPathSearchParams(const Creature* creature, FindPathParams& fpp) const
 {
-	fpp.fullPathSearch = !hasFollowPath;
+	fpp.fullPathSearch = _followedCreature != nullptr;
 	fpp.clearSight = true;
 	fpp.maxSearchDist = 12;
 	fpp.minTargetDist = fpp.maxTargetDist = 1;
-}
-
-void Creature::getPathToFollowCreature()
-{
-	if(followCreature)
-	{
-		FindPathParams fpp;
-		getPathSearchParams(followCreature, fpp);
-		if(server.game().getPathToEx(this, followCreature->getPosition(), _route, fpp))
-		{
-			hasFollowPath = true;
-			startAutoWalk(_route);
-		}
-		else
-			hasFollowPath = false;
-	}
-
-	onFollowCreatureComplete(followCreature);
 }
 
 
@@ -1415,42 +1580,6 @@ Position Creature::getPosition() const {
 	}
 
 	return _tile->getPosition();
-}
-
-
-bool Creature::setFollowCreature(Creature* creature, bool fullPathSearch /*= false*/) {
-	LOGt(*this << "::setFollowCreature(" << creature << ")");
-
-	if(creature)
-	{
-		if(followCreature == creature)
-			return true;
-
-		stopRouting();
-
-		const Position& creaturePos = creature->getPosition();
-		if(creaturePos.z != getPosition().z || !canSee(creaturePos))
-		{
-			return false;
-		}
-
-		hasFollowPath = forceUpdateFollowPath = false;
-		followCreature = creature;
-		isUpdatingPath = true;
-	}
-	else
-	{
-		isUpdatingPath = false;
-		followCreature = nullptr;
-	}
-
-	onFollowCreature(creature);
-
-	if (creature != nullptr) {
-		startThinking(true);
-	}
-
-	return true;
 }
 
 double Creature::getDamageRatio(Creature* attacker) const
@@ -1922,13 +2051,13 @@ bool Creature::registerCreatureEvent(const std::string& name)
 	return true;
 }
 
-CreatureEventList Creature::getCreatureEvents(CreatureEventType_t type)
+CreatureEventList Creature::getCreatureEvents(CreatureEventType_t type) const
 {
 	CreatureEventList retList;
 	if(!hasEventRegistered(type))
 		return retList;
 
-	for(CreatureEventList::iterator it = eventsList.begin(); it != eventsList.end(); ++it)
+	for(auto it = eventsList.cbegin(); it != eventsList.cend(); ++it)
 	{
 		if((*it)->getEventType() == type)
 			retList.push_back(*it);

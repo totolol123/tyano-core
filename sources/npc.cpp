@@ -2687,7 +2687,14 @@ int32_t NpcScriptInterface::luaActionFollow(lua_State* L)
 		return 1;
 	}
 
-	lua_pushboolean(L, npc->setFollowCreature(player, true));
+	if (player != nullptr) {
+		lua_pushboolean(L, npc->startFollowing(player));
+	}
+	else {
+		npc->stopFollowing();
+		lua_pushboolean(L, true);
+	}
+
 	return 1;
 }
 
