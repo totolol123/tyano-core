@@ -291,8 +291,6 @@ bool otserv(StringVector args, ServiceManager* services) {
 		atexit(runfileHandler);
 	}
 
-	nice(configManager.getNumber(ConfigManager::NICE_LEVEL));
-
 	std::string encryptionType = asLowerCaseString(configManager.getString(ConfigManager::ENCRYPTION_TYPE));
 	if(encryptionType == "md5")
 	{

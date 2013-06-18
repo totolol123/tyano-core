@@ -380,8 +380,8 @@ uint16_t Map::getHeight() const {
 }
 
 
-bool Map::getPathMatching(const Creature* creature, std::list<Direction>& directions, const FrozenPathingConditionCall& pathCondition, const FindPathParams& findParameters) const {
-	directions.clear();
+bool Map::getPathMatching(const Creature* creature, Route& route, const FrozenPathingConditionCall& pathCondition, const FindPathParams& findParameters) const {
+	route.clear();
 
 	Position startPos = creature->getPosition();
 	Position endPos;
@@ -425,7 +425,7 @@ bool Map::getPathMatching(const Creature* creature, std::list<Direction>& direct
 			}
 
 			// no path found
-			directions.clear();
+			route.clear();
 			return false;
 		}
 
@@ -489,7 +489,7 @@ bool Map::getPathMatching(const Creature* creature, std::list<Direction>& direct
 						}
 
 						// seems we ran out of nodes
-						directions.clear();
+						route.clear();
 						return false;
 					}
 				}
@@ -527,28 +527,28 @@ bool Map::getPathMatching(const Creature* creature, std::list<Direction>& direct
 
 		found = found->parent;
 		if (dx == 1 && dy == 1) {
-			directions.push_front(Direction::NORTH_WEST);
+			route.push_front(Direction::NORTH_WEST);
 		}
 		else if (dx == -1 && dy == 1) {
-			directions.push_front(Direction::NORTH_EAST);
+			route.push_front(Direction::NORTH_EAST);
 		}
 		else if (dx == 1 && dy == -1) {
-			directions.push_front(Direction::SOUTH_WEST);
+			route.push_front(Direction::SOUTH_WEST);
 		}
 		else if (dx == -1 && dy == -1) {
-			directions.push_front(Direction::SOUTH_EAST);
+			route.push_front(Direction::SOUTH_EAST);
 		}
 		else if (dx == 1) {
-			directions.push_front(Direction::WEST);
+			route.push_front(Direction::WEST);
 		}
 		else if (dx == -1) {
-			directions.push_front(Direction::EAST);
+			route.push_front(Direction::EAST);
 		}
 		else if (dy == 1) {
-			directions.push_front(Direction::NORTH);
+			route.push_front(Direction::NORTH);
 		}
 		else if (dy == -1) {
-			directions.push_front(Direction::SOUTH);
+			route.push_front(Direction::SOUTH);
 		}
 	}
 
@@ -556,8 +556,8 @@ bool Map::getPathMatching(const Creature* creature, std::list<Direction>& direct
 }
 
 
-bool Map::getPathTo(const Creature* creature, const Position& destination, std::list<Direction>& directions, int32_t maxDistance /*= -1*/) const {
-	directions.clear();
+bool Map::getPathTo(const Creature* creature, const Position& destination, Route& route, int32_t maxDistance /*= -1*/) const {
+	route.clear();
 
 	if (!canWalkTo(creature, destination)) {
 		return false;
@@ -605,7 +605,7 @@ bool Map::getPathTo(const Creature* creature, const Position& destination, std::
 		n = nodes.getBestNode();
 		if (n == nullptr) {
 			// no path found
-			directions.clear();
+			route.clear();
 			return false;
 		}
 
@@ -655,7 +655,7 @@ bool Map::getPathTo(const Creature* creature, const Position& destination, std::
 					neighbourNode = nodes.createOpenNode();
 					if (neighbourNode == nullptr) {
 						// seems we ran out of nodes
-						directions.clear();
+						route.clear();
 						return false;
 					}
 				}
@@ -691,32 +691,32 @@ bool Map::getPathTo(const Creature* creature, const Position& destination, std::
 
 		found = found->parent;
 		if (dx == -1 && dy == -1) {
-			directions.push_back(Direction::NORTH_WEST);
+			route.push_back(Direction::NORTH_WEST);
 		}
 		else if (dx == 1 && dy == -1) {
-			directions.push_back(Direction::NORTH_EAST);
+			route.push_back(Direction::NORTH_EAST);
 		}
 		else if (dx == -1 && dy == 1) {
-			directions.push_back(Direction::SOUTH_WEST);
+			route.push_back(Direction::SOUTH_WEST);
 		}
 		else if (dx == 1 && dy == 1) {
-			directions.push_back(Direction::SOUTH_EAST);
+			route.push_back(Direction::SOUTH_EAST);
 		}
 		else if (dx == -1) {
-			directions.push_back(Direction::WEST);
+			route.push_back(Direction::WEST);
 		}
 		else if (dx == 1) {
-			directions.push_back(Direction::EAST);
+			route.push_back(Direction::EAST);
 		}
 		else if (dy == -1) {
-			directions.push_back(Direction::NORTH);
+			route.push_back(Direction::NORTH);
 		}
 		else if (dy == 1) {
-			directions.push_back(Direction::SOUTH);
+			route.push_back(Direction::SOUTH);
 		}
 	}
 
-	return !directions.empty();
+	return !route.empty();
 }
 
 

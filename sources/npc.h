@@ -294,8 +294,34 @@ struct Voice
 };
 
 #define MAX_RAND_RANGE 10000000
-class Npc : public Creature
-{
+
+
+
+class Npc : public Creature {
+
+public:
+
+	virtual bool       canMoveTo      (const Tile& tile) const;
+	virtual CreatureP  getDirectOwner ();
+	virtual CreaturePC getDirectOwner () const;
+	virtual bool       isEnemy        (const CreaturePC& creature) const;
+
+
+protected:
+
+	virtual Direction getNextStepDirection    () const;
+	virtual bool      hasToThinkAboutCreature (const CreaturePC& creature) const;
+	virtual void      onThinkingStarted       ();
+
+
+private:
+
+	friend class Npcs;
+	friend class NpcScriptInterface;
+
+
+
+
 	public:
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 		static uint32_t npcCount;
@@ -355,8 +381,6 @@ class Npc : public Creature
 		bool isImmune(ConditionType_t type) const {return true;}
 
 		virtual std::string getDescription(int32_t lookDistance) const {return nameDescription + ".";}
-		virtual bool getNextStep(Direction& dir, uint32_t& flags);
-		bool getRandomStep(Direction& dir);
 
 		void reset();
 		bool loadFromXml(const std::string& name);
@@ -420,18 +444,6 @@ class Npc : public Creature
 		NpcEventsHandler* m_npcEventHandler;
 		static NpcScriptInterface* m_interface;
 
-
-	public:
-
-		virtual CreatureP  getDirectOwner ();
-		virtual CreaturePC getDirectOwner () const;
-		virtual bool       isEnemy        (const CreaturePC& creature) const;
-
-
-	private:
-
-		friend class Npcs;
-		friend class NpcScriptInterface;
 };
 
 #endif // _NPC_H

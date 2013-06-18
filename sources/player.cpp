@@ -75,6 +75,33 @@ bool Player::isEnemy(const CreaturePC& creature) const {
 }
 
 
+void Player::onMove(Tile& originTile, Tile& destinationTile) {
+	Creature::onMove(originTile, destinationTile);
+
+	setNextActionTask(nullptr);
+	setNextAction(getNextMoveTime());
+}
+
+
+void Player::onRoutingStarted() {
+	// TODO
+}
+
+
+void Player::onRoutingStopped(bool preliminary) {
+	if (preliminary) {
+		setNextWalkActionTask(nullptr);
+		sendCancelWalk();
+	}
+	else {
+		if(!walkTask)
+			return;
+
+		walkTaskEvent = server.scheduler().addTask(std::move(walkTask));
+	}
+}
+
+
 
 
 
@@ -111,7 +138,7 @@ Player::Player(const std::string& _name, ProtocolGame* p):
 	lastAttack = idleTime = marriage = blessings = balance = premiumDays = mana = manaMax = manaSpent = 0;
 	soul = guildId = levelPercent = magLevelPercent = magLevel = experience = damageImmunities = 0;
 	conditionImmunities = conditionSuppressions = groupId = vocation_id = managerNumber2 = town = skullEnd = 0;
-	lastLogin = lastLogout = lastIP = messageTicks = messageBuffer = nextAction = 0;
+	lastLogin = lastLogout = lastIP = messageTicks = messageBuffer = 0;
 	editListId = maxWriteLen = windowTextId = rankId = 0;
 
 	purchaseCallback = saleCallback = -1;
@@ -1444,9 +1471,6 @@ void Player::onCreatureDisappear(const Creature* creature, bool isLogout)
 		lastLogout = time(nullptr);
 	}
 
-	if(eventWalk)
-		setFollowCreature(nullptr);
-
 	closeShopWindow();
 	if(tradePartner)
 		server.game().internalCloseTrade(this);
@@ -1531,12 +1555,6 @@ bool Player::canShopItem(uint16_t itemId, uint8_t subType, ShopEvent_t event)
 	return false;
 }
 
-void Player::onWalk(Direction& dir)
-{
-	Creature::onWalk(dir);
-	setNextActionTask(nullptr);
-	setNextAction(OTSYS_TIME() + getStepDuration(dir));
-}
 
 void Player::onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport)
 {
@@ -1706,13 +1724,8 @@ void Player::setNextActionTask(std::unique_ptr<SchedulerTask> task)
 	}
 }
 
-uint32_t Player::getNextActionTime() const
-{
-	int64_t time = nextAction - OTSYS_TIME();
-	if(time < SCHEDULER_MINTICKS)
-		return SCHEDULER_MINTICKS;
-
-	return time;
+Time Player::getNextActionTime() const {
+	return nextAction;
 }
 
 void Player::onThink(Duration elapsedTime)
@@ -3221,7 +3234,6 @@ bool Player::setFollowCreature(Creature* creature, bool fullPathSearch /*= false
 			sendCancelMessage(RET_THEREISNOWAY);
 
 		sendCancelTarget();
-		stopEventWalk();
 		return false;
 	}
 
@@ -3274,7 +3286,7 @@ void Player::doAttacking(uint32_t interval)
 	{
 		if(weapon->interruptSwing() && !canDoAction())
 		{
-			setNextActionTask(SchedulerTask::create(std::chrono::milliseconds(getNextActionTime()), std::bind(&Game::checkCreatureAttack, &server.game(), getID())));
+			setNextActionTask(SchedulerTask::create(getNextActionTime(), std::bind(&Game::checkCreatureAttack, &server.game(), getID())));
 		}
 		else if((!weapon->hasExhaustion() || !hasCondition(CONDITION_EXHAUST, EXHAUST_COMBAT)) && weapon->useWeapon(this, tool, attackedCreature))
 			lastAttack = OTSYS_TIME();
@@ -3322,8 +3334,6 @@ double Player::getGainedExperience(Creature* attacker) const
 
 void Player::onFollowCreature(const Creature* creature)
 {
-	if(!creature)
-		stopEventWalk();
 }
 
 void Player::setChaseMode(chaseMode_t mode)
@@ -3342,31 +3352,9 @@ void Player::setChaseMode(chaseMode_t mode)
 	else if(attackedCreature)
 	{
 		setFollowCreature(nullptr);
-		stopEventWalk();
 	}
 }
 
-void Player::onWalkAborted()
-{
-	setNextWalkActionTask(nullptr);
-	sendCancelWalk();
-}
-
-void Player::onWalkComplete()
-{
-	if(!walkTask)
-		return;
-
-	walkTaskEvent = server.scheduler().addTask(std::move(walkTask));
-}
-
-void Player::stopWalk()
-{
-	if(listWalkDir.empty())
-		return;
-
-	stopEventWalk();
-}
 
 void Player::getCreatureLight(LightInfo& light) const
 {
@@ -3494,12 +3482,11 @@ void Player::onCombatRemoveCondition(const Creature* attacker, Condition* condit
 	{
 		if(!canDoAction())
 		{
-			int32_t delay = getNextActionTime();
-			delay -= (delay % EVENT_CREATURE_THINK_INTERVAL);
-			if(delay < 0)
+			Duration delay = getNextActionTime() - Clock::now();
+			if(delay <= Duration::zero())
 				removeCondition(condition);
 			else
-				condition->setTicks(delay);
+				condition->setTicks(std::chrono::duration_cast<std::chrono::milliseconds>(delay).count());
 		}
 		else
 			removeCondition(condition);

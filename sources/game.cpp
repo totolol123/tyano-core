@@ -1040,9 +1040,7 @@ bool Game::playerMoveCreature(uint32_t playerId, uint32_t movingCreatureId,
 
 	if(!player->canDoAction())
 	{
-		uint32_t delay = player->getNextActionTime();
-
-		player->setNextActionTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(&Game::playerMoveCreature,
+		player->setNextActionTask(SchedulerTask::create(player->getNextActionTime(), std::bind(&Game::playerMoveCreature,
 				this, playerId, movingCreatureId, movingCreaturePos, toPos)));
 		return false;
 	}
@@ -1055,13 +1053,13 @@ bool Game::playerMoveCreature(uint32_t playerId, uint32_t movingCreatureId,
 	if(!Position::areInRange<1,1,0>(movingCreaturePos, player->getPosition()) && !player->hasCustomFlag(PlayerCustomFlag_CanMoveFromFar))
 	{
 		//need to walk to the creature first before moving it
-		std::list<Direction> listDir;
-		if(getPathToEx(player, movingCreaturePos, listDir, 0, 1, true, true))
+		std::deque<Direction> route;
+		if(getPathToEx(player, movingCreaturePos, route, 0, 1, true, true))
 		{
 			server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
-				this, player->getID(), listDir)));
+				this, player->getID(), route)));
 
-			player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(player->getStepDuration()), std::bind(&Game::playerMoveCreature, this,
+			player->setNextWalkActionTask(SchedulerTask::create(Clock::now() + player->getStepDuration(), std::bind(&Game::playerMoveCreature, this,
 					playerId, movingCreatureId, movingCreaturePos, toPos)));
 			return true;
 		}
@@ -1149,9 +1147,7 @@ bool Game::playerMoveCreature(uint32_t playerId, uint32_t movingCreatureId,
 
 	if(Player* movingPlayer = movingCreature->getPlayer())
 	{
-		uint64_t delay = OTSYS_TIME() + movingPlayer->getStepDuration();
-		if(delay > movingPlayer->getNextActionTime())
-			movingPlayer->setNextAction(delay);
+		movingPlayer->setNextAction(Clock::now() + movingPlayer->getStepDuration());
 	}
 
 	return true;
@@ -1241,9 +1237,7 @@ bool Game::playerMoveItem(uint32_t playerId, const ExtendedPosition& origin, con
 
 	if(!player->canDoAction())
 	{
-		uint32_t delay = player->getNextActionTime();
-
-		player->setNextActionTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(&Game::playerMoveItem, this,
+		player->setNextActionTask(SchedulerTask::create(player->getNextActionTime(), std::bind(&Game::playerMoveItem, this,
 				playerId, origin, destination, count)));
 		return false;
 	}
@@ -1293,13 +1287,13 @@ bool Game::playerMoveItem(uint32_t playerId, const ExtendedPosition& origin, con
 	if(!Position::areInRange<1,1,0>(playerPos, mapFromPos) && !player->hasCustomFlag(PlayerCustomFlag_CanMoveFromFar))
 	{
 		//need to walk to the item first before using it
-		std::list<Direction> listDir;
-		if(getPathToEx(player, item->getPosition(), listDir, 0, 1, true, true))
+		std::deque<Direction> route;
+		if(getPathToEx(player, item->getPosition(), route, 0, 1, true, true))
 		{
 			server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
-				this, player->getID(), listDir)));
+				this, player->getID(), route)));
 
-			player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(player->getStepDuration()), std::bind(&Game::playerMoveItem, this,
+			player->setNextWalkActionTask(SchedulerTask::create(Clock::now() + player->getStepDuration(), std::bind(&Game::playerMoveItem, this,
 					playerId, origin, destination, count)));
 			return true;
 		}
@@ -1353,13 +1347,13 @@ bool Game::playerMoveItem(uint32_t playerId, const ExtendedPosition& origin, con
 				position = internalGetPosition(moveItem, position);
 			}
 
-			std::list<Direction> listDir;
-			if(map->getPathTo(player, walkPos, listDir))
+			std::deque<Direction> route;
+			if(map->getPathTo(player, walkPos, route))
 			{
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
-					this, player->getID(), listDir)));
+					this, player->getID(), route)));
 
-				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(player->getStepDuration()), std::bind(&Game::playerMoveItem, this,
+				player->setNextWalkActionTask(SchedulerTask::create(Clock::now() + player->getStepDuration(), std::bind(&Game::playerMoveItem, this,
 						playerId, position, destination, count)));
 				return true;
 			}
@@ -2098,20 +2092,18 @@ bool Game::playerMove(uint32_t playerId, Direction dir)
 		return false;
 	}
 
-	player->stopWalk();
-	int32_t delay = player->getWalkDelay(dir);
-	if(delay > 0)
-	{
-		player->setNextAction(OTSYS_TIME() + player->getStepDuration(dir) - SCHEDULER_MINTICKS);
-		player->setNextWalkTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(&Game::playerMove, this, playerId, dir)));
+	player->stopRouting();
 
+	Time nextMoveTime = player->getNextMoveTime();
+	if (nextMoveTime > Clock::now()) {
+		player->setNextAction(nextMoveTime);
+		player->setNextWalkTask(SchedulerTask::create(nextMoveTime, std::bind(&Game::playerMove, this, playerId, dir)));
 		return false;
 	}
 
 	player->setFollowCreature(nullptr);
-	player->onWalk(dir);
-
 	player->setIdleTime(0);
+
 	return internalMoveCreature(player, dir) == RET_NOERROR;
 }
 
@@ -2317,7 +2309,7 @@ bool Game::playerReceivePing(uint32_t playerId)
 	return true;
 }
 
-bool Game::playerAutoWalk(uint32_t playerId, std::list<Direction>& listDir)
+bool Game::playerAutoWalk(uint32_t playerId, std::deque<Direction>& route)
 {
 	Player* player = getPlayerByID(playerId);
 	if(!player || player->isRemoved())
@@ -2327,7 +2319,7 @@ bool Game::playerAutoWalk(uint32_t playerId, std::list<Direction>& listDir)
 	if(player->hasCondition(CONDITION_GAMEMASTER, GAMEMASTER_TELEPORT))
 	{
 		Position pos = player->getPosition();
-		for(std::list<Direction>::iterator it = listDir.begin(); it != listDir.end(); ++it)
+		for(auto it = route.begin(); it != route.end(); ++it)
 			pos = getNextPosition((*it), pos);
 
 		pos = getClosestFreeTile(player, pos, true, false);
@@ -2343,7 +2335,7 @@ bool Game::playerAutoWalk(uint32_t playerId, std::list<Direction>& listDir)
 	}
 
 	player->setNextWalkTask(nullptr);
-	return player->startAutoWalk(listDir);
+	return player->startAutoWalk(route);
 }
 
 bool Game::playerStopAutoWalk(uint32_t playerId)
@@ -2352,7 +2344,7 @@ bool Game::playerStopAutoWalk(uint32_t playerId)
 	if(!player || player->isRemoved())
 		return false;
 
-	player->stopWalk();
+	player->stopRouting();
 	return true;
 }
 
@@ -2391,7 +2383,7 @@ bool Game::playerUseItemEx(uint32_t playerId, const ExtendedPosition& origin, co
 
 	if(ret != RET_NOERROR)
 	{
-		if(ret == RET_TOOFARAWAY && destination.hasPosition(true))
+		if(ret == RET_TOOFARAWAY && origin.hasPosition(true) && destination.hasPosition(true))
 		{
 			ExtendedPosition position = origin;
 			if(Position::areInRange<1,1,0>(origin.getPosition(true), player->getPosition())
@@ -2410,11 +2402,11 @@ bool Game::playerUseItemEx(uint32_t playerId, const ExtendedPosition& origin, co
 				position = internalGetPosition(moveItem, origin);
 			}
 
-			std::list<Direction> listDir;
-			if(getPathToEx(player, destination.getPosition(true), listDir, 0, 1, true, true, 10))
+			std::deque<Direction> route;
+			if(getPathToEx(player, destination.getPosition(true), route, 0, 1, true, true, 10))
 			{
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
-					this, player->getID(), listDir)));
+					this, player->getID(), route)));
 
 				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerUseItemEx, this,
 						playerId, position, destination)));
@@ -2433,9 +2425,7 @@ bool Game::playerUseItemEx(uint32_t playerId, const ExtendedPosition& origin, co
 
 	if(!player->canDoAction())
 	{
-		uint32_t delay = player->getNextActionTime();
-
-		player->setNextActionTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(&Game::playerUseItemEx, this,
+		player->setNextActionTask(SchedulerTask::create(player->getNextActionTime(), std::bind(&Game::playerUseItemEx, this,
 				playerId, origin, destination)));
 		return false;
 	}
@@ -2479,11 +2469,11 @@ bool Game::playerUseItem(uint32_t playerId, const ExtendedPosition& origin, uint
 	{
 		if(ret == RET_TOOFARAWAY)
 		{
-			std::list<Direction> listDir;
-			if(getPathToEx(player, origin.getPosition(true), listDir, 0, 1, true, true))
+			std::deque<Direction> route;
+			if(getPathToEx(player, origin.getPosition(true), route, 0, 1, true, true))
 			{
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
-					this, player->getID(), listDir)));
+					this, player->getID(), route)));
 
 				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerUseItem, this,
 						playerId, origin, openContainerId)));
@@ -2502,9 +2492,7 @@ bool Game::playerUseItem(uint32_t playerId, const ExtendedPosition& origin, uint
 
 	if(!player->canDoAction())
 	{
-		uint32_t delay = player->getNextActionTime();
-
-		player->setNextActionTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(&Game::playerUseItem, this,
+		player->setNextActionTask(SchedulerTask::create(player->getNextActionTime(), std::bind(&Game::playerUseItem, this,
 				playerId, origin, openContainerId)));
 		return false;
 	}
@@ -2557,11 +2545,11 @@ bool Game::playerUseBattleWindow(uint32_t playerId, const ExtendedPosition& orig
 	{
 		if(ret == RET_TOOFARAWAY)
 		{
-			std::list<Direction> listDir;
-			if(getPathToEx(player, item->getPosition(), listDir, 0, 1, true, true))
+			std::deque<Direction> route;
+			if(getPathToEx(player, item->getPosition(), route, 0, 1, true, true))
 			{
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
-					this, player->getID(), listDir)));
+					this, player->getID(), route)));
 
 				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerUseBattleWindow, this,
 						playerId, origin, creatureId)));
@@ -2580,9 +2568,7 @@ bool Game::playerUseBattleWindow(uint32_t playerId, const ExtendedPosition& orig
 
 	if(!player->canDoAction())
 	{
-		uint32_t delay = player->getNextActionTime();
-
-		player->setNextActionTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(&Game::playerUseBattleWindow, this,
+		player->setNextActionTask(SchedulerTask::create(player->getNextActionTime(), std::bind(&Game::playerUseBattleWindow, this,
 				playerId, origin, creatureId)));
 		return false;
 	}
@@ -2672,11 +2658,11 @@ bool Game::playerRotateItem(uint32_t playerId, const ExtendedPosition& position)
 
 	if(position.hasPosition(true) && !Position::areInRange<1,1,0>(position.getPosition(true), player->getPosition()))
 	{
-		std::list<Direction> listDir;
-		if(getPathToEx(player, position.getPosition(true), listDir, 0, 1, true, true))
+		std::deque<Direction> route;
+		if(getPathToEx(player, position.getPosition(true), route, 0, 1, true, true))
 		{
 			server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
-				this, player->getID(), listDir)));
+				this, player->getID(), route)));
 
 			player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerRotateItem, this,
 					playerId, position)));
@@ -2826,11 +2812,11 @@ bool Game::playerRequestTrade(uint32_t playerId, const ExtendedPosition& positio
 
 		if(!Position::areInRange<1,1,0>(tradeItem->getPosition(), player->getPosition()))
 		{
-			std::list<Direction> listDir;
-			if(getPathToEx(player, position.getPosition(true), listDir, 0, 1, true, true))
+			std::deque<Direction> route;
+			if(getPathToEx(player, position.getPosition(true), route, 0, 1, true, true))
 			{
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
-					this, player->getID(), listDir)));
+					this, player->getID(), route)));
 
 				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerRequestTrade, this,
 						playerId, position, tradePlayerId)));
@@ -3421,7 +3407,7 @@ bool Game::playerCancelAttackAndFollow(uint32_t playerId)
 	playerSetAttackedCreature(playerId, 0);
 	playerFollowCreature(playerId, 0);
 
-	player->stopWalk();
+	player->stopRouting();
 	return true;
 }
 
@@ -3936,19 +3922,18 @@ bool Game::internalCreatureSay(Creature* creature, SpeakClasses type, const std:
 	return true;
 }
 
-bool Game::getPathTo(const Creature* creature, const Position& destPos,
-	std::list<Direction>& listDir, int32_t maxSearchDist /*= -1*/)
+bool Game::getPathTo(const Creature* creature, const Position& destPos, std::deque<Direction>& route, int32_t maxSearchDist /*= -1*/)
 {
-	return map->getPathTo(creature, destPos, listDir, maxSearchDist);
+	return map->getPathTo(creature, destPos, route, maxSearchDist);
 }
 
 bool Game::getPathToEx(const Creature* creature, const Position& targetPos,
-	std::list<Direction>& dirList, const FindPathParams& fpp)
+	std::deque<Direction>& route, const FindPathParams& fpp)
 {
-	return map->getPathMatching(creature, dirList, FrozenPathingConditionCall(targetPos), fpp);
+	return map->getPathMatching(creature, route, FrozenPathingConditionCall(targetPos), fpp);
 }
 
-bool Game::getPathToEx(const Creature* creature, const Position& targetPos, std::list<Direction>& dirList,
+bool Game::getPathToEx(const Creature* creature, const Position& targetPos, std::deque<Direction>& route,
 	uint32_t minTargetDist, uint32_t maxTargetDist, bool fullPathSearch /*= true*/,
 	bool clearSight /*= true*/, int32_t maxSearchDist /*= -1*/)
 {
@@ -3958,24 +3943,9 @@ bool Game::getPathToEx(const Creature* creature, const Position& targetPos, std:
 	fpp.clearSight = clearSight;
 	fpp.minTargetDist = minTargetDist;
 	fpp.maxTargetDist = maxTargetDist;
-	return getPathToEx(creature, targetPos, dirList, fpp);
+	return getPathToEx(creature, targetPos, route, fpp);
 }
 
-void Game::checkCreatureWalk(uint32_t creatureId)
-{
-	Creature* creature = getCreatureByID(creatureId);
-	if(creature && creature->getHealth() > 0)
-	{
-		creature->onWalk();
-	}
-}
-
-void Game::updateCreatureWalk(uint32_t creatureId)
-{
-	Creature* creature = getCreatureByID(creatureId);
-	if(creature && creature->getHealth() > 0)
-		creature->getPathToFollowCreature();
-}
 
 void Game::checkCreatureAttack(uint32_t creatureId)
 {
@@ -6125,6 +6095,16 @@ void Game::showHotkeyUseMessage(Player* player, Item* item)
 		sprintf(buffer, "Using one of %d %s...", count, kind->pluralName.c_str());
 
 	player->sendTextMessage(MSG_INFO_DESCR, buffer);
+}
+
+
+Tile* Game::getNextTile(const Tile& tile, Direction direction) const {
+	Position nextPosition = getNextPosition(direction, tile.getPosition());
+	if (!nextPosition.isValid()) {
+		return nullptr;
+	}
+
+	return getTile(nextPosition);
 }
 
 

@@ -31,6 +31,7 @@ enum class Direction : uint8_t {
 	SOUTH_EAST,
 	NORTH_WEST,
 	NORTH_EAST,
+	NONE = std::numeric_limits<uint8_t>::max(),
 };
 
 

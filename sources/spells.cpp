@@ -258,7 +258,7 @@ InstantSpellP Spells::getInstantSpellByName(const std::string& name)
 	return nullptr;
 }
 
-Position Spells::getCasterPosition(Creature* creature, Direction dir)
+Position Spells::getCasterPosition(const Creature* creature, Direction dir)
 {
 	return getNextPosition(dir, creature->getPosition());
 }

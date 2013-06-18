@@ -129,6 +129,9 @@ class Map {
 
 public:
 
+	typedef std::deque<Direction>  Route;
+
+
 	static const uint16_t creaturesBlockSize = 100;
 	static const uint16_t maxX = 60000;
 	static const uint16_t maxY = 60000;
@@ -147,8 +150,8 @@ public:
 	bool                 checkSightLine      (const Position& origin, const Position& destination) const;
 	void                 clearSpectatorCache ();
 	uint16_t             getHeight           () const;
-	bool                 getPathMatching     (const Creature* creature, std::list<Direction>& directions, const FrozenPathingConditionCall& pathCondition, const FindPathParams& findParameters) const;
-	bool                 getPathTo           (const Creature* creature, const Position& destination, std::list<Direction>& directions, int32_t maxDistance = -1) const;
+	bool                 getPathMatching     (const Creature* creature, Route& route, const FrozenPathingConditionCall& pathCondition, const FindPathParams& findParameters) const;
+	bool                 getPathTo           (const Creature* creature, const Position& destination, Route& route, int32_t maxDistance = -1) const;
 	const SpectatorList& getSpectators       (const Position& center);
 	void                 getSpectators       (SpectatorList& spectators, const Position& center, bool checkForDuplicates = false, bool multiFloor = false, int32_t westRange = 0, int32_t eastRange = 0, int32_t northRange = 0, int32_t southRange = 0);
 	Tile*                getTile             (int32_t x, int32_t y, int32_t z) const;

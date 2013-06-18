@@ -20,10 +20,10 @@
 #include "schedulertask.h"
 
 
-SchedulerTask::SchedulerTask(Duration delay, const Function& function)
+SchedulerTask::SchedulerTask(Time time, const Function& function)
 	: Task(function),
 	  _id(0),
-	  _time(Clock::now() + delay)
+	  _time(time)
 {}
 
 
@@ -33,7 +33,12 @@ SchedulerTask::UniquePointer SchedulerTask::create(Duration delay, const Functio
 		delay = Duration::zero();
 	}
 
-	return UniquePointer(new SchedulerTask(delay, function));
+	return UniquePointer(new SchedulerTask(Clock::now() + delay, function));
+}
+
+
+SchedulerTask::UniquePointer SchedulerTask::create(Time time, const Function& function) {
+	return UniquePointer(new SchedulerTask(time, function));
 }
 
 

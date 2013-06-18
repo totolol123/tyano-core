@@ -109,6 +109,23 @@ bool Monster::canBeConvincedBy(const CreatureP& convincer, bool forced) const {
 }
 
 
+bool Monster::canMoveTo(const Tile& tile) const {
+	if (!Creature::canMoveTo(tile)) {
+		return false;
+	}
+
+	if (!isInSpawnRange(tile.getPosition())) {
+		return false;
+	}
+
+	if (tile.__queryAdd(0, this, 1, FLAG_PATHFINDING) != RET_NOERROR) {
+		return false;
+	}
+
+	return true;
+}
+
+
 bool Monster::canSeeCreature(const CreatureP& creature) const {
 	if (creature == nullptr) {
 		assert(creature != nullptr);
@@ -337,6 +354,15 @@ void Monster::onAttackedCreatureDrain(Creature* target, int32_t points) {
 }
 
 
+void Monster::onCreatureAppear(const CreatureP& creature) {
+	Creature::onCreatureAppear(creature);
+
+	if (creature == this) {
+		startWandering();
+	}
+}
+
+
 bool Monster::onDeath() {
 	if (!Creature::onDeath()) {
 		return false;
@@ -360,7 +386,6 @@ void Monster::onThink(Duration elapsedTime) {
 	}
 
 	updateRelationship();
-	updateMovement();
 	updateTarget();
 	updateRetargeting(elapsedTime);
 	updateFollowing();
@@ -369,6 +394,13 @@ void Monster::onThink(Duration elapsedTime) {
 	// TODO refactor >>
 	onThinkDefense(std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count());
 	// <<
+}
+
+
+void Monster::onThinkingStarted() {
+	Creature::onThinkingStarted();
+
+	startWandering();
 }
 
 
@@ -622,11 +654,6 @@ void Monster::updateFollowing() {
 	else {
 		follow(nullptr);
 	}
-}
-
-
-void Monster::updateMovement() {
-	addEventWalk();
 }
 
 
@@ -1075,133 +1102,111 @@ void Monster::pushCreatures(Tile* tile)
 		server.game().addMagicEffect(tile->getPosition(), MAGIC_EFFECT_BLOCKHIT);
 }
 
-bool Monster::getNextStep(Direction& dir, uint32_t& flags)
-{
-	if(!isThinking() || !isAlive())
-	{
-		//we dont have anyone watching might aswell stop walking
-		eventWalk = 0;
-		return false;
+Direction Monster::getNextStepDirection() const {
+	Direction direction = Creature::getNextStepDirection();
+	if (direction != Direction::NONE) {
+		return direction;
 	}
 
-	bool result = false;
+	if (!isAlive()) {
+		return Direction::NONE;
+	}
+
 	if((!followCreature || !hasFollowPath) && !hasMaster())
 	{
-		if(followCreature || getTimeSinceLastMove() > 1000) //choose a random direction
-			result = getRandomStep(getPosition(), dir);
+		if(followCreature)
+			direction = getRandomStepDirection();
 	}
 	else if(hasMaster() || followCreature)
 	{
-		result = Creature::getNextStep(dir, flags);
-		if(!result)
+		//target dancing
+		if(attackedCreature && attackedCreature == followCreature)
 		{
-			//target dancing
-			if(attackedCreature && attackedCreature == followCreature)
-			{
-				if(isFleeing())
-					result = getDanceStep(getPosition(), dir, false, false);
-				else if(_type->staticAttackChance < (uint32_t)random_range(1, 100))
-					result = getDanceStep(getPosition(), dir);
-			}
+			if(isFleeing())
+				direction = getDanceStep(false, false);
+			else if(_type->staticAttackChance < (uint32_t)random_range(1, 100))
+				direction = getDanceStep();
 		}
-		else
-			flags |= FLAG_PATHFINDING;
 	}
 
-	if(result && (canPushItems() || canPushCreatures()))
+	if(direction != Direction::NONE && (canPushItems() || canPushCreatures()))
 	{
-		if(Tile* tile = server.game().getTile(Spells::getCasterPosition(this, dir)))
+		if(Tile* tile = server.game().getTile(Spells::getCasterPosition(this, direction)))
 		{
+			// TODO refactor!
+
 			if(canPushItems())
-				pushItems(tile);
+				const_cast<Monster*>(this)->pushItems(tile);
 
 			if(canPushCreatures())
-				pushCreatures(tile);
+				const_cast<Monster*>(this)->pushCreatures(tile);
 		}
 	}
 
-	return result;
+	return direction;
 }
 
-bool Monster::getRandomStep(const Position& creaturePos, Direction& dir)
+
+Direction Monster::getDanceStep(bool keepAttack /*= true*/, bool keepDistance /*= true*/) const
 {
-	std::vector<Direction> dirVector;
-	dirVector.push_back(Direction::NORTH);
-	dirVector.push_back(Direction::SOUTH);
-	dirVector.push_back(Direction::WEST);
-	dirVector.push_back(Direction::EAST);
+	Position position = getPosition();
 
-	std::random_shuffle(dirVector.begin(), dirVector.end());
-	for(auto it = dirVector.begin(); it != dirVector.end(); ++it)
-	{
-		if(!canWalkTo(creaturePos, *it))
-			continue;
-
-		dir = *it;
-		return true;
-	}
-
-	return false;
-}
-
-bool Monster::getDanceStep(const Position& creaturePos, Direction& dir,	bool keepAttack /*= true*/, bool keepDistance /*= true*/)
-{
 	assert(attackedCreature);
-	bool canDoAttackNow = canUseAttack(creaturePos, attackedCreature);
+	bool canDoAttackNow = canUseAttack(position, attackedCreature);
 	const Position& centerPos = attackedCreature->getPosition();
 
-	uint32_t tmpDist, centerToDist = std::max(std::abs(static_cast<signed>(creaturePos.x) - static_cast<signed>(centerPos.x)), std::abs(static_cast<signed>(creaturePos.y) - static_cast<signed>(centerPos.y)));
+	uint32_t tmpDist, centerToDist = std::max(std::abs(static_cast<signed>(position.x) - static_cast<signed>(centerPos.x)), std::abs(static_cast<signed>(position.y) - static_cast<signed>(centerPos.y)));
 	std::vector<Direction> dirVector;
-	if(!keepDistance || creaturePos.y >= centerPos.y)
+	if(!keepDistance || position.y >= centerPos.y)
 	{
-		tmpDist = std::max(std::abs(static_cast<signed>(creaturePos.x) - static_cast<signed>(centerPos.x)), std::abs(static_cast<signed>(creaturePos.y - 1) - static_cast<signed>(centerPos.y)));
-		if(tmpDist == centerToDist && canWalkTo(creaturePos, Direction::NORTH))
+		tmpDist = std::max(std::abs(static_cast<signed>(position.x) - static_cast<signed>(centerPos.x)), std::abs(static_cast<signed>(position.y - 1) - static_cast<signed>(centerPos.y)));
+		if(tmpDist == centerToDist && canMoveTo(Direction::NORTH))
 		{
 			bool result = true;
 			if(keepAttack)
-				result = (!canDoAttackNow || canUseAttack(Position(creaturePos.x, creaturePos.y - 1, creaturePos.z), attackedCreature));
+				result = (!canDoAttackNow || canUseAttack(Position(position.x, position.y - 1, position.z), attackedCreature));
 
 			if(result)
 				dirVector.push_back(Direction::NORTH);
 		}
 	}
 
-	if(!keepDistance || creaturePos.y <= centerPos.y)
+	if(!keepDistance || position.y <= centerPos.y)
 	{
-		tmpDist = std::max(std::abs(static_cast<signed>(creaturePos.x) - static_cast<signed>(centerPos.x)), std::abs(static_cast<signed>(creaturePos.y + 1) - static_cast<signed>(centerPos.y)));
-		if(tmpDist == centerToDist && canWalkTo(creaturePos, Direction::SOUTH))
+		tmpDist = std::max(std::abs(static_cast<signed>(position.x) - static_cast<signed>(centerPos.x)), std::abs(static_cast<signed>(position.y + 1) - static_cast<signed>(centerPos.y)));
+		if(tmpDist == centerToDist && canMoveTo(Direction::SOUTH))
 		{
 			bool result = true;
 			if(keepAttack)
-				result = (!canDoAttackNow || canUseAttack(Position(creaturePos.x, creaturePos.y + 1, creaturePos.z), attackedCreature));
+				result = (!canDoAttackNow || canUseAttack(Position(position.x, position.y + 1, position.z), attackedCreature));
 
 			if(result)
 				dirVector.push_back(Direction::SOUTH);
 		}
 	}
 
-	if(!keepDistance || creaturePos.x <= centerPos.x)
+	if(!keepDistance || position.x <= centerPos.x)
 	{
-		tmpDist = std::max(std::abs(static_cast<signed>(creaturePos.x + 1) - static_cast<signed>(centerPos.x)), std::abs(static_cast<signed>(creaturePos.y) - static_cast<signed>(centerPos.y)));
-		if(tmpDist == centerToDist && canWalkTo(creaturePos, Direction::EAST))
+		tmpDist = std::max(std::abs(static_cast<signed>(position.x + 1) - static_cast<signed>(centerPos.x)), std::abs(static_cast<signed>(position.y) - static_cast<signed>(centerPos.y)));
+		if(tmpDist == centerToDist && canMoveTo(Direction::EAST))
 		{
 			bool result = true;
 			if(keepAttack)
-				result = (!canDoAttackNow || canUseAttack(Position(creaturePos.x + 1, creaturePos.y, creaturePos.z), attackedCreature));
+				result = (!canDoAttackNow || canUseAttack(Position(position.x + 1, position.y, position.z), attackedCreature));
 
 			if(result)
 				dirVector.push_back(Direction::EAST);
 		}
 	}
 
-	if(!keepDistance || creaturePos.x >= centerPos.x)
+	if(!keepDistance || position.x >= centerPos.x)
 	{
-		tmpDist = std::max(std::abs(static_cast<signed>(creaturePos.x - 1) - static_cast<signed>(centerPos.x)), std::abs(static_cast<signed>(creaturePos.y) - static_cast<signed>(centerPos.y)));
-		if(tmpDist == centerToDist && canWalkTo(creaturePos, Direction::WEST))
+		tmpDist = std::max(std::abs(static_cast<signed>(position.x - 1) - static_cast<signed>(centerPos.x)), std::abs(static_cast<signed>(position.y) - static_cast<signed>(centerPos.y)));
+		if(tmpDist == centerToDist && canMoveTo(Direction::WEST))
 		{
 			bool result = true;
 			if(keepAttack)
-				result = (!canDoAttackNow || canUseAttack(Position(creaturePos.x - 1, creaturePos.y, creaturePos.z), attackedCreature));
+				result = (!canDoAttackNow || canUseAttack(Position(position.x - 1, position.y, position.z), attackedCreature));
 
 			if(result)
 				dirVector.push_back(Direction::WEST);
@@ -1209,54 +1214,16 @@ bool Monster::getDanceStep(const Position& creaturePos, Direction& dir,	bool kee
 	}
 
 	if(dirVector.empty())
-		return false;
+		return Direction::NONE;
 
-	dir = dirVector[random_range<uint32_t>(0, dirVector.size() - 1)];
-	return true;
+	return dirVector[random_range<uint32_t>(0, dirVector.size() - 1)];
 }
 
-bool Monster::isInSpawnRange(const Position& toPos)
+bool Monster::isInSpawnRange(const Position& toPos) const
 {
 	return masterRadius == -1 || !inDespawnRange(toPos);
 }
 
-bool Monster::canWalkTo(Position pos, Direction dir)
-{
-	if(getNoMove())
-		return false;
-
-	switch(dir)
-	{
-		case Direction::NORTH:
-			pos.y += -1;
-			break;
-		case Direction::WEST:
-			pos.x += -1;
-			break;
-		case Direction::EAST:
-			pos.x += 1;
-			break;
-		case Direction::SOUTH:
-			pos.y += 1;
-			break;
-
-		case Direction::NORTH_EAST:
-		case Direction::NORTH_WEST:
-		case Direction::SOUTH_EAST:
-		case Direction::SOUTH_WEST:
-			break;
-	}
-
-	if(!isInSpawnRange(pos))
-		return false;
-
-	Tile* tile = server.game().getTile(pos);
-	if(!tile || getTile()->isSwimmingPool(false) != tile->isSwimmingPool(false)) // prevent monsters entering/exiting to swimming pool
-		return false;
-
-	return !tile->getTopVisibleCreature(this) && tile->__queryAdd(
-		0, this, 1, FLAG_PATHFINDING) == RET_NOERROR;
-}
 
 
 boost::intrusive_ptr<Item> Monster::createCorpse(DeathList deathList)
