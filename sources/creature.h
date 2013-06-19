@@ -121,8 +121,8 @@ public:
 
 
 	virtual bool         canFollow               (const CreatureP& target) const;
-            bool         canMoveTo               (Direction direction) const;
-            bool         canMoveTo               (const Position& position) const;
+	        bool         canMoveTo               (Direction direction) const;
+	        bool         canMoveTo               (const Position& position) const;
 	virtual bool         canMoveTo               (const Tile& tile) const;
 	        bool         canStep                 () const;
 	        PlayerP      getController           ();
@@ -135,37 +135,37 @@ public:
 	        Time         getNextMoveTime         () const;
 	        Direction    getRandomStepDirection  () const;
 	        const Route& getRoute                () const;
-			bool         hasController           () const;
+	        bool         hasController           () const;
 	        bool         hasDirectOwner          () const;
 	        bool         isAlive                 () const;
 	        bool         isDrunk                 () const;
 	virtual bool         isEnemy                 (const CreaturePC& creature) const = 0;
 	        bool         isFollowing             () const;
-    		bool         isMonster               () const;
-    		bool         isNpc                   () const;
+	        bool         isMonster               () const;
+	        bool         isNpc                   () const;
 	        bool         isPlayer                () const;
 	        bool         isRemoved               () const;
 	        bool         isRemoving              () const;
 	        bool         isRouting               () const;
 	        bool         isThinking              () const;
 	        bool         isWandering             () const;
-			void         killSummons             ();
+	        void         killSummons             ();
 	        bool         moveTo                  (Tile& tile);
 	virtual void         onCreatureAppear        (const CreatureP& creature);
 	virtual void         onCreatureMove          (const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
-			void         releaseSummons          ();
+	        void         releaseSummons          ();
 	        bool         remove                  ();
 	        Direction    route                   ();
 	        Direction    stagger                 ();
 	        void         setDefaultOutfit        (Outfit_t defaultOutfit);
-	    	bool         startFollowing          (const CreatureP& target);
+	        bool         startFollowing          (const CreatureP& target);
 	        bool         startRouting            (const DirectionRoute& route);
 	        bool         startThinking           (bool forced = false);
 	        bool         startWandering          ();
-	    	bool         stepInDirection         (Direction direction);
-	    	void         stopFollowing           ();
-	    	void         stopRouting             ();
-			void         stopThinking            ();
+	        bool         stepInDirection         (Direction direction);
+	        void         stopFollowing           ();
+	        void         stopRouting             ();
+	        void         stopThinking            ();
 	        void         stopWandering           ();
 	        Direction    wander                  ();
 

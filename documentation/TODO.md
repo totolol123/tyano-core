@@ -10,8 +10,7 @@ Urgent
 Important
 ---------
 
-- Migrate creature walking code to thinking cycles.
-- Make NPCs walk only while there are players nearby.
+- Rework all premium stuff.
 
 
 Soon
