@@ -883,7 +883,7 @@ bool Game::internalPlaceCreature(Creature* creature, const Position& pos, bool e
 	return true;
 }
 
-bool Game::placeCreature(Creature* creature, const Position& pos, bool extendedPos /*= false*/, bool forced /*= false*/)
+bool Game::placeCreature(const CreatureP& creature, const Position& pos, bool extendedPos /*= false*/, bool forced /*= false*/)
 {
 	Player* tmpPlayer = nullptr;
 	if((tmpPlayer = creature->getPlayer()) && !tmpPlayer->storedConditionList.empty())
@@ -900,7 +900,7 @@ bool Game::placeCreature(Creature* creature, const Position& pos, bool extendedP
 		tmpPlayer->storedConditionList.clear();
 	}
 
-	if(!internalPlaceCreature(creature, pos, extendedPos, forced))
+	if(!internalPlaceCreature(creature.get(), pos, extendedPos, forced))
 		return false;
 
 	if (!creature->isAlive()) {
@@ -914,7 +914,7 @@ bool Game::placeCreature(Creature* creature, const Position& pos, bool extendedP
 	for(it = list.begin(); it != list.end(); ++it)
 	{
 		if((tmpPlayer = (*it)->getPlayer()))
-			tmpPlayer->sendCreatureAppear(creature, BOOST_CURRENT_FUNCTION);
+			tmpPlayer->sendCreatureAppear(creature.get(), BOOST_CURRENT_FUNCTION);
 	}
 
 	for(it = list.begin(); it != list.end(); ++it)
@@ -925,7 +925,11 @@ bool Game::placeCreature(Creature* creature, const Position& pos, bool extendedP
 	}
 
 	creature->setLastPosition(pos);
-	creature->getParent()->postAddNotification(nullptr, creature, nullptr, creature->getParent()->__getIndexOfThing(creature));
+	creature->getParent()->postAddNotification(nullptr, creature.get(), nullptr, creature->getParent()->__getIndexOfThing(creature.get()));
+
+	if (!creature->isAlive()) {
+		return false;
+	}
 
 	creature->onPlacedCreature();
 	return true;

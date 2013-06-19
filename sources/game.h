@@ -23,12 +23,14 @@
 #include "tile.h"
 
 class  CombatInfo;
+class  Creature;
 struct FindPathParams;
 class  Monster;
 class  Npc;
 class  ReferenceCounted;
 class  ServiceManager;
 
+typedef boost::intrusive_ptr<Creature>                  CreatureP;
 typedef std::vector<boost::intrusive_ptr<Creature>>     CreatureVector;
 typedef std::vector<Player*>                            PlayerVector;
 typedef std::list<boost::intrusive_ptr<Item>>           ItemList;
@@ -300,7 +302,7 @@ class Game
 		  * \param pos The position to place the creature
 		  * \param forced If true, placing the creature will not fail because of obstacles (creatures/items)
 		  */
-		bool placeCreature(Creature* creature, const Position& pos, bool extendedPos = false, bool forced = false);
+		bool placeCreature(const CreatureP& creature, const Position& pos, bool extendedPos = false, bool forced = false);
 		ReturnValue placeSummon(Creature* creature, const std::string& name);
 
 		/**
