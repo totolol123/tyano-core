@@ -143,7 +143,7 @@ bool Creature::hasToThinkAboutCreature(const CreaturePC& creature) const {
 
 
 bool Creature::isAlive() const {
-	return (!_removed && !_removing && health > 0);
+	return (!_removed && !_removing && health > 0 && _tile != nullptr);
 }
 
 
