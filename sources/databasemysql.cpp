@@ -87,7 +87,7 @@ void DatabaseMySQL::start() {
 
 	int32_t keepAlive = server.configManager().getNumber(ConfigManager::SQL_KEEPALIVE);
 	if(keepAlive)
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(keepAlive * 1000), std::bind(&DatabaseMySQL::keepAlive, this)));
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(keepAlive * 1000), std::bind(&DatabaseMySQL::keepAlive, this)));
 }
 
 
@@ -211,7 +211,7 @@ void DatabaseMySQL::keepAlive()
 		if(time(nullptr) > (m_use + delay) && mysql_ping(&m_handle))
 			reconnect();
 
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(delay * 1000), std::bind(&DatabaseMySQL::keepAlive, this)));
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(delay * 1000), std::bind(&DatabaseMySQL::keepAlive, this)));
 	}
 }
 

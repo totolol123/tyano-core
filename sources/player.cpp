@@ -1759,7 +1759,7 @@ void Player::onThink(Duration elapsedTime)
 			server.game().removeCreature(this, true);
 	}
 
-	messageTicks += std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
+	messageTicks += std::chrono::duration_cast<Milliseconds>(elapsedTime).count();
 	if(messageTicks >= 1500)
 	{
 		messageTicks = 0;
@@ -3463,7 +3463,7 @@ void Player::onCombatRemoveCondition(const Creature* attacker, Condition* condit
 			if(delay <= Duration::zero())
 				removeCondition(condition);
 			else
-				condition->setTicks(std::chrono::duration_cast<std::chrono::milliseconds>(delay).count());
+				condition->setTicks(std::chrono::duration_cast<Milliseconds>(delay).count());
 		}
 		else
 			removeCondition(condition);
@@ -3958,7 +3958,7 @@ bool Player::addUnjustifiedKill(const Player* attacked)
 
 		sendTextMessage(MSG_INFO_DESCR, "You have been banished.");
 		server.game().addMagicEffect(getPosition(), MAGIC_EFFECT_WRAPS_GREEN);
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(1000), std::bind(
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(1000), std::bind(
 			&Game::kickPlayer, &server.game(), getID(), false)));
 	}
 	else

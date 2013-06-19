@@ -8219,7 +8219,7 @@ int32_t LuaScriptInterface::luaAddEvent(lua_State* L)
 	eventDesc.scriptId = env->getScriptId();
 
 	interface->m_timerEvents[++interface->m_lastEventTimerId] = eventDesc;
-	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(
+	server.scheduler().addTask(SchedulerTask::create(Milliseconds(delay), std::bind(
 		&LuaScriptInterface::executeTimer, interface, interface->m_lastEventTimerId)));
 
 	lua_pushnumber(L, interface->m_lastEventTimerId);
@@ -9132,7 +9132,7 @@ int32_t LuaScriptInterface::luaDoReloadInfo(lua_State* L)
 	uint32_t id = popNumber(L);
 	if(id >= RELOAD_FIRST && id <= RELOAD_LAST)
 	{
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(SCHEDULER_MINTICKS),
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(SCHEDULER_MINTICKS),
 			std::bind(&Game::reloadInfo, &server.game(), (ReloadInfo_t)id, cid)));
 		lua_pushboolean(L, true);
 	}

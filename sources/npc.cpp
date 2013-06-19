@@ -73,7 +73,7 @@ Duration Npc::getWanderingInterval() const {
 		return Duration::zero();
 	}
 
-	return std::chrono::milliseconds(walkTicks);
+	return Milliseconds(walkTicks);
 }
 
 

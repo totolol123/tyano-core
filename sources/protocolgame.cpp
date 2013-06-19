@@ -75,7 +75,7 @@ template<class FunctionType>
 void ProtocolGame::addGameTaskInternal(uint32_t delay, const FunctionType& func)
 {
 	if(delay > 0)
-		server.dispatcher().addTask(Task::create(std::chrono::milliseconds(delay), func));
+		server.dispatcher().addTask(Task::create(Milliseconds(delay), func));
 	else
 		server.dispatcher().addTask(Task::create(func));
 }
@@ -320,7 +320,7 @@ bool ProtocolGame::login(const std::string& name, uint32_t id, const std::string
 
 		addRef();
 		m_eventConnect = server.scheduler().addTask(SchedulerTask::create(
-			std::chrono::milliseconds(1000), std::bind(&ProtocolGame::connect, this, _player->getID(), operatingSystem, version)));
+			Milliseconds(1000), std::bind(&ProtocolGame::connect, this, _player->getID(), operatingSystem, version)));
 		return true;
 	}
 
@@ -875,7 +875,7 @@ void ProtocolGame::parsePacket(NetworkMessage &msg)
 						player->sendTextMessage(MSG_INFO_DESCR, "You have been banished.");
 
 						server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_WRAPS_GREEN);
-						server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(1000), std::bind(
+						server.scheduler().addTask(SchedulerTask::create(Milliseconds(1000), std::bind(
 							&Game::kickPlayer, &server.game(), player->getID(), false)));
 					}
 				}

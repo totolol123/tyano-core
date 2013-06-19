@@ -154,7 +154,7 @@ bool Monster::challenge(const CreatureP& challenger) {
 		return false;
 	}
 
-	setRetargetDelay(std::chrono::seconds(8));
+	setRetargetDelay(Seconds(8));
 
 	return true;
 }
@@ -250,7 +250,7 @@ Direction Monster::getWanderingDirection() const {
 
 
 Duration Monster::getWanderingInterval() const {
-	return std::chrono::seconds(random_range(2, 8));
+	return Seconds(random_range(2, 8));
 }
 
 
@@ -427,7 +427,7 @@ void Monster::onThink(Duration elapsedTime) {
 	updateBabbling(elapsedTime);
 
 	// TODO refactor >>
-	onThinkDefense(std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count());
+	onThinkDefense(std::chrono::duration_cast<Milliseconds>(elapsedTime).count());
 	// <<
 }
 

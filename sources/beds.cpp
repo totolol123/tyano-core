@@ -149,7 +149,7 @@ void BedItem::sleep(Player* player)
 
 		player->getTile()->moveCreature(nullptr, player, getTile());
 		server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_SLEEP);
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(SCHEDULER_MINTICKS), std::bind(&Game::kickPlayer, &server.game(), player->getID(), false)));
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(SCHEDULER_MINTICKS), std::bind(&Game::kickPlayer, &server.game(), player->getID(), false)));
 		return;
 	}
 

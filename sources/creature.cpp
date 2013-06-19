@@ -36,8 +36,8 @@
 #include "server.h"
 
 
-const Duration Creature::THINK_DURATION = std::chrono::seconds(1);
-const Duration Creature::THINK_INTERVAL = std::chrono::milliseconds(100);
+const Duration Creature::THINK_DURATION = Seconds(1);
+const Duration Creature::THINK_INTERVAL = Milliseconds(100);
 
 LOGGER_DEFINITION(Creature);
 
@@ -1086,19 +1086,19 @@ void Creature::onThink(Duration elapsedTime) {
 	if(attackedCreature && !canSeeCreature(attackedCreature))
 		internalCreatureDisappear(attackedCreature, false);
 
-	blockTicks += std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
+	blockTicks += std::chrono::duration_cast<Milliseconds>(elapsedTime).count();
 	if(blockTicks >= 1000)
 	{
 		blockCount = std::min((uint32_t)blockCount + 1, (uint32_t)2);
 		blockTicks = 0;
 	}
 
-	onAttacking(std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count());
-	executeConditions(std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count());
+	onAttacking(std::chrono::duration_cast<Milliseconds>(elapsedTime).count());
+	executeConditions(std::chrono::duration_cast<Milliseconds>(elapsedTime).count());
 
 	CreatureEventList thinkEvents = getCreatureEvents(CREATURE_EVENT_THINK);
 	for(CreatureEventList::iterator it = thinkEvents.begin(); it != thinkEvents.end(); ++it)
-		(*it)->executeThink(this, std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count());
+		(*it)->executeThink(this, std::chrono::duration_cast<Milliseconds>(elapsedTime).count());
 }
 
 void Creature::onAttacking(uint32_t interval)
@@ -2019,7 +2019,7 @@ Duration Creature::getStepDuration() const
 	if(!tile || !tile->ground)
 		return Duration::zero();
 
-	return std::chrono::milliseconds((1000 * tile->ground->getKind()->speed) / stepSpeed);
+	return Milliseconds((1000 * tile->ground->getKind()->speed) / stepSpeed);
 }
 
 void Creature::getCreatureLight(LightInfo& light) const

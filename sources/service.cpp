@@ -83,7 +83,7 @@ bool ServicePort::open(uint16_t port)
 		LOGe("ServicePort::open(" << endpoint << ") - " << e.what());
 
 		m_pendingStart = true;
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(5000), std::bind(
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(5000), std::bind(
 			&ServicePort::onOpen, std::weak_ptr<ServicePort>(shared_from_this()), m_serverPort)));
 		return false;
 	}
@@ -165,7 +165,7 @@ void ServicePort::handle(boost::asio::ip::tcp::socket* socket, const boost::syst
 		if(!m_pendingStart)
 		{
 			m_pendingStart = true;
-			server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(5000), std::bind(
+			server.scheduler().addTask(SchedulerTask::create(Milliseconds(5000), std::bind(
 				&ServicePort::onOpen, std::weak_ptr<ServicePort>(shared_from_this()), m_serverPort)));
 		}
 	}

@@ -1591,5 +1591,5 @@ RealTime UnixTimestamp::realTimeForUtcDate(int day, int month, int year) {
 
 UnixTimestamp::operator RealTime() const {
 	// Convert value to our internal epoch and use it as duration relative to our epoch in RealTime.
-	return _epoch + std::chrono::seconds(static_cast<int64_t>(_value) - _epochValue);
+	return _epoch + Seconds(static_cast<int64_t>(_value) - _epochValue);
 }
