@@ -42,6 +42,76 @@ const Duration Creature::THINK_INTERVAL = std::chrono::milliseconds(100);
 LOGGER_DEFINITION(Creature);
 
 
+bool Creature::canMoveTo(Direction direction) const {
+	if (direction == Direction::NONE) {
+		return false;
+	}
+
+	if (!isAlive()) {
+		return false;
+	}
+
+	Tile* tile = server.game().getNextTile(*_tile, direction);
+	if (tile == nullptr) {
+		return false;
+	}
+
+	return canMoveTo(*tile);
+}
+
+
+bool Creature::canMoveTo(const Position& position) const {
+	Tile* tile = server.game().getTile(position);
+	if (tile == nullptr) {
+		return false;
+	}
+
+	return canMoveTo(*tile);
+}
+
+
+bool Creature::canMoveTo(const Tile& tile) const {
+	if (!isAlive()) {
+		return false;
+	}
+
+	if (cannotMove) {
+		return false;
+	}
+
+	if (&tile == _tile) {
+		return false;
+	}
+
+	if (tile.getTopVisibleCreature(this) != nullptr) {
+		// blocked by other creature
+		return false;
+	}
+
+	if (tile.__queryAdd(0, this, 1, 0) != RET_NOERROR) {
+		return false;
+	}
+
+	return true;
+}
+
+
+bool Creature::canStep() const {
+	if (!isAlive()) {
+		return false;
+	}
+
+	if (cannotMove) {
+		return false;
+	}
+
+	if (getStepDuration() <= Duration::zero()) {
+		return false;
+	}
+
+	return true;
+}
+
 
 void Creature::didRemove() {
 	if (!_removing) {
@@ -147,6 +217,11 @@ bool Creature::isAlive() const {
 }
 
 
+bool Creature::isDrunk() const {
+	return hasCondition(CONDITION_DRUNK);
+}
+
+
 bool Creature::isMonster() const {
 	return (getMonster() != nullptr);
 }
@@ -172,8 +247,18 @@ bool Creature::isRemoving() const {
 }
 
 
+bool Creature::isRouting() const {
+	return !_route.empty();
+}
+
+
 bool Creature::isThinking() const {
 	return (_thinkDuration > Duration::zero());
+}
+
+
+bool Creature::isWandering() const {
+	return _wandering;
 }
 
 
@@ -183,6 +268,85 @@ void Creature::killSummons() {
 		summon->changeHealth(-summon->getHealth());
 		summon->release();
 	}
+}
+
+
+Time Creature::getNextMoveTime() const {
+	return _nextMoveTime;
+}
+
+
+Direction Creature::getRandomStepDirection() const {
+	if (!isAlive()) {
+		return Direction::NONE;
+	}
+
+	Game& game = server.game();
+
+	std::vector<Direction> directions(9);
+	directions.push_back(Direction::NONE);
+	directions.push_back(Direction::EAST);
+	directions.push_back(Direction::NORTH);
+	directions.push_back(Direction::NORTH_EAST);
+	directions.push_back(Direction::NORTH_WEST);
+	directions.push_back(Direction::SOUTH);
+	directions.push_back(Direction::SOUTH_EAST);
+	directions.push_back(Direction::SOUTH_WEST);
+	directions.push_back(Direction::WEST);
+
+	std::random_shuffle(directions.begin(), directions.end());
+
+	for (Direction direction : directions) {
+		if (direction == Direction::NONE) {
+			return direction;
+		}
+
+		Tile* tile = game.getNextTile(*_tile, direction);
+		if (tile == nullptr) {
+			continue;
+		}
+		if (!canMoveTo(*tile)) {
+			continue;
+		}
+
+		return direction;
+	}
+
+	return Direction::NONE;
+}
+
+
+Direction Creature::getWanderingDirection() const {
+	return getRandomStepDirection();
+}
+
+
+Duration Creature::getWanderingInterval() const {
+	return Duration::zero();
+}
+
+
+bool Creature::moveTo(Tile& tile) {
+	if (!isAlive()) {
+		return false;
+	}
+
+	if (!canMoveTo(tile)) {
+		return false;
+	}
+
+	Tile& previousTile = *_tile;
+
+	if (server.game().internalMoveCreature(nullptr, this, &previousTile, &tile, 0) != RET_NOERROR) {
+		return false;
+	}
+
+	Direction direction = getDirectionTo(previousTile.getPosition(), tile.getPosition());
+
+	_nextMoveTime = Clock::now() + getStepDuration(direction);
+	onMove(previousTile, tile);
+
+	return true;
 }
 
 
@@ -205,17 +369,7 @@ void Creature::onCreatureMove(const CreatureP& creature, const Position& origin,
 
 	// TODO refactor
 	if (creature == this) {
-		lastStep = OTSYS_TIME();
-		lastStepCost = 1;
-
 		setLastPosition(origin);
-		if(!teleport)
-		{
-			if(origin.z != destination.z || (std::abs(destination.x - origin.x) >= 1 && std::abs(destination.y - origin.y) >= 1))
-				lastStepCost = 2;
-		}
-		else
-			stopEventWalk();
 
 		if(!summons.empty())
 		{
@@ -242,8 +396,6 @@ void Creature::onCreatureMove(const CreatureP& creature, const Position& origin,
 		if(hasFollowPath)
 		{
 			isUpdatingPath = true;
-			server.dispatcher().addTask(Task::create(
-				std::bind(&Game::updateCreatureWalk, &server.game(), getID())));
 		}
 
 		if(destination.z != origin.z || !canSee(followCreature->getPosition()))
@@ -296,9 +448,50 @@ void Creature::onMonsterMasterChanged(const MonsterP& monster, const CreatureP& 
 }
 
 
+void Creature::onMove(Tile& originTile, Tile& destinationTile) {
+	// override in subclasses
+}
+
+
+void Creature::onRoutingStarted() {
+	// override in subclasses
+}
+
+
+void Creature::onRoutingStopped(bool preliminary) {
+	// override in subclasses
+}
+
+
+void Creature::onThinkingStarted() {
+	startWandering();
+}
+
+
 void Creature::onThinkingStopped() {
+	stopRouting();
+	stopWandering();
+
 	healMap.clear();
 	damageMap.clear();
+}
+
+
+void Creature::onWanderingStarted() {
+	// override in subclasses
+}
+
+
+void Creature::onWanderingStopped() {
+	// override in subclasses
+}
+
+
+void Creature::releaseSummons() {
+	auto summons = std::move(this->summons);
+	for (const auto& summon : summons) {
+		summon->release();
+	}
 }
 
 
@@ -311,8 +504,67 @@ bool Creature::remove() {
 }
 
 
+Direction Creature::route() {
+	if (!isRouting()) {
+		return Direction::NONE;
+	}
+
+	if (!canStep()) {
+		return Direction::NONE;
+	}
+
+	Direction direction = _route.front();
+	_route.pop_front();
+
+	// TODO re-route on failure
+
+	if (!stepInDirection(direction)) {
+		forceUpdateFollowPath = true;
+		stopRouting();
+
+		return Direction::NONE;
+	}
+
+	return direction;
+}
+
+
 void Creature::setDefaultOutfit(Outfit_t defaultOutfit) {
 	this->defaultOutfit = defaultOutfit;
+}
+
+
+bool Creature::shouldStagger() const {
+	// 25% chance when drunk
+	return (isDrunk() && random_range(1, 100) <= 25);
+}
+
+
+Direction Creature::stagger() {
+	if (!canStep()) {
+		return Direction::NONE;
+	}
+
+	server.game().internalCreatureSay(this, SPEAK_MONSTER_SAY, "Hicks!", isGhost());
+
+	Direction direction = getRandomStepDirection();
+	if (!stepInDirection(direction)) {
+		return Direction::NONE;
+	}
+
+	return direction;
+}
+
+
+void Creature::startRouting(const Route& route) {
+	if (!isThinking()) {
+		return;
+	}
+
+	stopRouting();
+
+	_route = route;
+	onRoutingStarted();
 }
 
 
@@ -333,6 +585,39 @@ void Creature::startThinking(bool forced) {
 	_thinkDuration = THINK_DURATION;
 
 	server.dispatcher().addTask(Task::create(std::bind(&Creature::think, boost::intrusive_ptr<Creature>(this))));
+
+	onThinkingStarted();
+}
+
+
+void Creature::startWandering() {
+	if (!isThinking()) {
+		return;
+	}
+
+	if (_wandering) {
+		return;
+	}
+
+	Duration interval = getWanderingInterval();
+	if (interval <= Duration::zero()) {
+		return;
+	}
+
+	_wandering = true;
+	_nextWanderingTime = Clock::now() + interval;
+
+	onWanderingStarted();
+}
+
+
+void Creature::stopRouting() {
+	if (_route.empty()) {
+		return;
+	}
+
+	_route.clear();
+	onRoutingStopped(true);
 }
 
 
@@ -348,6 +633,30 @@ void Creature::stopThinking() {
 
 	_thinkDuration = Duration::zero();
 	onThinkingStopped();
+}
+
+
+void Creature::stopWandering() {
+	if (_wandering) {
+		return;
+	}
+
+	_wandering = false;
+	onWanderingStopped();
+}
+
+
+bool Creature::stepInDirection(Direction direction) {
+	if (direction == Direction::NONE) {
+		return false;
+	}
+
+	Tile* nextTile = server.game().getNextTile(*_tile, direction);
+	if (nextTile == nullptr) {
+		return false;
+	}
+
+	return moveTo(*nextTile);
 }
 
 
@@ -391,6 +700,63 @@ void Creature::think() {
 }
 
 
+void Creature::updateMovement(Time now) {
+	if (_nextMoveTime > now) {
+		return;
+	}
+
+	if (isRouting()) {
+		if (shouldStagger()) {
+			stagger();
+			return;
+		}
+
+		route();
+		return;
+	}
+
+	if (isWandering()) {
+		if (_nextWanderingTime > now) {
+			return;
+		}
+
+		if (shouldStagger()) {
+			stagger();
+			return;
+		}
+
+		wander();
+		return;
+	}
+}
+
+
+Direction Creature::wander() {
+	if (!isWandering()) {
+		return Direction::NONE;
+	}
+
+	if (!canStep()) {
+		return Direction::NONE;
+	}
+
+	Direction direction = getWanderingDirection();
+	if (!stepInDirection(direction)) {
+		return Direction::NONE;
+	}
+
+	Duration interval = getWanderingInterval();
+	if (interval > Duration::zero()) {
+		_nextWanderingTime = Clock::now() + getWanderingInterval();
+	}
+	else {
+		stopWandering();
+	}
+
+	return direction;
+}
+
+
 void Creature::willRemove() {
 	if (_removed || _removing) {
 		assert(!_removed && !_removing);
@@ -399,10 +765,7 @@ void Creature::willRemove() {
 
 	_removing = true;
 
-	auto summons = std::move(this->summons);
-	for (const auto& summon : summons) {
-		summon->release();
-	}
+	releaseSummons();
 }
 
 
@@ -429,10 +792,11 @@ AutoId::List AutoId::list;
 Creature::Creature()
 	: _removed(false),
 	  _removing(false),
-	  _thinkTaskId(0)
+	  _thinkTaskId(0),
+	  _tile(nullptr),
+	  _wandering(false)
 {
 	id = 0;
-	_tile = nullptr;
 	direction = Direction::SOUTH;
 	lootDrop = LOOT_DROP_FULL;
 	skillLoss = true;
@@ -446,8 +810,6 @@ Creature::Creature()
 	mana = 0;
 	manaMax = 0;
 
-	lastStep = 0;
-	lastStepCost = 1;
 	baseSpeed = 220;
 	varSpeed = 0;
 
@@ -456,7 +818,6 @@ Creature::Creature()
 
 	followCreature = nullptr;
 	hasFollowPath = false;
-	eventWalk = 0;
 	forceUpdateFollowPath = false;
 	isUpdatingPath = false;
 
@@ -519,32 +880,10 @@ bool Creature::canSeeCreature(const CreatureP& creature) const
 	return creature == this || (!creature->isGhost() && (!creature->isInvisible() || canSeeInvisibility()));
 }
 
-int64_t Creature::getTimeSinceLastMove() const
-{
-	if(lastStep)
-		return OTSYS_TIME() - lastStep;
 
-	return 0x7FFFFFFFFFFFFFFFLL;
-}
+void Creature::onThink(Duration elapsedTime) {
+	updateMovement(Clock::now());
 
-int32_t Creature::getWalkDelay(Direction dir) const
-{
-	if(lastStep)
-		return getStepDuration(dir) - (OTSYS_TIME() - lastStep);
-
-	return 0;
-}
-
-int32_t Creature::getWalkDelay() const
-{
-	if(lastStep)
-		return getStepDuration() - (OTSYS_TIME() - lastStep);
-
-	return 0;
-}
-
-void Creature::onThink(Duration elapsedTime)
-{
 	if(followCreature && !canSeeCreature(followCreature))
 		internalCreatureDisappear(followCreature, false);
 
@@ -604,66 +943,8 @@ void Creature::onAttacking(uint32_t interval)
 		doAttacking(interval);
 }
 
-void Creature::onWalk()
-{
-	if(getWalkDelay() <= 0)
-	{
-		Direction dir;
-		uint32_t flags = FLAG_IGNOREFIELDDAMAGE;
-		if(getNextStep(dir, flags) && server.game().internalMoveCreature(this, dir, flags) != RET_NOERROR)
-			forceUpdateFollowPath = true;
-	}
 
-	if(listWalkDir.empty())
-		onWalkComplete();
-
-	if(eventWalk)
-	{
-		eventWalk = 0;
-		addEventWalk();
-	}
-}
-
-void Creature::onWalk(Direction& dir)
-{
-	if(!hasCondition(CONDITION_DRUNK))
-		return;
-
-	uint32_t r = random_range(0, 16);
-	if(r > 4)
-		return;
-
-	switch(r)
-	{
-		case 0:
-			dir = Direction::NORTH;
-			break;
-		case 1:
-			dir = Direction::WEST;
-			break;
-		case 3:
-			dir = Direction::SOUTH;
-			break;
-		case 4:
-			dir = Direction::EAST;
-			break;
-	}
-
-	server.game().internalCreatureSay(this, SPEAK_MONSTER_SAY, "Hicks!", isGhost());
-}
-
-bool Creature::getNextStep(Direction& dir, uint32_t& flags)
-{
-	if(listWalkDir.empty())
-		return false;
-
-	dir = listWalkDir.front();
-	listWalkDir.pop_front();
-	onWalk(dir);
-	return true;
-}
-
-bool Creature::startAutoWalk(std::list<Direction>& listDir)
+bool Creature::startAutoWalk(const Route& route)
 {
 	if(getPlayer() && getPlayer()->getNoMove())
 	{
@@ -671,34 +952,8 @@ bool Creature::startAutoWalk(std::list<Direction>& listDir)
 		return false;
 	}
 
-	listWalkDir = listDir;
-	addEventWalk();
+	startRouting(route);
 	return true;
-}
-
-void Creature::addEventWalk()
-{
-	if(eventWalk)
-		return;
-
-	int64_t ticks = getEventStepTicks();
-	if(ticks > 0)
-		eventWalk = server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(ticks),
-			std::bind(&Game::checkCreatureWalk, &server.game(), getID())));
-}
-
-void Creature::stopEventWalk()
-{
-	if(!eventWalk)
-		return;
-
-	server.scheduler().cancelTask(eventWalk);
-	eventWalk = 0;
-	if(!listWalkDir.empty())
-	{
-		listWalkDir.clear();
-		onWalkAborted();
-	}
 }
 
 void Creature::internalCreatureDisappear(const Creature* creature, bool isLogout)
@@ -1141,10 +1396,10 @@ void Creature::getPathToFollowCreature()
 	{
 		FindPathParams fpp;
 		getPathSearchParams(followCreature, fpp);
-		if(server.game().getPathToEx(this, followCreature->getPosition(), listWalkDir, fpp))
+		if(server.game().getPathToEx(this, followCreature->getPosition(), _route, fpp))
 		{
 			hasFollowPath = true;
-			startAutoWalk(listWalkDir);
+			startAutoWalk(_route);
 		}
 		else
 			hasFollowPath = false;
@@ -1171,17 +1426,12 @@ bool Creature::setFollowCreature(Creature* creature, bool fullPathSearch /*= fal
 		if(followCreature == creature)
 			return true;
 
+		stopRouting();
+
 		const Position& creaturePos = creature->getPosition();
 		if(creaturePos.z != getPosition().z || !canSee(creaturePos))
 		{
-			followCreature = nullptr;
 			return false;
-		}
-
-		if(!listWalkDir.empty())
-		{
-			listWalkDir.clear();
-			onWalkAborted();
 		}
 
 		hasFollowPath = forceUpdateFollowPath = false;
@@ -1619,7 +1869,7 @@ std::string Creature::getDescription(int32_t lookDistance) const
 	return "a creature";
 }
 
-int32_t Creature::getStepDuration(Direction dir) const
+Duration Creature::getStepDuration(Direction dir) const
 {
 	if(dir == Direction::NORTH_WEST || dir == Direction::NORTH_EAST || dir == Direction::SOUTH_WEST || dir == Direction::SOUTH_EAST)
 		return getStepDuration() * 2;
@@ -1627,29 +1877,20 @@ int32_t Creature::getStepDuration(Direction dir) const
 	return getStepDuration();
 }
 
-int32_t Creature::getStepDuration() const
+Duration Creature::getStepDuration() const
 {
 	if(_removed || _removing)
-		return 0;
+		return Duration::zero();
 
 	uint32_t stepSpeed = getStepSpeed();
 	if(!stepSpeed)
-		return 0;
+		return Duration::zero();
 
 	const Tile* tile = getTile();
 	if(!tile || !tile->ground)
-		return 0;
+		return Duration::zero();
 
-	return ((1000 * tile->ground->getKind()->speed) / stepSpeed) * lastStepCost;
-}
-
-int64_t Creature::getEventStepTicks() const
-{
-	int64_t ret = getWalkDelay();
-	if(ret > 0)
-		return ret;
-
-	return getStepDuration();
+	return std::chrono::milliseconds((1000 * tile->ground->getKind()->speed) / stepSpeed);
 }
 
 void Creature::getCreatureLight(LightInfo& light) const

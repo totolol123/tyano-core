@@ -37,6 +37,26 @@ LOGGER_DEFINITION(Npcs);
 
 
 
+bool Npc::canMoveTo(const Tile& tile) const {
+	if (!Creature::canMoveTo(tile)) {
+		return false;
+	}
+
+	if (!Spawns::getInstance()->isInZone(masterPosition, masterRadius, tile.getPosition())) {
+		return false;
+	}
+
+	if (floorChange && (tile.floorChange() || tile.positionChange())) {
+		return true;
+	}
+
+	if (tile.__queryAdd(0, this, 1, FLAG_PATHFINDING) != RET_NOERROR) {
+		return false;
+	}
+
+	return true;
+}
+
 
 CreatureP Npc::getDirectOwner() {
 	return nullptr;
@@ -48,13 +68,45 @@ CreaturePC Npc::getDirectOwner() const {
 }
 
 
+Duration Npc::getWanderingInterval() const {
+	if (focusCreature > 0) {
+		return Duration::zero();
+	}
+
+	return std::chrono::milliseconds(walkTicks);
+}
+
+
+bool Npc::hasToThinkAboutCreature(const CreaturePC& creature) const {
+	assert(creature != nullptr);
+
+	if (creature->hasController()) {
+		return true;
+	}
+
+	return false;
+}
+
+
 bool Npc::isEnemy(const CreaturePC& creature) const {
 	return false;
 }
 
 
+void Npc::onThinkingStarted() {
+	Creature::onThinkingStarted();
+
+	startWandering();
+}
+
+
 
  
+
+
+
+
+
  
 AutoList<Npc> Npc::autoList;
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
@@ -192,9 +244,6 @@ void Npc::reload()
 	//Simulate that the creature is placed on the map again.
 	if(m_npcEventHandler)
 		m_npcEventHandler->onCreatureAppear(this);
- 
-	if(walkTicks > 0)
-		addEventWalk();
 }
 
 bool Npc::loadFromXml(const std::string& filename)
@@ -1091,8 +1140,6 @@ bool Npc::canSee(const Position& pos) const
 void Npc::onCreatureAppear(const CreatureP& creature)
 {
 	Creature::onCreatureAppear(creature);
-	if(creature == this && walkTicks > 0)
-		addEventWalk();
 
 	if(creature == this)
 	{
@@ -1852,11 +1899,11 @@ void Npc::doMove(Direction dir)
 
 void Npc::doMoveTo(Position target)
 {
-	std::list<Direction> listDir;
-	if(!server.game().getPathToEx(this, target, listDir, 1, 1, true, true))
+	std::deque<Direction> route;
+	if(!server.game().getPathToEx(this, target, route, 1, 1, true, true))
 		return;
 
-	startAutoWalk(listDir);
+	startAutoWalk(route);
 }
 
 uint32_t Npc::getListItemPrice(uint16_t itemId, ShopEvent_t type)
@@ -1941,69 +1988,15 @@ void Npc::onPlayerEndTrade(Player* player, int32_t buyCallback,
 		m_npcEventHandler->onPlayerEndTrade(player);
 }
 
-bool Npc::getNextStep(Direction& dir, uint32_t& flags)
-{
-	if(Creature::getNextStep(dir, flags))
-		return true;
 
-	if(walkTicks <= 0 || !isIdle || focusCreature || getTimeSinceLastMove() < walkTicks)
-		return false;
-
-	return getRandomStep(dir);
-}
-
-bool Npc::canWalkTo(const Position& fromPos, Direction dir)
-{
-	if(getNoMove())
-		return false;
-
-	Position toPos = fromPos;
-	toPos = getNextPosition(dir, toPos);
-	if(!Spawns::getInstance()->isInZone(masterPosition, masterRadius, toPos))
-		return false;
-
-	Tile* tile = server.game().getTile(toPos);
-	if(!tile)
-		return true;
-
-	if(getTile()->isSwimmingPool() != tile->isSwimmingPool()) // prevent npc entering/exiting to swimming pool
-		return false;
-
-	if(floorChange && (tile->floorChange() || tile->positionChange()))
-		return true;
-
-	return tile->__queryAdd(0, this, 1, FLAG_PATHFINDING) == RET_NOERROR;
-}
-
-bool Npc::getRandomStep(Direction& dir)
-{
-	std::vector<Direction> dirList;
-	const Position& creaturePos = getPosition();
-	if(canWalkTo(creaturePos, Direction::NORTH))
-		dirList.push_back(Direction::NORTH);
-
-	if(canWalkTo(creaturePos, Direction::SOUTH))
-		dirList.push_back(Direction::SOUTH);
-
-	if(canWalkTo(creaturePos, Direction::EAST))
-		dirList.push_back(Direction::EAST);
-
-	if(canWalkTo(creaturePos, Direction::WEST))
-		dirList.push_back(Direction::WEST);
-
-	if(dirList.empty())
-		return false;
-
-	std::random_shuffle(dirList.begin(), dirList.end());
-	dir = dirList[random_range<uint32_t>(0, dirList.size() - 1)];
-	return true;
-}
 
 void Npc::setCreatureFocus(Creature* creature)
 {
 	if(!creature)
 	{
 		focusCreature = 0;
+		startWandering();
+
 		return;
 	}
 
@@ -2027,6 +2020,8 @@ void Npc::setCreatureFocus(Creature* creature)
 		dir = Direction::NORTH;
 
 	focusCreature = creature->getID();
+	stopWandering();
+
 	server.game().internalCreatureTurn(this, dir);
 }
 

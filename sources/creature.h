@@ -116,43 +116,75 @@ class Creature : public AutoId, public Thing {
 
 public:
 
+	typedef std::deque<Direction>  Route;
+
+
+            bool       canMoveTo               (Direction direction) const;
+            bool       canMoveTo               (const Position& position) const;
+	virtual bool       canMoveTo               (const Tile& tile) const;
+	        bool       canStep                 () const;
 	        PlayerP    getController           ();
 	        PlayerPC   getController           () const;
 	virtual CreatureP  getDirectOwner          () = 0;
 	virtual CreaturePC getDirectOwner          () const = 0;
 	        CreatureP  getFinalOwner           ();
 	        CreaturePC getFinalOwner           () const;
+	        Time       getNextMoveTime         () const;
+	        Direction  getRandomStepDirection  () const;
 			bool       hasController           () const;
 	        bool       hasDirectOwner          () const;
 	        bool       isAlive                 () const;
+	        bool       isDrunk                 () const;
 	virtual bool       isEnemy                 (const CreaturePC& creature) const = 0;
     		bool       isMonster               () const;
     		bool       isNpc                   () const;
 	        bool       isPlayer                () const;
 	        bool       isRemoved               () const;
 	        bool       isRemoving              () const;
+	        bool       isRouting               () const;
 	        bool       isThinking              () const;
+	        bool       isWandering             () const;
+			void       killSummons             ();
+	        bool       moveTo                  (Tile& tile);
 	virtual void       onCreatureAppear        (const CreatureP& creature);
 	virtual void       onCreatureMove          (const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
-			void       killSummons             ();
+			void       releaseSummons          ();
 	        bool       remove                  ();
+	        Direction  route                   ();
+	        Direction  stagger                 ();
 	        void       setDefaultOutfit        (Outfit_t defaultOutfit);
+	        void       startRouting            (const Route& route);
 	    	void       startThinking           (bool forced = false);
+	        void       startWandering          ();
+	    	bool       stepInDirection         (Direction direction);
+	    	void       stopRouting             ();
 			void       stopThinking            ();
+	        void       stopWandering           ();
+	        Direction  wander                  ();
 
 
 protected:
 
-	virtual bool hasSomethingToThinkAbout () const;
-	virtual bool hasToThinkAboutCreature  (const CreaturePC& creature) const;
-	virtual void onMonsterMasterChanged   (const MonsterP& monster, const CreatureP& previousMaster);
-	virtual void onThink                  (Duration elapsedTime);
-	virtual void onThinkingStopped        ();
+	virtual Direction getWanderingDirection    () const;
+	virtual Duration  getWanderingInterval     () const;
+	virtual bool      hasSomethingToThinkAbout () const;
+	virtual bool      hasToThinkAboutCreature  (const CreaturePC& creature) const;
+	virtual void      onMonsterMasterChanged   (const MonsterP& monster, const CreatureP& previousMaster);
+	virtual void      onMove                   (Tile& originTile, Tile& destinationTile);
+	virtual void      onRoutingStarted         ();
+	virtual void      onRoutingStopped         (bool preliminary);
+	virtual void      onThink                  (Duration elapsedTime);
+	virtual void      onThinkingStarted        ();
+	virtual void      onThinkingStopped        ();
+	virtual void      onWanderingStarted       ();
+	virtual void      onWanderingStopped       ();
 
 
 private:
 
-	void think ();
+	bool shouldStagger  () const;
+	void think          ();
+	void updateMovement (Time now);
 
 
 	LOGGER_DECLARATION;
@@ -160,17 +192,23 @@ private:
 	static const Duration THINK_DURATION;
 	static const Duration THINK_INTERVAL;
 
+	Time              _nextMoveTime;
+	Time              _nextWanderingTime;
 	Time              _previousThinkTime;
 	bool              _removed;
 	bool              _removing;
+	Route             _route;
 	Duration          _thinkDuration;
 	Scheduler::TaskId _thinkTaskId;
+	Tile*             _tile;
+	bool              _wandering;
 
 	friend class Monster;
 
 
 
 
+	uint64_t walkUpdateTicks;
 
 
 	protected:
@@ -230,28 +268,19 @@ private:
 		virtual int32_t getThrowRange() const {return 1;}
 		virtual RaceType_t getRace() const {return RACE_NONE;}
 
-		virtual bool isPushable() const {return getWalkDelay() <= 0;}
+		virtual bool isPushable() const {return true;}
 		virtual bool canSeeInvisibility() const {return false;}
 
-		int32_t getWalkDelay(Direction dir) const;
-		int32_t getWalkDelay() const;
-		int32_t getStepDuration(Direction dir) const;
-		int32_t getStepDuration() const;
+		Duration getStepDuration(Direction dir) const;
+		Duration getStepDuration() const;
 
 		void getPathToFollowCreature();
-		int64_t getEventStepTicks() const;
-		int64_t getTimeSinceLastMove() const;
 		virtual int32_t getStepSpeed() const {return getSpeed();}
 
 		int32_t getSpeed() const {return baseSpeed + varSpeed;}
 		void setSpeed(int32_t varSpeedDelta)
 		{
-			int32_t oldSpeed = getSpeed();
 			varSpeed = varSpeedDelta;
-			if(getSpeed() <= 0)
-				stopEventWalk();
-			else if(oldSpeed <= 0 && !listWalkDir.empty())
-				addEventWalk();
 		}
 
 		void setBaseSpeed(uint32_t newBaseSpeed) {baseSpeed = newBaseSpeed;}
@@ -273,14 +302,7 @@ private:
 		ZoneType_t getZone() const;
 
 		//walk functions
-		bool startAutoWalk(std::list<Direction>& listDir);
-		void addEventWalk();
-		void stopEventWalk();
-
-		//walk events
-		virtual void onWalk(Direction& dir);
-		virtual void onWalkAborted() {}
-		virtual void onWalkComplete() {}
+		bool startAutoWalk(const Route& route);
 
 		//follow functions
 		virtual Creature* getFollowCreature() const {return followCreature;}
@@ -377,8 +399,6 @@ private:
 		void setCreatureLight(LightInfo& light) {internalLight = light;}
 
 		virtual void onAttacking(uint32_t interval);
-		virtual void onWalk();
-		virtual bool getNextStep(Direction& dir, uint32_t& flags);
 
 		virtual void onAddTileItem(const Tile* tile, const Position& pos, const Item* item);
 		virtual void onUpdateTileItem(const Tile* tile, const Position& pos, const Item* oldItem,
@@ -434,7 +454,6 @@ private:
 
 	protected:
 
-		Tile* _tile;
 		uint32_t id;
 		bool isUpdatingPath;
 		StorageMap storageMap;
@@ -451,8 +470,6 @@ private:
 		Position masterPosition;
 		Position lastPosition;
 		int32_t masterRadius;
-		uint64_t lastStep;
-		uint32_t lastStepCost;
 		uint32_t baseSpeed;
 		int32_t varSpeed;
 		bool skillLoss;
@@ -468,9 +485,6 @@ private:
 
 		//follow variables
 		Creature* followCreature;
-		uint32_t eventWalk;
-		std::list<Direction> listWalkDir;
-		uint32_t walkUpdateTicks;
 		bool hasFollowPath;
 		bool forceUpdateFollowPath;
 
