@@ -50,3 +50,4 @@ Improvements
 - Use or develop a LUA framework.
 - Further consolidate `Position`, `StackPosition` and `ExtendedPosition`.
 - Migrate `TODO.md` to GitHub issues.
+- Never directly use enum values as array index or size. 

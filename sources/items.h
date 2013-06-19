@@ -19,6 +19,7 @@
 #define _ITEMS_H
 
 #include "const.h"
+#include "tools.h"
 
 #define SLOTP_WHEREEVER 0xFFFFFFFF
 #define SLOTP_HEAD 1 << 0
@@ -124,52 +125,6 @@ public:
 		speed, healthGain, healthTicks, manaGain, manaTicks;
 
 private:
-
-	static CombatTypeIndex combatTypeIndexFromCombatType(CombatType_t combatType) {
-		switch (combatType) {
-		case COMBAT_NONE:
-			return COMBATINDEX_NONE;
-
-		case COMBAT_PHYSICALDAMAGE:
-			return COMBATINDEX_PHYSICALDAMAGE;
-
-		case COMBAT_ENERGYDAMAGE:
-			return COMBATINDEX_ENERGYDAMAGE;
-
-		case COMBAT_EARTHDAMAGE:
-			return COMBATINDEX_EARTHDAMAGE;
-
-		case COMBAT_FIREDAMAGE:
-			return COMBATINDEX_FIREDAMAGE;
-
-		case COMBAT_UNDEFINEDDAMAGE:
-			return COMBATINDEX_UNDEFINEDDAMAGE;
-
-		case COMBAT_LIFEDRAIN:
-			return COMBATINDEX_LIFEDRAIN;
-
-		case COMBAT_MANADRAIN:
-			return COMBATINDEX_MANADRAIN;
-
-		case COMBAT_HEALING:
-			return COMBATINDEX_HEALING;
-
-		case COMBAT_DROWNDAMAGE:
-			return COMBATINDEX_DROWNDAMAGE;
-
-		case COMBAT_ICEDAMAGE:
-			return COMBATINDEX_ICEDAMAGE;
-
-		case COMBAT_HOLYDAMAGE:
-			return COMBATINDEX_HOLYDAMAGE;
-
-		case COMBAT_DEATHDAMAGE:
-			return COMBATINDEX_DEATHDAMAGE;
-		}
-
-		return COMBATINDEX_NONE;
-	}
-
 
 	int16_t _absorb[COMBATINDEX_COUNT-1];
 	int16_t _reflect[COMBATINDEX_COUNT-1][REFLECT_COUNT];

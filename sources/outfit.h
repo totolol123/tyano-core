@@ -19,6 +19,7 @@
 #define _OUTFIT_H
 
 #include "const.h"
+#include "tools.h"
 
 #define OUTFITS_MAX_NUMBER 25
 
@@ -36,25 +37,62 @@ struct Outfit
 {
 	Outfit()
 	{
-		memset(skills, 0, sizeof(skills));
-		memset(skillsPercent, 0, sizeof(skillsPercent));
-		memset(stats, 0 , sizeof(stats));
-		memset(statsPercent, 0, sizeof(statsPercent));
+		// temporary workaround. TODO: refactor outfits!
+		name.~basic_string();
+		storageValue.~basic_string();
 
-		memset(absorb, 0, sizeof(absorb));
-		memset(reflect[REFLECT_PERCENT], 0, sizeof(reflect[REFLECT_PERCENT]));
-		memset(reflect[REFLECT_CHANCE], 0, sizeof(reflect[REFLECT_CHANCE]));
+		memset(this, 0, sizeof(*this));
+
+		new(&name) std::string;
+		new(&storageValue) std::string;
 
 		isDefault = true;
 		requirement = REQUIREMENT_BOTH;
-		isPremium = manaShield = invisible = regeneration = false;
-		outfitId = lookType = addons = accessLevel = storageId = 0;
-		speed = healthGain = healthTicks = manaGain = manaTicks = conditionSuppressions = 0;
 	}
+
+
+	int16_t getAbsorb(CombatType_t combatType) const {
+		CombatTypeIndex index = combatTypeIndexFromCombatType(combatType);
+		if (index == COMBATINDEX_NONE) {
+			return 0;
+		}
+
+		return _absorb[index-1];
+	}
+
+
+	int16_t getReflect(CombatType_t combatType, Reflect_t reflectType) const {
+		CombatTypeIndex index = combatTypeIndexFromCombatType(combatType);
+		if (index == COMBATINDEX_NONE) {
+			return 0;
+		}
+
+		return _reflect[index-1][reflectType];
+	}
+
+
+	void setAbsorb(CombatType_t combatType, int16_t absorb) {
+		CombatTypeIndex index = combatTypeIndexFromCombatType(combatType);
+		if (index == COMBATINDEX_NONE) {
+			return;
+		}
+
+		_absorb[index-1] = absorb;
+	}
+
+
+	void setReflect(CombatType_t combatType, Reflect_t reflectType, int16_t reflect) {
+		CombatTypeIndex index = combatTypeIndexFromCombatType(combatType);
+		if (index == COMBATINDEX_NONE) {
+			return;
+		}
+
+		_reflect[index-1][reflectType] = reflect;
+	}
+
 
 	bool isDefault, isPremium, manaShield, invisible, regeneration;
 	AddonRequirement_t requirement;
-	int16_t absorb[COMBAT_LAST + 1], reflect[REFLECT_LAST + 1][COMBAT_LAST + 1];
 
 	uint16_t accessLevel, addons;
 	int32_t skills[SKILL_LAST + 1], skillsPercent[SKILL_LAST + 1], stats[STAT_LAST + 1], statsPercent[STAT_LAST + 1],
@@ -62,6 +100,13 @@ struct Outfit
 
 	uint32_t outfitId, lookType, storageId;
 	std::string name, storageValue;
+
+
+private:
+
+	int16_t _absorb[COMBATINDEX_COUNT-1];
+	int16_t _reflect[COMBATINDEX_COUNT-1][REFLECT_COUNT];
+
 };
 
 typedef std::list<Outfit> OutfitList;

@@ -172,184 +172,184 @@ bool Outfits::parseOutfitNode(xmlNodePtr p)
 				if(readXMLInteger(configNode, "percentAll", intValue))
 				{
 					for(uint32_t i = COMBAT_FIRST; i <= COMBAT_LAST; i++)
-						outfit.reflect[REFLECT_PERCENT][(CombatType_t)i] += intValue;
+						outfit.setReflect((CombatType_t)i, REFLECT_PERCENT, outfit.getReflect((CombatType_t)i, REFLECT_PERCENT) + intValue);
 				}
 
 				if(readXMLInteger(configNode, "percentElements", intValue))
 				{
-					outfit.reflect[REFLECT_PERCENT][COMBAT_ENERGYDAMAGE] += intValue;
-					outfit.reflect[REFLECT_PERCENT][COMBAT_FIREDAMAGE] += intValue;
-					outfit.reflect[REFLECT_PERCENT][COMBAT_EARTHDAMAGE] += intValue;
-					outfit.reflect[REFLECT_PERCENT][COMBAT_ICEDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_ENERGYDAMAGE, REFLECT_PERCENT) + intValue);
+					outfit.setReflect(COMBAT_FIREDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_FIREDAMAGE, REFLECT_PERCENT) + intValue);
+					outfit.setReflect(COMBAT_EARTHDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_EARTHDAMAGE, REFLECT_PERCENT) + intValue);
+					outfit.setReflect(COMBAT_ICEDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_ICEDAMAGE, REFLECT_PERCENT) + intValue);
 				}
 
 				if(readXMLInteger(configNode, "percentMagic", intValue))
 				{
-					outfit.reflect[REFLECT_PERCENT][COMBAT_ENERGYDAMAGE] += intValue;
-					outfit.reflect[REFLECT_PERCENT][COMBAT_FIREDAMAGE] += intValue;
-					outfit.reflect[REFLECT_PERCENT][COMBAT_EARTHDAMAGE] += intValue;
-					outfit.reflect[REFLECT_PERCENT][COMBAT_ICEDAMAGE] += intValue;
-					outfit.reflect[REFLECT_PERCENT][COMBAT_HOLYDAMAGE] += intValue;
-					outfit.reflect[REFLECT_PERCENT][COMBAT_DEATHDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_ENERGYDAMAGE, REFLECT_PERCENT) + intValue);
+					outfit.setReflect(COMBAT_FIREDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_FIREDAMAGE, REFLECT_PERCENT) + intValue);
+					outfit.setReflect(COMBAT_EARTHDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_EARTHDAMAGE, REFLECT_PERCENT) + intValue);
+					outfit.setReflect(COMBAT_ICEDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_ICEDAMAGE, REFLECT_PERCENT) + intValue);
+					outfit.setReflect(COMBAT_HOLYDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_HOLYDAMAGE, REFLECT_PERCENT) + intValue);
+					outfit.setReflect(COMBAT_DEATHDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_DEATHDAMAGE, REFLECT_PERCENT) + intValue);
 				}
 
 				if(readXMLInteger(configNode, "percentEnergy", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_ENERGYDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_ENERGYDAMAGE, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "percentFire", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_FIREDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_FIREDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_FIREDAMAGE, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "percentPoison", intValue) || readXMLInteger(configNode, "percentEarth", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_EARTHDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_EARTHDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_EARTHDAMAGE, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "percentIce", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_ICEDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_ICEDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_ICEDAMAGE, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "percentHoly", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_HOLYDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_HOLYDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_HOLYDAMAGE, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "percentDeath", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_DEATHDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_DEATHDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_DEATHDAMAGE, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "percentLifeDrain", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_LIFEDRAIN] += intValue;
+					outfit.setReflect(COMBAT_LIFEDRAIN, REFLECT_PERCENT, outfit.getReflect(COMBAT_LIFEDRAIN, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "percentManaDrain", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_MANADRAIN] += intValue;
+					outfit.setReflect(COMBAT_MANADRAIN, REFLECT_PERCENT, outfit.getReflect(COMBAT_MANADRAIN, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "percentDrown", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_DROWNDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_DROWNDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_DROWNDAMAGE, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "percentPhysical", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_PHYSICALDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_PHYSICALDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_PHYSICALDAMAGE, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "percentHealing", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_HEALING] += intValue;
+					outfit.setReflect(COMBAT_HEALING, REFLECT_PERCENT, outfit.getReflect(COMBAT_HEALING, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "percentUndefined", intValue))
-					outfit.reflect[REFLECT_PERCENT][COMBAT_UNDEFINEDDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_UNDEFINEDDAMAGE, REFLECT_PERCENT, outfit.getReflect(COMBAT_UNDEFINEDDAMAGE, REFLECT_PERCENT) + intValue);
 
 				if(readXMLInteger(configNode, "chanceAll", intValue))
 				{
 					for(uint32_t i = COMBAT_FIRST; i <= COMBAT_LAST; i++)
-						outfit.reflect[REFLECT_CHANCE][(CombatType_t)i] += intValue;
+						outfit.setReflect((CombatType_t)i, REFLECT_CHANCE, outfit.getReflect((CombatType_t)i, REFLECT_CHANCE) + intValue);
 				}
 
 				if(readXMLInteger(configNode, "chanceElements", intValue))
 				{
-					outfit.reflect[REFLECT_CHANCE][COMBAT_ENERGYDAMAGE] += intValue;
-					outfit.reflect[REFLECT_CHANCE][COMBAT_FIREDAMAGE] += intValue;
-					outfit.reflect[REFLECT_CHANCE][COMBAT_EARTHDAMAGE] += intValue;
-					outfit.reflect[REFLECT_CHANCE][COMBAT_ICEDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_ENERGYDAMAGE, REFLECT_CHANCE) + intValue);
+					outfit.setReflect(COMBAT_FIREDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_FIREDAMAGE, REFLECT_CHANCE) + intValue);
+					outfit.setReflect(COMBAT_EARTHDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_EARTHDAMAGE, REFLECT_CHANCE) + intValue);
+					outfit.setReflect(COMBAT_ICEDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_ICEDAMAGE, REFLECT_CHANCE) + intValue);
 				}
 
 				if(readXMLInteger(configNode, "chanceMagic", intValue))
 				{
-					outfit.reflect[REFLECT_CHANCE][COMBAT_ENERGYDAMAGE] += intValue;
-					outfit.reflect[REFLECT_CHANCE][COMBAT_FIREDAMAGE] += intValue;
-					outfit.reflect[REFLECT_CHANCE][COMBAT_EARTHDAMAGE] += intValue;
-					outfit.reflect[REFLECT_CHANCE][COMBAT_ICEDAMAGE] += intValue;
-					outfit.reflect[REFLECT_CHANCE][COMBAT_HOLYDAMAGE] += intValue;
-					outfit.reflect[REFLECT_CHANCE][COMBAT_DEATHDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_ENERGYDAMAGE, REFLECT_CHANCE) + intValue);
+					outfit.setReflect(COMBAT_FIREDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_FIREDAMAGE, REFLECT_CHANCE) + intValue);
+					outfit.setReflect(COMBAT_EARTHDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_EARTHDAMAGE, REFLECT_CHANCE) + intValue);
+					outfit.setReflect(COMBAT_ICEDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_ICEDAMAGE, REFLECT_CHANCE) + intValue);
+					outfit.setReflect(COMBAT_HOLYDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_HOLYDAMAGE, REFLECT_CHANCE) + intValue);
+					outfit.setReflect(COMBAT_DEATHDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_DEATHDAMAGE, REFLECT_CHANCE) + intValue);
 				}
 
 				if(readXMLInteger(configNode, "chanceEnergy", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_ENERGYDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_ENERGYDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_ENERGYDAMAGE, REFLECT_CHANCE) + intValue);
 
 				if(readXMLInteger(configNode, "chanceFire", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_FIREDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_FIREDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_FIREDAMAGE, REFLECT_CHANCE) + intValue);
 
 				if(readXMLInteger(configNode, "chancePoison", intValue) || readXMLInteger(configNode, "chanceEarth", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_EARTHDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_EARTHDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_EARTHDAMAGE, REFLECT_CHANCE) + intValue);
 
 				if(readXMLInteger(configNode, "chanceIce", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_ICEDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_ICEDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_ICEDAMAGE, REFLECT_CHANCE) + intValue);
 
 				if(readXMLInteger(configNode, "chanceHoly", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_HOLYDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_HOLYDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_HOLYDAMAGE, REFLECT_CHANCE) + intValue);
 
 				if(readXMLInteger(configNode, "chanceDeath", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_DEATHDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_DEATHDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_DEATHDAMAGE, REFLECT_CHANCE) + intValue);
 
 				if(readXMLInteger(configNode, "chanceLifeDrain", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_LIFEDRAIN] += intValue;
+					outfit.setReflect(COMBAT_LIFEDRAIN, REFLECT_CHANCE, outfit.getReflect(COMBAT_LIFEDRAIN, REFLECT_CHANCE) + intValue);
 
 				if(readXMLInteger(configNode, "chanceManaDrain", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_MANADRAIN] += intValue;
+					outfit.setReflect(COMBAT_MANADRAIN, REFLECT_CHANCE, outfit.getReflect(COMBAT_MANADRAIN, REFLECT_CHANCE) + intValue);
 
 				if(readXMLInteger(configNode, "chanceDrown", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_DROWNDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_DROWNDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_DROWNDAMAGE, REFLECT_CHANCE) + intValue);
 
 				if(readXMLInteger(configNode, "chancePhysical", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_PHYSICALDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_PHYSICALDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_PHYSICALDAMAGE, REFLECT_CHANCE) + intValue);
 
 				if(readXMLInteger(configNode, "chanceHealing", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_HEALING] += intValue;
+					outfit.setReflect(COMBAT_HEALING, REFLECT_CHANCE, outfit.getReflect(COMBAT_HEALING, REFLECT_CHANCE) + intValue);
 
 				if(readXMLInteger(configNode, "chanceUndefined", intValue))
-					outfit.reflect[REFLECT_CHANCE][COMBAT_UNDEFINEDDAMAGE] += intValue;
+					outfit.setReflect(COMBAT_UNDEFINEDDAMAGE, REFLECT_CHANCE, outfit.getReflect(COMBAT_UNDEFINEDDAMAGE, REFLECT_CHANCE) + intValue);
 			}
 			else if(!xmlStrcmp(configNode->name, (const xmlChar*)"absorb"))
 			{
 				if(readXMLInteger(configNode, "percentAll", intValue))
 				{
 					for(int32_t i = COMBAT_FIRST; i <= COMBAT_LAST; i++)
-						outfit.absorb[(CombatType_t)i] += intValue;
+						outfit.setAbsorb((CombatType_t)i, outfit.getAbsorb((CombatType_t)i) + intValue);
 				}
 
 				if(readXMLInteger(configNode, "percentElements", intValue))
 				{
-					outfit.absorb[COMBAT_ENERGYDAMAGE] += intValue;
-					outfit.absorb[COMBAT_FIREDAMAGE] += intValue;
-					outfit.absorb[COMBAT_EARTHDAMAGE] += intValue;
-					outfit.absorb[COMBAT_ICEDAMAGE] += intValue;
+					outfit.setAbsorb(COMBAT_ENERGYDAMAGE, outfit.getAbsorb(COMBAT_ENERGYDAMAGE) + intValue);
+					outfit.setAbsorb(COMBAT_FIREDAMAGE, outfit.getAbsorb(COMBAT_FIREDAMAGE) + intValue);
+					outfit.setAbsorb(COMBAT_EARTHDAMAGE, outfit.getAbsorb(COMBAT_EARTHDAMAGE) + intValue);
+					outfit.setAbsorb(COMBAT_ICEDAMAGE, outfit.getAbsorb(COMBAT_ICEDAMAGE) + intValue);
 				}
 
 				if(readXMLInteger(configNode, "percentMagic", intValue))
 				{
-					outfit.absorb[COMBAT_ENERGYDAMAGE] += intValue;
-					outfit.absorb[COMBAT_FIREDAMAGE] += intValue;
-					outfit.absorb[COMBAT_EARTHDAMAGE] += intValue;
-					outfit.absorb[COMBAT_ICEDAMAGE] += intValue;
-					outfit.absorb[COMBAT_HOLYDAMAGE] += intValue;
-					outfit.absorb[COMBAT_DEATHDAMAGE] += intValue;
+					outfit.setAbsorb(COMBAT_ENERGYDAMAGE, outfit.getAbsorb(COMBAT_ENERGYDAMAGE) + intValue);
+					outfit.setAbsorb(COMBAT_FIREDAMAGE, outfit.getAbsorb(COMBAT_FIREDAMAGE) + intValue);
+					outfit.setAbsorb(COMBAT_EARTHDAMAGE, outfit.getAbsorb(COMBAT_EARTHDAMAGE) + intValue);
+					outfit.setAbsorb(COMBAT_ICEDAMAGE, outfit.getAbsorb(COMBAT_ICEDAMAGE) + intValue);
+					outfit.setAbsorb(COMBAT_HOLYDAMAGE, outfit.getAbsorb(COMBAT_HOLYDAMAGE) + intValue);
+					outfit.setAbsorb(COMBAT_DEATHDAMAGE, outfit.getAbsorb(COMBAT_DEATHDAMAGE) + intValue);
 				}
 
 				if(readXMLInteger(configNode, "percentEnergy", intValue))
-					outfit.absorb[COMBAT_ENERGYDAMAGE] += intValue;
+					outfit.setAbsorb(COMBAT_ENERGYDAMAGE, outfit.getAbsorb(COMBAT_ENERGYDAMAGE) + intValue);
 
 				if(readXMLInteger(configNode, "percentFire", intValue))
-					outfit.absorb[COMBAT_FIREDAMAGE] += intValue;
+					outfit.setAbsorb(COMBAT_FIREDAMAGE, outfit.getAbsorb(COMBAT_FIREDAMAGE) + intValue);
 
 				if(readXMLInteger(configNode, "percentPoison", intValue) || readXMLInteger(configNode, "percentEarth", intValue))
-					outfit.absorb[COMBAT_EARTHDAMAGE] += intValue;
+					outfit.setAbsorb(COMBAT_EARTHDAMAGE, outfit.getAbsorb(COMBAT_EARTHDAMAGE) + intValue);
 
 				if(readXMLInteger(configNode, "percentIce", intValue))
-					outfit.absorb[COMBAT_ICEDAMAGE] += intValue;
+					outfit.setAbsorb(COMBAT_ICEDAMAGE, outfit.getAbsorb(COMBAT_ICEDAMAGE) + intValue);
 
 				if(readXMLInteger(configNode, "percentHoly", intValue))
-					outfit.absorb[COMBAT_HOLYDAMAGE] += intValue;
+					outfit.setAbsorb(COMBAT_HOLYDAMAGE, outfit.getAbsorb(COMBAT_HOLYDAMAGE) + intValue);
 
 				if(readXMLInteger(configNode, "percentDeath", intValue))
-					outfit.absorb[COMBAT_DEATHDAMAGE] += intValue;
+					outfit.setAbsorb(COMBAT_DEATHDAMAGE, outfit.getAbsorb(COMBAT_DEATHDAMAGE) + intValue);
 
 				if(readXMLInteger(configNode, "percentLifeDrain", intValue))
-					outfit.absorb[COMBAT_LIFEDRAIN] += intValue;
+					outfit.setAbsorb(COMBAT_LIFEDRAIN, outfit.getAbsorb(COMBAT_LIFEDRAIN) + intValue);
 
 				if(readXMLInteger(configNode, "percentManaDrain", intValue))
-					outfit.absorb[COMBAT_MANADRAIN] += intValue;
+					outfit.setAbsorb(COMBAT_MANADRAIN, outfit.getAbsorb(COMBAT_MANADRAIN) + intValue);
 
 				if(readXMLInteger(configNode, "percentDrown", intValue))
-					outfit.absorb[COMBAT_DROWNDAMAGE] += intValue;
+					outfit.setAbsorb(COMBAT_DROWNDAMAGE, outfit.getAbsorb(COMBAT_DROWNDAMAGE) + intValue);
 
 				if(readXMLInteger(configNode, "percentPhysical", intValue))
-					outfit.absorb[COMBAT_PHYSICALDAMAGE] += intValue;
+					outfit.setAbsorb(COMBAT_PHYSICALDAMAGE, outfit.getAbsorb(COMBAT_PHYSICALDAMAGE) + intValue);
 
 				if(readXMLInteger(configNode, "percentHealing", intValue))
-					outfit.absorb[COMBAT_HEALING] += intValue;
+					outfit.setAbsorb(COMBAT_HEALING, outfit.getAbsorb(COMBAT_HEALING) + intValue);
 
 				if(readXMLInteger(configNode, "percentUndefined", intValue))
-					outfit.absorb[COMBAT_UNDEFINEDDAMAGE] += intValue;
+					outfit.setAbsorb(COMBAT_UNDEFINEDDAMAGE, outfit.getAbsorb(COMBAT_UNDEFINEDDAMAGE) + intValue);
 			}
 			else if(!xmlStrcmp(configNode->name, (const xmlChar*)"skills"))
 			{
@@ -804,7 +804,7 @@ int16_t Outfits::getOutfitAbsorb(uint32_t lookType, uint16_t sex, CombatType_t c
 	for(OutfitMap::iterator it = map.begin(); it != map.end(); ++it)
 	{
 		if(it->second.lookType == lookType)
-			return it->second.absorb[combat];
+			return it->second.getAbsorb(combat);
 	}
 
 	return 0;
@@ -821,8 +821,8 @@ int16_t Outfits::getOutfitReflect(uint32_t lookType, uint16_t sex, CombatType_t 
 		if(it->second.lookType != lookType)
 			continue;
 
-		if(it->second.reflect[REFLECT_CHANCE][combat] < random_range(0, 100))
-			return it->second.reflect[REFLECT_PERCENT][combat];
+		if(it->second.getReflect(combat, REFLECT_CHANCE) < random_range(0, 100))
+			return it->second.getReflect(combat, REFLECT_PERCENT);
 	}
 
 	return 0;
