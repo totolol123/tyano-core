@@ -284,14 +284,13 @@ bool IOMapSerialize::loadMapRelational(Map* map)
 				{
 					if(house->hasPendingTransfer())
 					{
-						if(Player* player = server.game().getPlayerByGuidEx(house->getOwner()))
+						if(PlayerP player = server.game().getPlayerByGuidEx(house->getOwner()))
 						{
 							Depot* depot = player->getDepot(house->getTownId(), true);
 							loadItems(db, std::move(itemsResult), depot, true);
 							if(player->isVirtual())
 							{
-								IOLoginData::getInstance()->savePlayer(player);
-								delete player;
+								IOLoginData::getInstance()->savePlayer(player.get());
 							}
 						}
 					}
@@ -324,14 +323,13 @@ bool IOMapSerialize::loadMapRelational(Map* map)
 					{
 						if(house->hasPendingTransfer())
 						{
-							if(Player* player = server.game().getPlayerByGuidEx(house->getOwner()))
+							if(PlayerP player = server.game().getPlayerByGuidEx(house->getOwner()))
 							{
 								Depot* depot = player->getDepot(house->getTownId(), true);
 								loadItems(db, std::move(itemsResult), depot, true);
 								if(player->isVirtual())
 								{
-									IOLoginData::getInstance()->savePlayer(player);
-									delete player;
+									IOLoginData::getInstance()->savePlayer(player.get());
 								}
 							}
 						}
@@ -413,7 +411,7 @@ bool IOMapSerialize::loadMapBinary(Map* map)
 			Position pos(x, y, (int16_t)z);
 			if(house && house->hasPendingTransfer())
 			{
-				if(Player* player = server.game().getPlayerByGuidEx(house->getOwner()))
+				if(PlayerP player = server.game().getPlayerByGuidEx(house->getOwner()))
 				{
 					Depot* depot = player->getDepot(player->getTown(), true);
 					while(itemCount--)
@@ -421,8 +419,7 @@ bool IOMapSerialize::loadMapBinary(Map* map)
 
 					if(player->isVirtual())
 					{
-						IOLoginData::getInstance()->savePlayer(player);
-						delete player;
+						IOLoginData::getInstance()->savePlayer(player.get());
 					}
 				}
 			}

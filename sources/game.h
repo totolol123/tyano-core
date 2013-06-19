@@ -32,6 +32,7 @@ class  ServiceManager;
 typedef std::vector<boost::intrusive_ptr<Creature>>     CreatureVector;
 typedef std::vector<Player*>                            PlayerVector;
 typedef std::list<boost::intrusive_ptr<Item>>           ItemList;
+typedef boost::intrusive_ptr<Player>                    PlayerP;
 typedef std::map<boost::intrusive_ptr<Item>, uint32_t>  TradeItemMap;
 
 
@@ -224,7 +225,7 @@ public:
 		  * \param s is the name identifier
 		  * \returns A Pointer to the player
 		  */
-		Player* getPlayerByName(std::string s);
+		PlayerP getPlayerByName(std::string s);
 
 		/**
 		  * Returns a player based on a string name identifier
@@ -234,7 +235,7 @@ public:
 		  * \param s is the name identifier
 		  * \return A Pointer to the player
 		  */
-		Player* getPlayerByNameEx(const std::string& s);
+		PlayerP getPlayerByNameEx(const std::string& s);
 
 		/**
 		  * Returns a player based on a guid identifier
@@ -244,7 +245,7 @@ public:
 		  * \param guid is the identifier
 		  * \return A Pointer to the player
 		  */
-		Player* getPlayerByGuid(uint32_t guid);
+		PlayerP getPlayerByGuid(uint32_t guid);
 
 		/**
 		  * Returns a player based on a guid identifier
@@ -253,7 +254,7 @@ public:
 		  * use isOffline() to determine if the player was offline
 		  * \param guid is the identifier
 		  */
-		Player* getPlayerByGuidEx(uint32_t guid);
+		PlayerP getPlayerByGuidEx(uint32_t guid);
 
 		/**
 		  * Returns a player based on a string name identifier, with support for the "~" wildcard.

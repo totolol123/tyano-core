@@ -34,7 +34,8 @@ struct Outfit_t;
 class  Player;
 class  Thing;
 
-typedef std::unique_ptr<DBResult>  DBResultP;
+typedef std::unique_ptr<DBResult>    DBResultP;
+typedef boost::intrusive_ptr<Thing>  ThingP;
 
 
 enum LuaVariantType_t
@@ -113,7 +114,7 @@ class ScriptEnviroment
 		Creature* getCreatureByUID(uint32_t uid);
 		Player* getPlayerByUID(uint32_t uid);
 
-		uint32_t addThing(Thing* thing);
+		uint32_t addThing(ThingP thing);
 		void insertThing(uint32_t uid, Thing* thing);
 		void removeThing(uint32_t uid);
 
@@ -152,7 +153,7 @@ class ScriptEnviroment
 
 	private:
 
-		typedef std::map<uint64_t, Thing*> ThingMap;
+		typedef std::map<uint64_t, ThingP> ThingMap;
 		typedef std::vector<const LuaVariant*> VariantVector;
 		typedef std::map<uint32_t, std::string> StorageMap;
 		typedef std::map<uint32_t, CombatArea*> AreaMap;
