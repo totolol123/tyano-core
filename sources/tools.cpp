@@ -1560,6 +1560,11 @@ UnixTimestamp::UnixTimestamp(uint32_t value)
 {}
 
 
+UnixTimestamp::UnixTimestamp(const RealTime& time)
+	: _value(realTimeToUnixTimestampValue(time))
+{}
+
+
 RealTime UnixTimestamp::realTimeForUtcDate(int day, int month, int year) {
 	// see http://stackoverflow.com/questions/14504870/convert-stdchronotime-point-to-unix-timestamp
 
@@ -1572,24 +1577,36 @@ RealTime UnixTimestamp::realTimeForUtcDate(int day, int month, int year) {
 	localComponents.tm_isdst = -1;
 
 	// Get local time from components.
-	std::time_t localTime = std::mktime(&localComponents);
+	auto localTime = std::mktime(&localComponents);
 
 	// Get components from local time with UTC offset applied.
-	std::tm offsetComponents = *std::gmtime(&localTime);
-	offsetComponents.tm_isdst = -1;
+	auto offsetComponents = std::gmtime(&localTime);
+	offsetComponents->tm_isdst = -1;
 
 	// Get local time again using adjusted components.
-	std::time_t offsetTime = std::mktime(&offsetComponents);
+	auto offsetTime = std::mktime(offsetComponents);
 
 	// Compute different between offset time and local time to get the actual UTC time.
-	std::time_t utcTime = localTime - (offsetTime - localTime);
+	auto utcTime = localTime - (offsetTime - localTime);
 
 	// The rest is easy :)
 	return RealClock::from_time_t(utcTime);
 }
 
 
+uint32_t UnixTimestamp::realTimeToUnixTimestampValue(const RealTime& time) {
+	auto duration = time - _epoch;
+	auto durationInSeconds = std::chrono::duration_cast<Seconds>(duration);
+	return durationInSeconds.count() + _epochValue;
+}
+
+
 UnixTimestamp::operator RealTime() const {
 	// Convert value to our internal epoch and use it as duration relative to our epoch in RealTime.
 	return _epoch + Seconds(static_cast<int64_t>(_value) - _epochValue);
+}
+
+
+std::ostream& operator << (std::ostream& stream, const UnixTimestamp& timestamp) {
+	return stream << timestamp._value;
 }

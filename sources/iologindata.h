@@ -47,16 +47,28 @@ typedef std::shared_ptr<Account>  AccountP;
 typedef std::pair<int32_t, Item*> itemBlock;
 typedef std::list<itemBlock> ItemBlockList;
 
-class IOLoginData
-{
-	public:
+class IOLoginData {
+
+public:
+
+	bool addPremiumDaysToAccount        (Account& account, uint32_t days) const;
+	bool removePremiumDaysFromAccount   (Account& account, uint32_t days) const;
+	bool setPremiumDaysForAccount       (Account& account, uint32_t days) const;
+	bool setUnlimitedPremiumForAccount  (Account& account) const;
+
+
+
+
+
+
 		static IOLoginData* getInstance()
 		{
 			static IOLoginData instance;
 			return &instance;
 		}
 
-		AccountP loadAccount(uint32_t accountId, bool preLoad = false);
+		bool loadAccount(Account& account, bool preLoad = false) const;
+		AccountP loadAccount(uint32_t accountId, bool preLoad = false) const;
 		void saveAccount(const Account& account);
 
 		bool getAccountId(const std::string& name, uint32_t& number);
@@ -126,7 +138,7 @@ class IOLoginData
 
 		typedef std::map<int32_t, std::pair<boost::intrusive_ptr<Item>, int32_t> > ItemMap;
 
-		void loadCharacters(Account& account);
+		void loadCharacters(Account& account) const;
 
 		bool saveItems(const Player* player, const ItemBlockList& itemList, DBInsert& query_insert);
 		void loadItems(ItemMap& itemMap, DBResultP result);

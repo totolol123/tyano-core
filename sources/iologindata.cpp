@@ -45,47 +45,177 @@
 LOGGER_DEFINITION(IOLoginData);
 
 
+bool IOLoginData::addPremiumDaysToAccount(Account& account, uint32_t days) const {
+	if (days == 0) {
+		return true;
+	}
 
-AccountP IOLoginData::loadAccount(uint32_t accountId, bool preloadOnly/* = false*/) {
+	if (!loadAccount(account)) {
+		return false;
+	}
+
+	if (account.hasUnlimitedPremium()) {
+		return true;
+	}
+
+	RealTime expiration;
+	if (account.hasPremium()) {
+		expiration = account.getPremiumExpiration();
+	}
+	else {
+		expiration = RealClock::now();
+	}
+
+	expiration += Days(days);
+
+	DBQuery query;
+	query << "UPDATE `accounts` SET `premiumExpiration` = " << UnixTimestamp(expiration) << " WHERE `id` = " << account.getId();
+
+	if (!server.database().executeQuery(query.str())) {
+		LOGe("Failed to add premium days to account " << account.getId() << ".");
+		return false;
+	}
+
+	account.setPremiumExpiration(expiration);
+
+	return true;
+}
+
+
+bool IOLoginData::removePremiumDaysFromAccount(Account& account, uint32_t days) const {
+	if (days == 0) {
+		return true;
+	}
+
+	if (!loadAccount(account)) {
+		return false;
+	}
+
+	if (account.hasUnlimitedPremium()) {
+		return true;
+	}
+	if (!account.hasPremium()) {
+		return true;
+	}
+
+	RealTime expiration = account.getPremiumExpiration() - Days(days);
+
+	RealTime now = RealClock::now();
+	if (expiration < now) {
+		expiration = now;
+	}
+
+	DBQuery query;
+	query << "UPDATE `accounts` SET `premiumExpiration` = " << UnixTimestamp(expiration) << " WHERE `id` = " << account.getId();
+
+	if (!server.database().executeQuery(query.str())) {
+		LOGe("Failed to remove premium expiration from account " << account.getId() << ".");
+		return false;
+	}
+
+	account.setPremiumExpiration(expiration);
+
+	return true;
+}
+
+
+bool IOLoginData::setPremiumDaysForAccount(Account& account, uint32_t days) const {
+	if (!loadAccount(account)) {
+		return false;
+	}
+
+	if (!account.hasPremium() && days == 0) {
+		return true;
+	}
+
+	RealTime expiration = RealClock::now() + Days(days);
+
+	DBQuery query;
+	query << "UPDATE `accounts` SET `premiumExpiration` = " << UnixTimestamp(expiration) << " WHERE `id` = " << account.getId();
+
+	if (!server.database().executeQuery(query.str())) {
+		LOGe("Failed to set premium expiration for account " << account.getId() << ".");
+		return false;
+	}
+
+	account.setPremiumExpiration(expiration);
+
+	return true;
+}
+
+
+bool IOLoginData::setUnlimitedPremiumForAccount(Account& account) const {
+	if (!loadAccount(account)) {
+		return false;
+	}
+
+	if (account.hasUnlimitedPremium()) {
+		return true;
+	}
+
+	DBQuery query;
+	query << "UPDATE `accounts` SET `premiumExpiration` = 0 WHERE `id` = " << account.getId();
+
+	if (!server.database().executeQuery(query.str())) {
+		LOGe("Failed to set unlimited premium for account " << account.getId() << ".");
+		return false;
+	}
+
+	account.setPremiumExpiration(Account::PREMIUM_UNLIMITED);
+
+	return true;
+}
+
+
+
+bool IOLoginData::loadAccount(Account& account, bool preloadOnly/* = false*/) const {
 	Database& database = server.database();
 
 	DBQuery query;
-	query << "SELECT `id`, `name`, `password`, `premiumExpiration`, `key`, `warnings` FROM `accounts` WHERE `id` = " << accountId << " LIMIT 1";
+	query << "SELECT `id`, `name`, `password`, `premiumExpiration`, `key`, `warnings` FROM `accounts` WHERE `id` = " << account.getId() << " LIMIT 1";
 
 	DBResultP result = database.storeQuery(query.str());
 	if (result == nullptr) {
-		LOGe("Failed to load account " << accountId << ".");
-		return nullptr;
+		LOGe("Failed to load account " << account.getId() << ".");
+		return false;
 	}
 
-	AccountP account = std::make_shared<Account>(result->getDataInt("id"));
-	account->setName(result->getDataString("name"));
-	account->setPassword(result->getDataString("password"));
-	account->setRecoveryKey(result->getDataString("key"));
-	account->setWarnings(result->getDataInt("warnings"));
+	account.setName(result->getDataString("name"));
+	account.setPassword(result->getDataString("password"));
+	account.setRecoveryKey(result->getDataString("key"));
+	account.setWarnings(result->getDataInt("warnings"));
 
 	if (result->isNull("premiumExpiration")) {
-		account->setPremiumExpiration(Account::PREMIUM_NONE);
+		account.setPremiumExpiration(Account::PREMIUM_NONE);
 	}
 	else {
 		uint32_t premiumExpiration = result->getUnsigned32("premiumExpiration");
 		if (premiumExpiration == 0) {
-			account->setPremiumExpiration(Account::PREMIUM_UNLIMITED);
+			account.setPremiumExpiration(Account::PREMIUM_UNLIMITED);
 		}
 		else {
-			account->setPremiumExpiration(UnixTimestamp(premiumExpiration));
+			account.setPremiumExpiration(UnixTimestamp(premiumExpiration));
 		}
 	}
 
 	if (!preloadOnly) {
-		loadCharacters(*account);
+		loadCharacters(account);
+	}
+
+	return true;
+}
+
+AccountP IOLoginData::loadAccount(uint32_t accountId, bool preloadOnly/* = false*/) const {
+	AccountP account = std::make_shared<Account>(accountId);
+	if (!loadAccount(*account, preloadOnly)) {
+		return nullptr;
 	}
 
 	return account;
 }
 
 
-void IOLoginData::loadCharacters(Account& account) {
+void IOLoginData::loadCharacters(Account& account) const {
 	DBQuery query;
 #ifdef __LOGIN_SERVER__
 	query << "SELECT `name`, `level`, `vocation`, `world_id` FROM `players` WHERE `account_id` = " << accountId << " AND `deleted` = 0 ORDER BY `name` ASC";

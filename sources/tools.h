@@ -146,13 +146,17 @@ class UnixTimestamp {
 public:
 
 	explicit UnixTimestamp(uint32_t value);
+	explicit UnixTimestamp(const RealTime& time);
 
 	operator RealTime() const;
+
+	friend std::ostream& operator << (std::ostream& stream, const UnixTimestamp& timestamp);
 
 
 private:
 
-	static RealTime realTimeForUtcDate(int day, int month, int year);
+	static RealTime realTimeForUtcDate           (int day, int month, int year);
+	static uint32_t realTimeToUnixTimestampValue (const RealTime& time);
 
 
 	static const RealTime _epoch;
