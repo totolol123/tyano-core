@@ -775,6 +775,8 @@ Direction getReverseDirection(Direction dir)
 {
 	switch(dir)
 	{
+		case Direction::NONE:
+			return Direction::NONE;
 		case Direction::NORTH:
 			return Direction::SOUTH;
 		case Direction::SOUTH:
@@ -800,6 +802,8 @@ Position getNextPosition(Direction direction, Position pos)
 {
 	switch(direction)
 	{
+		case Direction::NONE:
+			break;
 		case Direction::NORTH:
 			pos.y--;
 			break;

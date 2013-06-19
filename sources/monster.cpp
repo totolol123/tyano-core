@@ -1148,12 +1148,66 @@ void Monster::pushCreatures(Tile* tile)
 		server.game().addMagicEffect(tile->getPosition(), MAGIC_EFFECT_BLOCKHIT);
 }
 
+<<<<<<< cutting-edge
+
+
+Direction Monster::getDanceStep(bool keepAttack /*= true*/, bool keepDistance /*= true*/) const
+{
+	Position position = getPosition();
+=======
+Direction Monster::getNextStepDirection() const {
+	Direction direction = Creature::getNextStepDirection();
+	if (direction != Direction::NONE) {
+		return direction;
+	}
+>>>>>>> ad0d4ec Started refactoring creature movement code...
+
+<<<<<<< cutting-edge
+=======
+	if (!isAlive()) {
+		return Direction::NONE;
+	}
+
+	if((!followCreature || !hasFollowPath) && !hasMaster())
+	{
+		if(followCreature)
+			direction = getRandomStepDirection();
+	}
+	else if(hasMaster() || followCreature)
+	{
+		//target dancing
+		if(attackedCreature && attackedCreature == followCreature)
+		{
+			if(isFleeing())
+				direction = getDanceStep(false, false);
+			else if(_type->staticAttackChance < (uint32_t)random_range(1, 100))
+				direction = getDanceStep();
+		}
+	}
+
+	if(direction != Direction::NONE && (canPushItems() || canPushCreatures()))
+	{
+		if(Tile* tile = server.game().getTile(Spells::getCasterPosition(this, direction)))
+		{
+			// TODO refactor!
+
+			if(canPushItems())
+				const_cast<Monster*>(this)->pushItems(tile);
+
+			if(canPushCreatures())
+				const_cast<Monster*>(this)->pushCreatures(tile);
+		}
+	}
+
+	return direction;
+}
 
 
 Direction Monster::getDanceStep(bool keepAttack /*= true*/, bool keepDistance /*= true*/) const
 {
 	Position position = getPosition();
 
+>>>>>>> ad0d4ec Started refactoring creature movement code...
 	assert(attackedCreature);
 	bool canDoAttackNow = canUseAttack(position, attackedCreature);
 	const Position& centerPos = attackedCreature->getPosition();

@@ -396,6 +396,9 @@ std::ostream& operator << (std::ostream& stream, const Position& position) {
 
 std::ostream& operator << (std::ostream& stream, Direction direction) {
 	switch (direction) {
+		case Direction::NONE:
+			return stream << "none";
+
 		case Direction::NORTH:
 			return stream << "north";
 

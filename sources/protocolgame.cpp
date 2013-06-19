@@ -1339,7 +1339,7 @@ void ProtocolGame::parseReceivePing(NetworkMessage& msg)
 void ProtocolGame::parseAutoWalk(NetworkMessage& msg)
 {
 	// first we get all directions...
-	std::list<Direction> path;
+	std::deque<Direction> path;
 	size_t dirCount = msg.GetByte();
 	for(size_t i = 0; i < dirCount; ++i)
 	{

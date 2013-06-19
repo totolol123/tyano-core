@@ -122,7 +122,10 @@ public:
             bool       canMoveTo               (Direction direction) const;
             bool       canMoveTo               (const Position& position) const;
 	virtual bool       canMoveTo               (const Tile& tile) const;
+<<<<<<< cutting-edge
 	        bool       canStep                 () const;
+=======
+>>>>>>> ad0d4ec Started refactoring creature movement code...
 	        PlayerP    getController           ();
 	        PlayerPC   getController           () const;
 	virtual CreatureP  getDirectOwner          () = 0;
@@ -156,17 +159,28 @@ public:
 	        void       startRouting            (const Route& route);
 	    	void       startThinking           (bool forced = false);
 	        void       startWandering          ();
+<<<<<<< cutting-edge
+=======
+	    	Direction  step                    ();
+>>>>>>> ad0d4ec Started refactoring creature movement code...
 	    	bool       stepInDirection         (Direction direction);
 	    	void       stopRouting             ();
 			void       stopThinking            ();
 	        void       stopWandering           ();
+<<<<<<< cutting-edge
 	        Direction  wander                  ();
+=======
+>>>>>>> ad0d4ec Started refactoring creature movement code...
 
 
 protected:
 
+<<<<<<< cutting-edge
 	virtual Direction getWanderingDirection    () const;
 	virtual Duration  getWanderingInterval     () const;
+=======
+	virtual Direction getNextStepDirection     () const;
+>>>>>>> ad0d4ec Started refactoring creature movement code...
 	virtual bool      hasSomethingToThinkAbout () const;
 	virtual bool      hasToThinkAboutCreature  (const CreaturePC& creature) const;
 	virtual void      onMonsterMasterChanged   (const MonsterP& monster, const CreatureP& previousMaster);
@@ -182,9 +196,14 @@ protected:
 
 private:
 
+<<<<<<< cutting-edge
 	bool shouldStagger  () const;
 	void think          ();
 	void updateMovement (Time now);
+=======
+	void think          ();
+	void updateMovement ();
+>>>>>>> ad0d4ec Started refactoring creature movement code...
 
 
 	LOGGER_DECLARATION;
@@ -193,7 +212,10 @@ private:
 	static const Duration THINK_INTERVAL;
 
 	Time              _nextMoveTime;
+<<<<<<< cutting-edge
 	Time              _nextWanderingTime;
+=======
+>>>>>>> ad0d4ec Started refactoring creature movement code...
 	Time              _previousThinkTime;
 	bool              _removed;
 	bool              _removing;

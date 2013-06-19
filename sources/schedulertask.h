@@ -29,7 +29,8 @@ public:
 	typedef std::unique_ptr<SchedulerTask>  UniquePointer;
 
 
-	static UniquePointer create(Duration delay, const Function& function);
+	static UniquePointer create (Duration delay, const Function& function);
+	static UniquePointer create (Time time, const Function& function);
 
 	Id   getId   () const;
 	Time getTime () const;
@@ -38,7 +39,7 @@ public:
 
 private:
 
-	SchedulerTask(Duration delay, const Function& function);
+	SchedulerTask(Time time, const Function& function);
 
 
 	Id   _id;

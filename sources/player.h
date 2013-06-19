@@ -47,8 +47,20 @@ typedef std::list<Party*> PartyList;
 #define STAMINA_MAX (42 * 60 * 60 * 1000)
 #define STAMINA_MULTIPLIER (60 * 1000)
 
-class Player : public Creature, public Cylinder
-{
+class Player : public Creature, public Cylinder {
+
+protected:
+
+	virtual void onMove           (Tile& originTile, Tile& destinationTile);
+	virtual void onRoutingStarted ();
+	virtual void onRoutingStopped (bool preliminary);
+
+
+
+
+
+
+
 	public:
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 		static uint32_t playerCount;
@@ -305,12 +317,6 @@ class Player : public Creature, public Cylinder
 		//follow events
 		virtual void onFollowCreature(const Creature* creature);
 
-		//walk events
-		virtual void onWalk(Direction& dir);
-		virtual void onWalkAborted();
-		virtual void onWalkComplete();
-
-		void stopWalk();
 		void openShopWindow();
 		void closeShopWindow(Npc* npc = nullptr, int32_t onBuy = -1, int32_t onSell = -1);
 		bool canShopItem(uint16_t itemId, uint8_t subType, ShopEvent_t event);
@@ -533,9 +539,9 @@ class Player : public Creature, public Cylinder
 		virtual void postRemoveNotification(Creature* actor, Thing* thing, const Cylinder* newParent,
 			int32_t index, bool isCompleteRemoval, cylinderlink_t link = LINK_OWNER);
 
-		void setNextAction(int64_t time) {if(time > nextAction) {nextAction = time;}}
-		bool canDoAction() const {return nextAction <= OTSYS_TIME();}
-		uint32_t getNextActionTime() const;
+		void setNextAction(Time time) {if(time > nextAction) {nextAction = time;}}
+		bool canDoAction() const {return nextAction <= Clock::now();}
+		Time getNextActionTime() const;
 
 		Item* getWriteItem(uint32_t& _windowTextId, uint16_t& _maxWriteLen);
 		void setWriteItem(Item* item, uint16_t _maxWriteLen = 0);
@@ -707,7 +713,7 @@ class Player : public Creature, public Cylinder
 		int64_t lastLoad;
 		int64_t lastPong;
 		int64_t lastPing;
-		int64_t nextAction;
+		Time nextAction;
 		uint64_t stamina;
 		uint64_t experience;
 		uint64_t manaSpent;

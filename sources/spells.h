@@ -53,7 +53,7 @@ class Spells : public BaseEvents<Spell> {
 		uint32_t getInstantSpellCount(const Player* player);
 		ReturnValue onPlayerSay(Player* player, const std::string& words);
 		virtual std::string getScriptBaseName() const {return "spells";}
-		static Position getCasterPosition(Creature* creature, Direction dir);
+		static Position getCasterPosition(const Creature* creature, Direction dir);
 
 	private:
 		virtual void clear();

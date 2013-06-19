@@ -7167,6 +7167,7 @@ int32_t LuaScriptInterface::luaDoMoveCreature(lua_State* L)
 
 	bool validDirection = false;
 	switch (static_cast<Direction>(direction)) {
+	case Direction::NONE:
 	case Direction::EAST:
 	case Direction::NORTH:
 	case Direction::NORTH_EAST:

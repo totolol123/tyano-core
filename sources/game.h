@@ -143,8 +143,15 @@ typedef std::map<int32_t, float> StageList;
   * This class is responsible to control everything that happens
   */
 
-class Game
-{
+class Game {
+
+public:
+
+	Tile* getNextTile(const Tile& tile, Direction direction) const;
+
+
+
+
 	public:
 		Game();
 		~Game();
@@ -191,8 +198,8 @@ class Game
 		  * Get a single tile of the map.
 		  * \returns A pointer to the tile
 		  */
-		Tile* getTile(int32_t x, int32_t y, int32_t z) {return map->getTile(x, y, z);}
-		Tile* getTile(const Position& pos) {return map->getTile(pos);}
+		Tile* getTile(int32_t x, int32_t y, int32_t z) const {return map->getTile(x, y, z);}
+		Tile* getTile(const Position& pos) const {return map->getTile(pos);}
 
 		/**
 		  * Returns a creature based on the unique creature identifier
@@ -449,7 +456,7 @@ class Game
 		bool playerCloseRuleViolation(uint32_t playerId, const std::string& name);
 		bool playerCancelRuleViolation(uint32_t playerId);
 		bool playerReceivePing(uint32_t playerId);
-		bool playerAutoWalk(uint32_t playerId, std::list<Direction>& listDir);
+		bool playerAutoWalk(uint32_t playerId, std::deque<Direction>& route);
 		bool playerStopAutoWalk(uint32_t playerId);
 		bool playerUseItemEx(uint32_t playerId, const ExtendedPosition& origin, const ExtendedPosition& destination);
 		bool playerUseItem(uint32_t playerId, const ExtendedPosition& origin, uint8_t openContainerId);
@@ -511,12 +518,12 @@ class Game
 		bool isSightClear(const Position& fromPos, const Position& toPos, bool sameFloor);
 
 		bool getPathTo(const Creature* creature, const Position& destPos,
-			std::list<Direction>& listDir, int32_t maxSearchDist /*= -1*/);
+			std::deque<Direction>& route, int32_t maxSearchDist /*= -1*/);
 
-		bool getPathToEx(const Creature* creature, const Position& targetPos, std::list<Direction>& dirList,
+		bool getPathToEx(const Creature* creature, const Position& targetPos, std::deque<Direction>& route,
 			const FindPathParams& fpp);
 
-		bool getPathToEx(const Creature* creature, const Position& targetPos, std::list<Direction>& dirList,
+		bool getPathToEx(const Creature* creature, const Position& targetPos, std::deque<Direction>& route,
 			uint32_t minTargetDist, uint32_t maxTargetDist, bool fullPathSearch = true,
 			bool clearSight = true, int32_t maxSearchDist = -1);
 
@@ -544,8 +551,6 @@ class Game
 		void addRefreshTile(Tile* tile, RefreshBlock_t rb) {refreshTiles[tile] = rb;}
 
 		//Events
-		void checkCreatureWalk(uint32_t creatureId);
-		void updateCreatureWalk(uint32_t creatureId);
 		void checkCreatureAttack(uint32_t creatureId);
 		void checkLight();
 
