@@ -1956,7 +1956,7 @@ void Game::addMoney(Cylinder* cylinder, uint64_t money, uint32_t flags /*= 0*/)
 	}
 }
 
-Item* Game::transformItem(Item* item, uint16_t newId, int32_t newCount /*= -1*/)
+ItemP Game::transformItem(const ItemP& item, uint16_t newId, int32_t newCount /*= -1*/)
 {
 	if(item->getId() == newId && (newCount == -1 || (newCount == item->getSubType() && newCount != 0)))
 		return item;
@@ -1965,7 +1965,7 @@ Item* Game::transformItem(Item* item, uint16_t newId, int32_t newCount /*= -1*/)
 	if(!cylinder)
 		return nullptr;
 
-	int32_t itemIndex = cylinder->__getIndexOfThing(item);
+	int32_t itemIndex = cylinder->__getIndexOfThing(item.get());
 	if(itemIndex == -1)
 	{
 		LOGt("Error: transformItem, itemIndex == -1");
@@ -1985,11 +1985,11 @@ Item* Game::transformItem(Item* item, uint16_t newId, int32_t newCount /*= -1*/)
 	{
 		//This only occurs when you transform items on tiles from a downItem to a topItem (or vice versa)
 		//Remove the old, and add the new
-		ReturnValue ret = internalRemoveItem(nullptr, item);
+		ReturnValue ret = internalRemoveItem(nullptr, item.get());
 		if(ret != RET_NOERROR)
 			return item;
 
-		boost::intrusive_ptr<Item> newItem;
+		ItemP newItem;
 		if(newCount == -1)
 			newItem = Item::CreateItem(newId);
 		else
@@ -1998,9 +1998,9 @@ Item* Game::transformItem(Item* item, uint16_t newId, int32_t newCount /*= -1*/)
 		if(!newItem)
 			return nullptr;
 
-		newItem->copyAttributes(item);
+		newItem->copyAttributes(item.get());
 		if(internalAddItem(nullptr, cylinder, newItem.get(), INDEX_WHEREEVER, FLAG_NOLIMIT) == RET_NOERROR)
-			return newItem.get();
+			return newItem;
 
 		return nullptr;
 	}
@@ -2018,19 +2018,18 @@ Item* Game::transformItem(Item* item, uint16_t newId, int32_t newCount /*= -1*/)
 
 				if(tmpId != -1)
 				{
-					item = transformItem(item, tmpId);
-					return item;
+					return transformItem(item, tmpId);
 				}
 			}
 
-			internalRemoveItem(nullptr, item);
+			internalRemoveItem(nullptr, item.get());
 			return nullptr;
 		}
 
 		uint16_t itemId = item->getId();
 		int32_t count = item->getSubType();
 
-		cylinder->postRemoveNotification(nullptr, item, cylinder, itemIndex, false);
+		cylinder->postRemoveNotification(nullptr, item.get(), cylinder, itemIndex, false);
 		if(oldKind->id != newKind->id)
 		{
 			itemId = newId;
@@ -2041,13 +2040,13 @@ Item* Game::transformItem(Item* item, uint16_t newId, int32_t newCount /*= -1*/)
 		if(newCount != -1 && newKind->hasSubType())
 			count = newCount;
 
-		cylinder->__updateThing(item, itemId, count);
-		cylinder->postAddNotification(nullptr, item, cylinder, itemIndex);
+		cylinder->__updateThing(item.get(), itemId, count);
+		cylinder->postAddNotification(nullptr, item.get(), cylinder, itemIndex);
 		return item;
 	}
 
 	//Replacing the the old item with the new while maintaining the old position
-	boost::intrusive_ptr<Item> newItem = nullptr;
+	ItemP newItem = nullptr;
 	if(newCount == -1)
 		newItem = Item::CreateItem(newId);
 	else
@@ -2063,9 +2062,9 @@ Item* Game::transformItem(Item* item, uint16_t newId, int32_t newCount /*= -1*/)
 	cylinder->postAddNotification(nullptr, newItem.get(), cylinder, itemIndex);
 
 	item->setParent(nullptr);
-	cylinder->postRemoveNotification(nullptr, item, cylinder, itemIndex, true);
+	cylinder->postRemoveNotification(nullptr, item.get(), cylinder, itemIndex, true);
 
-	return newItem.get();
+	return newItem;
 }
 
 ReturnValue Game::internalTeleport(Thing* thing, const Position& newPos, bool pushMove, uint32_t flags /*= 0*/)
@@ -4544,8 +4543,8 @@ void Game::internalDecayItem(Item* item)
 {
 	if(item->getKind()->decayTo)
 	{
-		Item* newItem = transformItem(item, item->getKind()->decayTo);
-		startDecay(newItem);
+		ItemP newItem = transformItem(item, item->getKind()->decayTo);
+		startDecay(newItem.get());
 	}
 	else
 	{

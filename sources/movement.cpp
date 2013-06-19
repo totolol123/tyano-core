@@ -863,8 +863,8 @@ uint32_t MoveEvent::EquipItem(const MoveEventP& moveEvent, Player* player, Item*
 	ItemKindPC kind = item->getKind();
 	if(kind->transformEquipTo)
 	{
-		Item* newItem = server.game().transformItem(item, kind->transformEquipTo);
-		server.game().startDecay(newItem);
+		ItemP newItem = server.game().transformItem(item, kind->transformEquipTo);
+		server.game().startDecay(newItem.get());
 	}
 	else
 		player->setItemAbility(slot, true);

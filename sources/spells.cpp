@@ -1560,11 +1560,11 @@ ReturnValue ConjureSpell::internalConjureItem(Player* player, uint32_t conjureId
 		if(test)
 			return RET_NOERROR;
 
-		Item* newItem = server.game().transformItem(item, conjureId, conjureCount);
+		ItemP newItem = server.game().transformItem(item, conjureId, conjureCount);
 		if(!newItem)
 			return RET_NOTPOSSIBLE;
 
-		server.game().startDecay(newItem);
+		server.game().startDecay(newItem.get());
 		return RET_NOERROR;
 	}
 
