@@ -810,7 +810,7 @@ void MoveEvent::setEventType(MoveEvent_t type)
 	m_eventType = type;
 }
 
-uint32_t MoveEvent::StepInField(Creature* creature, Item* item)
+uint32_t MoveEvent::StepInField(const CreatureP& creature, Item* item)
 {
 	if(MagicField* field = item->getMagicField())
 	{
@@ -1026,7 +1026,7 @@ uint32_t MoveEvent::DeEquipItem(const MoveEventP& moveEvent, Player* player, Ite
 	return 1;
 }
 
-uint32_t MoveEvent::fireStepEvent(Creature* actor, Creature* creature, Item* item, const Position& pos, const Position& fromPos, const Position& toPos)
+uint32_t MoveEvent::fireStepEvent(Creature* actor, const CreatureP& creature, Item* item, const Position& pos, const Position& fromPos, const Position& toPos)
 {
 	if(isScripted())
 		return executeStep(actor, creature, item, pos, fromPos, toPos);
@@ -1034,7 +1034,7 @@ uint32_t MoveEvent::fireStepEvent(Creature* actor, Creature* creature, Item* ite
 	return stepFunction(creature, item);
 }
 
-uint32_t MoveEvent::executeStep(Creature* actor, Creature* creature, Item* item, const Position& pos, const Position& fromPos, const Position& toPos)
+uint32_t MoveEvent::executeStep(Creature* actor, const CreatureP& creature, Item* item, const Position& pos, const Position& fromPos, const Position& toPos)
 {
 	//onStepIn(cid, item, position, lastPosition, fromPosition, toPosition, actor)
 	//onStepOut(cid, item, position, lastPosition, fromPosition, toPosition, actor)

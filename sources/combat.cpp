@@ -1429,12 +1429,12 @@ bool MagicField::isBlocking(const Creature* creature) const
 	return !creature || !creature->getPlayer();
 }
 
-void MagicField::onStepInField(Creature* creature, bool purposeful/* = true*/)
+void MagicField::onStepInField(const CreatureP& creature, bool purposeful/* = true*/)
 {
-	if(getId() == ITEM_MAGICWALL_SAFE || getId() == ITEM_WILDGROWTH_SAFE || isBlocking(creature))
+	if(getId() == ITEM_MAGICWALL_SAFE || getId() == ITEM_WILDGROWTH_SAFE || isBlocking(creature.get()))
 	{
 		if(!creature->isGhost())
-			server.game().internalRemoveItem(creature, this, 1);
+			server.game().internalRemoveItem(creature.get(), this, 1);
 
 		return;
 	}
