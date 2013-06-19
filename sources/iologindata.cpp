@@ -936,7 +936,7 @@ bool IOLoginData::savePlayer(Player* player, bool preSave/* = true*/, bool shall
 	//save vip list- FIXME: merge it to one config query?
 	query.str("");
 	if(!server.configManager().getBool(ConfigManager::VIPLIST_PER_PLAYER))
-		query << "DELETE FROM `account_viplist` WHERE `account_id` = " << player->getAccount() << " AND `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID);
+		query << "DELETE FROM `account_viplist` WHERE `account_id` = " << player->getAccount()->getId() << " AND `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID);
 	else
 		query << "DELETE FROM `player_viplist` WHERE `player_id` = " << player->getGUID();
 
