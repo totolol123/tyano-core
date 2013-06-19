@@ -95,7 +95,6 @@ bool Creature::canMoveTo(const Tile& tile) const {
 	return true;
 }
 
-<<<<<<< cutting-edge
 
 bool Creature::canStep() const {
 	if (!isAlive()) {
@@ -113,8 +112,6 @@ bool Creature::canStep() const {
 	return true;
 }
 
-=======
->>>>>>> ad0d4ec Started refactoring creature movement code...
 
 void Creature::didRemove() {
 	if (!_removing) {
@@ -279,7 +276,6 @@ Time Creature::getNextMoveTime() const {
 }
 
 
-<<<<<<< cutting-edge
 Direction Creature::getRandomStepDirection() const {
 	if (!isAlive()) {
 		return Direction::NONE;
@@ -327,50 +323,6 @@ Direction Creature::getWanderingDirection() const {
 
 Duration Creature::getWanderingInterval() const {
 	return Duration::zero();
-=======
-Direction Creature::getNextStepDirection() const {
-	return Direction::NONE;
-}
-
-
-Direction Creature::getRandomStepDirection() const {
-	if (!isAlive()) {
-		return Direction::NONE;
-	}
-
-	Game& game = server.game();
-
-	std::vector<Direction> directions(9);
-	directions.push_back(Direction::NONE);
-	directions.push_back(Direction::EAST);
-	directions.push_back(Direction::NORTH);
-	directions.push_back(Direction::NORTH_EAST);
-	directions.push_back(Direction::NORTH_WEST);
-	directions.push_back(Direction::SOUTH);
-	directions.push_back(Direction::SOUTH_EAST);
-	directions.push_back(Direction::SOUTH_WEST);
-	directions.push_back(Direction::WEST);
-
-	std::random_shuffle(directions.begin(), directions.end());
-
-	for (Direction direction : directions) {
-		if (direction == Direction::NONE) {
-			return direction;
-		}
-
-		Tile* tile = game.getNextTile(*_tile, direction);
-		if (tile == nullptr) {
-			continue;
-		}
-		if (!canMoveTo(*tile)) {
-			continue;
-		}
-
-		return direction;
-	}
-
-	return Direction::NONE;
->>>>>>> ad0d4ec Started refactoring creature movement code...
 }
 
 
@@ -512,11 +464,7 @@ void Creature::onRoutingStopped(bool preliminary) {
 
 
 void Creature::onThinkingStarted() {
-<<<<<<< cutting-edge
 	startWandering();
-=======
-	// override in subclasses
->>>>>>> ad0d4ec Started refactoring creature movement code...
 }
 
 
@@ -586,7 +534,6 @@ void Creature::setDefaultOutfit(Outfit_t defaultOutfit) {
 }
 
 
-<<<<<<< cutting-edge
 bool Creature::shouldStagger() const {
 	// 25% chance when drunk
 	return (isDrunk() && random_range(1, 100) <= 25);
@@ -609,8 +556,6 @@ Direction Creature::stagger() {
 }
 
 
-=======
->>>>>>> ad0d4ec Started refactoring creature movement code...
 void Creature::startRouting(const Route& route) {
 	if (!isThinking()) {
 		return;
@@ -654,7 +599,6 @@ void Creature::startWandering() {
 		return;
 	}
 
-<<<<<<< cutting-edge
 	Duration interval = getWanderingInterval();
 	if (interval <= Duration::zero()) {
 		return;
@@ -663,9 +607,6 @@ void Creature::startWandering() {
 	_wandering = true;
 	_nextWanderingTime = Clock::now() + interval;
 
-=======
-	_wandering = true;
->>>>>>> ad0d4ec Started refactoring creature movement code...
 	onWanderingStarted();
 }
 
@@ -705,56 +646,6 @@ void Creature::stopWandering() {
 }
 
 
-<<<<<<< cutting-edge
-=======
-Direction Creature::step() {
-	if (!isAlive()) {
-		return Direction::NONE;
-	}
-
-	if (!_wandering && _route.empty()) {
-		return Direction::NONE;
-	}
-
-	bool isRoute = false;
-
-	Direction direction;
-	if (isDrunk() && random_range(1, 100) <= 25) {
-		// 25% chance of doing a random step
-		server.game().internalCreatureSay(this, SPEAK_MONSTER_SAY, "Hicks!", isGhost());
-
-		direction = getRandomStepDirection();
-	}
-	else {
-		if (_route.empty()) {
-			direction = getNextStepDirection();
-		}
-		else {
-			direction = _route.front();
-			_route.pop_front();
-
-			isRoute = true;
-		}
-	}
-
-	if (!stepInDirection(direction)) {
-		if (isRoute) {
-			forceUpdateFollowPath = true;
-			stopRouting();
-		}
-
-		return Direction::NONE;
-	}
-
-	if (isRoute && _route.empty()) {
-		onRoutingStopped(false);
-	}
-
-	return direction;
-}
-
-
->>>>>>> ad0d4ec Started refactoring creature movement code...
 bool Creature::stepInDirection(Direction direction) {
 	if (direction == Direction::NONE) {
 		return false;
@@ -809,7 +700,6 @@ void Creature::think() {
 }
 
 
-<<<<<<< cutting-edge
 void Creature::updateMovement(Time now) {
 	if (_nextMoveTime > now) {
 		return;
@@ -864,16 +754,6 @@ Direction Creature::wander() {
 	}
 
 	return direction;
-=======
-void Creature::updateMovement() {
-	if (_nextMoveTime > Clock::now()) {
-		return;
-	}
-
-	if (getStepDuration() > Duration::zero()) {
-		step();
-	}
->>>>>>> ad0d4ec Started refactoring creature movement code...
 }
 
 
@@ -1002,11 +882,7 @@ bool Creature::canSeeCreature(const CreatureP& creature) const
 
 
 void Creature::onThink(Duration elapsedTime) {
-<<<<<<< cutting-edge
 	updateMovement(Clock::now());
-=======
-	updateMovement();
->>>>>>> ad0d4ec Started refactoring creature movement code...
 
 	if(followCreature && !canSeeCreature(followCreature))
 		internalCreatureDisappear(followCreature, false);

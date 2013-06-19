@@ -68,30 +68,12 @@ CreaturePC Npc::getDirectOwner() const {
 }
 
 
-<<<<<<< cutting-edge
 Duration Npc::getWanderingInterval() const {
 	if (focusCreature > 0) {
 		return Duration::zero();
 	}
 
 	return std::chrono::milliseconds(walkTicks);
-=======
-Direction Npc::getNextStepDirection() const {
-	Direction direction = Creature::getNextStepDirection();
-	if (direction != Direction::NONE) {
-		return direction;
-	}
-
-	if (!isAlive()) {
-		return Direction::NONE;
-	}
-
-	if (focusCreature > 0) {
-		return Direction::NONE;
-	}
-
-	return getRandomStepDirection();
->>>>>>> ad0d4ec Started refactoring creature movement code...
 }
 
 

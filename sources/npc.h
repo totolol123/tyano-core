@@ -309,11 +309,7 @@ public:
 
 protected:
 
-<<<<<<< cutting-edge
 	virtual Duration  getWanderingInterval    () const;
-=======
-	virtual Direction getNextStepDirection    () const;
->>>>>>> ad0d4ec Started refactoring creature movement code...
 	virtual bool      hasToThinkAboutCreature (const CreaturePC& creature) const;
 	virtual void      onThinkingStarted       ();
 
