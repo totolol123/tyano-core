@@ -115,7 +115,7 @@ class ScriptEnviroment
 		Player* getPlayerByUID(uint32_t uid);
 
 		uint32_t addThing(ThingP thing);
-		void insertThing(uint32_t uid, Thing* thing);
+		void insertThing(uint32_t uid, const ThingP& thing);
 		void removeThing(uint32_t uid);
 
 		static void addTempItem(ScriptEnviroment* env, Item* item);
