@@ -140,4 +140,26 @@ uint32_t adlerChecksum(uint8_t *data, size_t length);
 
 std::string getFilePath(FileType filetype, std::string filename);
 
+
+class UnixTimestamp {
+
+public:
+
+	explicit UnixTimestamp(uint32_t value);
+
+	operator RealTime() const;
+
+
+private:
+
+	static RealTime realTimeForUtcDate(int day, int month, int year);
+
+
+	static const RealTime _epoch;
+	static const uint32_t _epochValue;
+
+	uint32_t _value;
+
+};
+
 #endif // _TOOLS_H

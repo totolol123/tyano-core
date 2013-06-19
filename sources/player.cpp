@@ -54,6 +54,11 @@
 LOGGER_DEFINITION(Player);
 
 
+AccountP Player::getAccount() const {
+	return _account;
+}
+
+
 CreatureP Player::getDirectOwner() {
 	return nullptr;
 }
@@ -119,14 +124,19 @@ void Player::onRoutingStopped(bool preliminary) {
 
 
 
+
 AutoList<Player> Player::autoList;
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 uint32_t Player::playerCount = 0;
 #endif
 MuteCountMap Player::muteCountMap;
 
-Player::Player(const std::string& _name, ProtocolGame* p):
-	Creature(), transferContainer(server.items()[ITEM_LOCKER]), name(_name), nameDescription(_name), client(p)
+Player::Player(const AccountP& account, const std::string& _name, ProtocolGame* p)
+	: _account(account),
+	  transferContainer(server.items()[ITEM_LOCKER]),
+	  name(_name),
+	  nameDescription(_name),
+	  client(p)
 {
 	if(client)
 		client->setPlayer(this);
@@ -142,7 +152,7 @@ Player::Player(const std::string& _name, ProtocolGame* p):
 	guildLevel = GUILDLEVEL_NONE;
 
 	promotionLevel = walkTaskEvent = actionTaskEvent = nextStepEvent = bloodHitCount = shieldBlockCount = 0;
-	lastAttack = idleTime = marriage = blessings = balance = premiumDays = mana = manaMax = manaSpent = 0;
+	lastAttack = idleTime = marriage = blessings = balance = mana = manaMax = manaSpent = 0;
 	soul = guildId = levelPercent = magLevelPercent = magLevel = experience = damageImmunities = 0;
 	conditionImmunities = conditionSuppressions = groupId = vocation_id = managerNumber2 = town = skullEnd = 0;
 	lastLogin = lastLogout = lastIP = messageTicks = messageBuffer = 0;
@@ -963,7 +973,7 @@ bool Player::addDepot(Depot* depot, uint32_t depotId)
 		return false;
 
 	depots[depotId] = std::make_pair(depot, false);
-	depot->setMaxDepotLimit((group != nullptr ? group->getDepotLimit(isPremium()) : 1000));
+	depot->setMaxDepotLimit((group != nullptr ? group->getDepotLimit() : 1000));
 	return true;
 }
 
@@ -1153,10 +1163,6 @@ void Player::sendCancelMessage(ReturnValue message) const
 
 		case RET_TURNSECUREMODETOATTACKUNMARKEDPLAYERS:
 			sendCancel("Turn secure mode off if you really want to attack unmarked players.");
-			break;
-
-		case RET_YOUNEEDPREMIUMACCOUNT:
-			sendCancel("You need a premium account.");
 			break;
 
 		case RET_YOUNEEDTOLEARNTHISSPELL:
@@ -1388,12 +1394,12 @@ void Player::onCreatureAppear(const CreatureP& creature)
 		if(ticks > 0)
 		{
 			ticks = (int64_t)((double)(ticks * 1000) / server.configManager().getDouble(ConfigManager::RATE_STAMINA_GAIN));
-			int64_t premium = server.configManager().getNumber(ConfigManager::STAMINA_LIMIT_TOP) * STAMINA_MULTIPLIER, period = ticks;
-			if((int64_t)stamina <= premium)
+			int64_t limit = server.configManager().getNumber(ConfigManager::STAMINA_LIMIT_TOP) * STAMINA_MULTIPLIER, period = ticks;
+			if((int64_t)stamina <= limit)
 			{
 				period += stamina;
-				if(period > premium)
-					period -= premium;
+				if(period > limit)
+					period -= limit;
 				else
 					period = 0;
 
@@ -2491,7 +2497,7 @@ bool Player::addVIP(uint32_t _guid, std::string& name, bool isOnline, bool inter
 		return false;
 	}
 
-	if(VIPList.size() > (group ? group->getMaxVips(isPremium()) : 20))
+	if(VIPList.size() > (group ? group->getMaxVips() : 20))
 	{
 		if(!internal)
 			sendTextMessage(MSG_STATUS_SMALL, "You cannot add more buddies.");
@@ -3655,15 +3661,14 @@ bool Player::rateExperience(double& gainExp, bool fromMonster)
 		int32_t minutes = getStaminaMinutes();
 		if(minutes >= server.configManager().getNumber(ConfigManager::STAMINA_LIMIT_TOP))
 		{
-			if(isPremium() || !server.configManager().getNumber(ConfigManager::STAMINA_BONUS_PREMIUM))
-				gainExp *= server.configManager().getDouble(ConfigManager::RATE_STAMINA_ABOVE);
+			gainExp *= server.configManager().getDouble(ConfigManager::RATE_STAMINA_ABOVE);
 		}
 		else if(minutes < (server.configManager().getNumber(ConfigManager::STAMINA_LIMIT_BOTTOM)) && minutes > 0)
 			gainExp *= server.configManager().getDouble(ConfigManager::RATE_STAMINA_UNDER);
 		else if(minutes <= 0)
 			gainExp = 0;
 	}
-	else if(isPremium() || !server.configManager().getNumber(ConfigManager::STAMINA_BONUS_PREMIUM))
+	else
 		gainExp *= server.configManager().getDouble(ConfigManager::RATE_STAMINA_ABOVE);
 
 	return true;
@@ -3763,7 +3768,7 @@ bool Player::changeOutfit(Outfit_t outfit, bool checkList)
 bool Player::canWearOutfit(uint32_t outfitId, uint32_t addons)
 {
 	OutfitMap::iterator it = outfits.find(outfitId);
-	if(it == outfits.end() || (it->second.isPremium && !isPremium()) || getAccess() < it->second.accessLevel
+	if(it == outfits.end() || getAccess() < it->second.accessLevel
 		|| ((it->second.addons & addons) != addons && !hasCustomFlag(PlayerCustomFlag_CanWearAllAddons)))
 		return false;
 
@@ -3947,7 +3952,7 @@ bool Player::addUnjustifiedKill(const Player* attacked)
 		if((d <= 0 || tc < d) && (w <= 0 || wc < w) && (m <= 0 || mc < m))
 			return true;
 
-		if(!IOBan::getInstance()->addAccountBanishment(accountId, (now + server.configManager().getNumber(
+		if(!IOBan::getInstance()->addAccountBanishment(_account->getId(), (now + server.configManager().getNumber(
 			ConfigManager::KILLS_BAN_LENGTH)), 20, ACTION_BANISHMENT, "Unjustified player killing.", 0, guid))
 			return true;
 
@@ -3984,9 +3989,6 @@ void Player::setPromotionLevel(uint32_t pLevel)
 				break;
 
 			tmpLevel++;
-			Vocation* voc = Vocations::getInstance()->getVocation(currentVoc);
-			if(voc->isPremiumNeeded() && !isPremium() && server.configManager().getBool(ConfigManager::PREMIUM_FOR_PROMOTION))
-				continue;
 
 			vocation_id = currentVoc;
 		}
@@ -4004,8 +4006,6 @@ void Player::setPromotionLevel(uint32_t pLevel)
 
 			tmpLevel++;
 			currentVoc = voc->getFromVocation();
-			if(voc->isPremiumNeeded() && !isPremium() && server.configManager().getBool(ConfigManager::PREMIUM_FOR_PROMOTION))
-				continue;
 
 			vocation_id = currentVoc;
 		}
@@ -4018,9 +4018,6 @@ void Player::setPromotionLevel(uint32_t pLevel)
 
 uint16_t Player::getBlessings() const
 {
-	if(!isPremium() && server.configManager().getBool(ConfigManager::BLESSING_ONLY_PREMIUM))
-		return 0;
-
 	uint16_t count = 0;
 	for(int16_t i = 0; i < 16; ++i)
 	{
@@ -4659,13 +4656,6 @@ void Player::leaveGuild()
 	guildName = rankName = guildNick = "";
 }
 
-bool Player::isPremium() const
-{
-	if(server.configManager().getBool(ConfigManager::FREE_PREMIUM) || hasFlag(PlayerFlag_IsAlwaysPremium))
-		return true;
-
-	return premiumDays;
-}
 
 bool Player::setGuildLevel(GuildLevel_t newLevel, uint32_t rank/* = 0*/)
 {

@@ -1382,8 +1382,6 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 	if(kind->wieldInfo)
 	{
 		s << std::endl << "It can only be wielded properly by ";
-		if(kind->wieldInfo & WIELDINFO_PREMIUM)
-			s << "premium ";
 
 		if(kind->wieldInfo & WIELDINFO_VOCREQ)
 			s << kind->vocationString;

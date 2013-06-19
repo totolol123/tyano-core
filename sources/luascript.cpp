@@ -2326,12 +2326,6 @@ void LuaScriptInterface::registerFunctions()
 	//doPlayerAddMapMark(cid, pos, type[, description])
 	lua_register(m_luaState, "doPlayerAddMapMark", LuaScriptInterface::luaDoPlayerAddMapMark);
 
-	//doPlayerAddPremiumDays(cid, days)
-	lua_register(m_luaState, "doPlayerAddPremiumDays", LuaScriptInterface::luaDoPlayerAddPremiumDays);
-
-	//getPlayerPremiumDays(cid)
-	lua_register(m_luaState, "getPlayerPremiumDays", LuaScriptInterface::luaGetPlayerPremiumDays);
-
 	//doCreatureSetLookDirection(cid, dir)
 	lua_register(m_luaState, "doCreatureSetLookDirection", LuaScriptInterface::luaDoCreatureSetLookDir);
 
@@ -2737,14 +2731,11 @@ int32_t LuaScriptInterface::internalGetPlayerInfo(lua_State* L, PlayerInfo_t inf
 			value = player->getGUID();
 			break;
 		case PlayerInfoAccountId:
-			value = player->getAccount();
+			value = player->getAccount()->getId();
 			break;
 		case PlayerInfoAccount:
-			lua_pushstring(L, player->getAccountName().c_str());
+			lua_pushstring(L, player->getAccount()->getName().c_str());
 			return 1;
-		case PlayerInfoPremiumDays:
-			value = player->getPremiumDays();
-			break;
 		case PlayerInfoFood:
 		{
 			if(Condition* condition = player->getCondition(CONDITION_REGENERATION, CONDITIONID_DEFAULT))
@@ -2949,11 +2940,6 @@ int32_t LuaScriptInterface::luaGetPlayerAccountId(lua_State* L)
 int32_t LuaScriptInterface::luaGetPlayerAccount(lua_State* L)
 {
 	return internalGetPlayerInfo(L, PlayerInfoAccount);
-}
-
-int32_t LuaScriptInterface::luaGetPlayerPremiumDays(lua_State* L)
-{
-	return internalGetPlayerInfo(L, PlayerInfoPremiumDays);
 }
 
 int32_t LuaScriptInterface::luaGetPlayerBalance(lua_State* L)
@@ -7389,7 +7375,7 @@ int32_t LuaScriptInterface::luaGetAccountIdByName(lua_State* L)
 	std::string name = popString(L);
 
 	if(PlayerP player = server.game().getPlayerByName(name))
-		lua_pushnumber(L, player->getAccount());
+		lua_pushnumber(L, player->getAccount()->getId());
 	else
 		lua_pushnumber(L, IOLoginData::getInstance()->getAccountIdByName(name));
 
@@ -7402,7 +7388,7 @@ int32_t LuaScriptInterface::luaGetAccountByName(lua_State* L)
 	std::string name = popString(L);
 
 	if(PlayerP player = server.game().getPlayerByName(name))
-		lua_pushstring(L, player->getAccountName().c_str());
+		lua_pushstring(L, player->getAccount()->getName().c_str());
 	else
 	{
 		std::string tmp;
@@ -7893,45 +7879,6 @@ int32_t LuaScriptInterface::luaDoPlayerAddMapMark(lua_State* L)
 
 	player->sendAddMarker(pos, type, description);
 	lua_pushboolean(L, true);
-	return 1;
-}
-
-int32_t LuaScriptInterface::luaDoPlayerAddPremiumDays(lua_State* L)
-{
-	//doPlayerAddPremiumDays(cid, days)
-	int32_t days = popNumber(L);
-
-	ScriptEnviroment* env = getEnv();
-	if(Player* player = env->getPlayerByUID(popNumber(L)))
-	{
-		if(player->premiumDays < 65535)
-		{
-			AccountP account = IOLoginData::getInstance()->loadAccount(player->getAccount());
-			if (account == nullptr) {
-				errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
-				lua_pushboolean(L, false);
-				return 1;
-			}
-
-			if(days < 0)
-			{
-				account->setPremiumDays(std::max((uint32_t)0, uint32_t(account->getPremiumDays() + (int32_t)days)));
-				player->premiumDays = std::max((uint32_t)0, uint32_t(player->premiumDays + (int32_t)days));
-			}
-			else
-			{
-				account->setPremiumDays(std::min((uint32_t)65534, uint32_t(account->getPremiumDays() + (uint32_t)days)));
-				player->premiumDays = std::min((uint32_t)65534, uint32_t(player->premiumDays + (uint32_t)days));
-			}
-			IOLoginData::getInstance()->saveAccount(*account);
-		}
-		lua_pushboolean(L, true);
-	}
-	else
-	{
-		errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
-		lua_pushboolean(L, false);
-	}
 	return 1;
 }
 
@@ -8662,17 +8609,13 @@ int32_t LuaScriptInterface::luaGetVocationInfo(lua_State* L)
 	setField(L, "soulTicks", voc->getGainTicks(GAIN_SOUL));
 	setField(L, "capacity", voc->getGainCap());
 	setFieldBool(L, "attackable", voc->isAttackable());
-	setFieldBool(L, "needPremium", voc->isPremiumNeeded());
 	setFieldFloat(L, "experienceMultiplier", voc->getExperienceMultiplier());
 	return 1;
 }
 
 int32_t LuaScriptInterface::luaGetGroupInfo(lua_State* L)
 {
-	//getGroupInfo(id[, premium])
-	bool premium = false;
-	if(lua_gettop(L) > 1)
-		premium = popNumber(L);
+	//getGroupInfo(id)
 
 	Group* group = Groups::getInstance()->getGroup(popNumber(L));
 	if(!group)
@@ -8691,8 +8634,8 @@ int32_t LuaScriptInterface::luaGetGroupInfo(lua_State* L)
 	setField(L, "nameViolationFlags", group->getNameViolationFlags());
 	setField(L, "flags", group->getFlags());
 	setField(L, "customFlags", group->getCustomFlags());
-	setField(L, "depotLimit", group->getDepotLimit(premium));
-	setField(L, "maxVips", group->getMaxVips(premium));
+	setField(L, "depotLimit", group->getDepotLimit());
+	setField(L, "maxVips", group->getMaxVips());
 	setField(L, "outfit", group->getOutfit());
 	return 1;
 }

@@ -383,10 +383,6 @@ ChatChannel* Chat::createChannel(Player* player, uint16_t channelId)
 
 		case CHANNEL_PRIVATE:
 		{
-			//only 1 private channel for each premium player
-			if(!player->isPremium() || getPrivateChannel(player))
-				return nullptr;
-
 			//find a free private channel slot
 			for(uint16_t i = 100; i < 10000; ++i)
 			{
@@ -739,14 +735,9 @@ bool Chat::talkToChannel(Player* player, SpeakClasses type, const std::string& t
 							{
 								if(paramPlayer->getGuildLevel() == GUILDLEVEL_MEMBER)
 								{
-									if(paramPlayer->isPremium())
-									{
-										paramPlayer->setGuildLevel(GUILDLEVEL_VICE);
-										sprintf(buffer, "%s has promoted %s to %s.", player->getName().c_str(), paramPlayer->getName().c_str(), paramPlayer->getRankName().c_str());
-										channel->talk(player, SPEAK_CHANNEL_W, buffer);
-									}
-									else
-										player->sendCancel("A player with that name does not have a premium account.");
+									paramPlayer->setGuildLevel(GUILDLEVEL_VICE);
+									sprintf(buffer, "%s has promoted %s to %s.", player->getName().c_str(), paramPlayer->getName().c_str(), paramPlayer->getRankName().c_str());
+									channel->talk(player, SPEAK_CHANNEL_W, buffer);
 								}
 								else
 									player->sendCancel("You can only promote Members to Vice-Leaders.");
@@ -817,14 +808,9 @@ bool Chat::talkToChannel(Player* player, SpeakClasses type, const std::string& t
 						{
 							if(IOGuild::getInstance()->getGuildLevel(guid) == GUILDLEVEL_MEMBER)
 							{
-								if(IOLoginData::getInstance()->isPremium(guid))
-								{
-									IOGuild::getInstance()->setGuildLevel(guid, GUILDLEVEL_VICE);
-									sprintf(buffer, "%s has promoted %s to %s.", player->getName().c_str(), param.c_str(), IOGuild::getInstance()->getRank(guid).c_str());
-									channel->talk(player, SPEAK_CHANNEL_W, buffer);
-								}
-								else
-									player->sendCancel("A player with that name does not have a premium account.");
+								IOGuild::getInstance()->setGuildLevel(guid, GUILDLEVEL_VICE);
+								sprintf(buffer, "%s has promoted %s to %s.", player->getName().c_str(), param.c_str(), IOGuild::getInstance()->getRank(guid).c_str());
+								channel->talk(player, SPEAK_CHANNEL_W, buffer);
 							}
 							else
 								player->sendCancel("You can only promote Members to Vice-Leaders.");
@@ -1100,7 +1086,6 @@ ChannelList Chat::getChannelList(Player* player)
 			list.push_back(it->second);
 	}
 
-	bool hasPrivate = false;
 	PrivateChatChannel* prvChannel = nullptr;
 	for(PrivateChannelMap::iterator pit = m_privateChannels.begin(); pit != m_privateChannels.end(); ++pit)
 	{
@@ -1109,13 +1094,7 @@ ChannelList Chat::getChannelList(Player* player)
 
 		if(prvChannel->isInvited(player))
 			list.push_back(prvChannel);
-
-		if(prvChannel->getOwner() == player->getGUID())
-			hasPrivate = true;
 	}
-
-	if(!hasPrivate && player->isPremium())
-		list.push_front(dummyPrivate);
 
 	return list;
 }

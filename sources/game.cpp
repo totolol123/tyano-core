@@ -200,8 +200,6 @@ void Game::setGameState(GameState_t newState)
 				server.globalEvents().startup();
 
 				IOBan::getInstance()->clearTemporials();
-				if(server.configManager().getBool(ConfigManager::REMOVE_PREMIUM_ON_INIT))
-					IOLoginData::getInstance()->updatePremiumDays();
 				break;
 			}
 
@@ -726,18 +724,26 @@ PlayerP Game::getPlayerByName(std::string s)
 	return nullptr;
 }
 
-PlayerP Game::getPlayerByNameEx(const std::string& s)
+PlayerP Game::getPlayerByNameEx(const std::string& name)
 {
-	PlayerP player = getPlayerByName(s);
+	PlayerP player = getPlayerByName(name);
 	if(player)
 		return player;
 
-	std::string name = s;
-	if(!IOLoginData::getInstance()->playerExists(name))
-		return nullptr;
+	auto io = *IOLoginData::getInstance();
 
-	player = new Player(name, nullptr);
-	if(IOLoginData::getInstance()->loadPlayer(player.get(), name))
+	auto accountId = io.getAccountIdByName(name);
+	if (accountId == 0) {
+		return nullptr;
+	}
+
+	AccountP account = io.loadAccount(accountId, true);
+	if (account == nullptr) {
+		return nullptr;
+	}
+
+	player = new Player(account, name, nullptr);
+	if(io.loadPlayer(player.get(), name))
 		return player;
 
 	LOGe("[Game::getPlayerByNameEx] Cannot load player: " << name);
@@ -769,8 +775,20 @@ PlayerP Game::getPlayerByGuidEx(uint32_t guid)
 	if(!IOLoginData::getInstance()->getNameByGuid(guid, name))
 		return nullptr;
 
-	player = new Player(name, nullptr);
-	if(IOLoginData::getInstance()->loadPlayer(player.get(), name))
+	auto io = *IOLoginData::getInstance();
+
+	auto accountId = io.getAccountIdByName(name);
+	if (accountId == 0) {
+		return nullptr;
+	}
+
+	AccountP account = io.loadAccount(accountId, true);
+	if (account == nullptr) {
+		return nullptr;
+	}
+
+	player = new Player(account, name, nullptr);
+	if(io.loadPlayer(player.get(), name))
 		return player;
 
 	LOGe("[Game::getPlayerByGuidEx] Cannot load player: " << name);
@@ -824,7 +842,7 @@ Player* Game::getPlayerByAccount(uint32_t acc)
 {
 	for(AutoList<Player>::iterator it = Player::autoList.begin(); it != Player::autoList.end(); ++it)
 	{
-		if(!it->second->isRemoved() && it->second->getAccount() == acc)
+		if(!it->second->isRemoved() && it->second->getAccount() != nullptr && it->second->getAccount()->getId() == acc)
 			return it->second.get();
 	}
 
@@ -849,7 +867,7 @@ PlayerVector Game::getPlayersByAccount(uint32_t acc)
 	PlayerVector players;
 	for(AutoList<Player>::iterator it = Player::autoList.begin(); it != Player::autoList.end(); ++it)
 	{
-		if(!it->second->isRemoved() && it->second->getAccount() == acc)
+		if(!it->second->isRemoved() && it->second->getAccount() != nullptr && it->second->getAccount()->getId() == acc)
 			players.push_back(it->second.get());
 	}
 
@@ -2137,7 +2155,7 @@ bool Game::playerBroadcastMessage(Player* player, SpeakClasses type, const std::
 bool Game::playerCreatePrivateChannel(uint32_t playerId)
 {
 	Player* player = getPlayerByID(playerId);
-	if(!player || player->isRemoved() || !player->isPremium())
+	if(!player || player->isRemoved())
 		return false;
 
 	ChatChannel* channel = server.chat().createChannel(player, 0xFFFF);
@@ -4925,10 +4943,7 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 		return false;
 	}
 
-	AccountP account = IOLoginData::getInstance()->loadAccount(target->getAccount(), true);
-	if (account == nullptr) {
-		return false;
-	}
+	AccountP account = target->getAccount();
 
 	enum KickAction {
 		NONE = 1,
@@ -6044,9 +6059,6 @@ void Game::globalSave()
 	Houses::getInstance()->payHouses();
 	//clear temporial and expired bans
 	IOBan::getInstance()->clearTemporials();
-	//remove premium days globally if configured to
-	if(server.configManager().getBool(ConfigManager::REMOVE_PREMIUM_ON_INIT))
-		IOLoginData::getInstance()->updatePremiumDays();
 
 	//reload everything
 	reloadInfo(RELOAD_ALL);

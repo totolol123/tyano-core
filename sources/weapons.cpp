@@ -158,7 +158,6 @@ Weapon::Weapon(LuaScriptInterface* _interface):
 	manaPercent = 0;
 	soul = 0;
 	exhaustion = 0;
-	premium = false;
 	enabled = true;
 	wieldUnproperly = false;
 	swing = true;
@@ -209,13 +208,6 @@ bool Weapon::configureEvent(xmlNodePtr p)
 
 	if(readXMLInteger(p, "exhaust", intValue) || readXMLInteger(p, "exhaustion", intValue))
 		exhaustion = intValue;
-
-	if(readXMLString(p, "prem", strValue) || readXMLString(p, "premium", strValue))
-	{
-		premium = booleanString(strValue);
-		if(premium)
-			wieldInfo |= WIELDINFO_PREMIUM;
-	}
 
 	if(readXMLString(p, "enabled", strValue))
 		enabled = booleanString(strValue);
@@ -307,9 +299,6 @@ int32_t Weapon::playerWeaponCheck(Player* player, Creature* target) const
 		return 0;
 
 	if(player->getSoul() < soul)
-		return 0;
-
-	if(isPremium() && !player->isPremium())
 		return 0;
 
 	if(!vocWeaponMap.empty() && vocWeaponMap.find(player->getVocationId()) == vocWeaponMap.end())

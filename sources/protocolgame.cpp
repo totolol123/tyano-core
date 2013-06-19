@@ -117,10 +117,27 @@ bool ProtocolGame::login(const std::string& name, uint32_t id, const std::string
 
 	if(!_player || name == "Account Manager" || server.configManager().getNumber(ConfigManager::ALLOW_CLONES) > (int32_t)players.size())
 	{
-		player = new Player(name, this);
+		auto io = *IOLoginData::getInstance();
+
+		AccountP account;
+		if (name != "Account Manager") {
+			auto accountId = io.getAccountIdByName(name);
+			if (accountId == 0) {
+				disconnectClient(0x14, "Your character could not be loaded.");
+				return false;
+			}
+
+			account = io.loadAccount(accountId, true);
+			if (account == nullptr) {
+				disconnectClient(0x14, "Your character could not be loaded.");
+				return false;
+			}
+		}
+
+		player = new Player(account, name, this);
 
 		player->setID();
-		if(!IOLoginData::getInstance()->loadPlayer(player.get(), name, true))
+		if(!io.loadPlayer(player.get(), name, true))
 		{
 			disconnectClient(0x14, "Your character could not be loaded.");
 			return false;
@@ -323,7 +340,7 @@ bool ProtocolGame::logout(bool displayEffect, bool forceLogout)
 	{
 		if(!forceLogout)
 		{
-			if(!IOLoginData::getInstance()->hasCustomFlag(player->getAccount(), PlayerCustomFlag_CanLogoutAnytime))
+			if(!IOLoginData::getInstance()->hasCustomFlag(player->getAccount()->getId(), PlayerCustomFlag_CanLogoutAnytime))
 			{
 				if(player->getTile() != nullptr && player->getTile()->hasFlag(TILESTATE_NOLOGOUT))
 				{
@@ -833,7 +850,7 @@ void ProtocolGame::parsePacket(NetworkMessage &msg)
 					int64_t banTime = -1;
 					ViolationAction_t action = ACTION_BANISHMENT;
 
-					AccountP account = IOLoginData::getInstance()->loadAccount(player->getAccount(), true);
+					AccountP account = player->getAccount();
 					if (account == nullptr) {
 						return;
 					}
@@ -2963,10 +2980,8 @@ void ProtocolGame::sendOutfitWindow()
 				msg->AddString(it->name);
 				if(player->hasCustomFlag(PlayerCustomFlag_CanWearAllAddons))
 					msg->AddByte(0x03);
-				else if(!server.configManager().getBool(ConfigManager::ADDONS_PREMIUM) || player->isPremium())
-					msg->AddByte(it->addons);
 				else
-					msg->AddByte(0x00);
+					msg->AddByte(it->addons);
 			}
 		}
 		else

@@ -607,8 +607,6 @@ class LuaScriptInterface
 		static int32_t luaDoPlayerSendTutorial(lua_State* L);
 		static int32_t luaDoPlayerSendMailByName(lua_State* L);
 		static int32_t luaDoPlayerAddMapMark(lua_State* L);
-		static int32_t luaGetPlayerPremiumDays(lua_State* L);
-		static int32_t luaDoPlayerAddPremiumDays(lua_State* L);
 		static int32_t luaGetCreatureNoMove(lua_State* L);
 		static int32_t luaDoCreatureSetNoMove(lua_State* L);
 		static int32_t luaGetTownId(lua_State* L);
@@ -713,7 +711,6 @@ class LuaScriptInterface
 			PlayerInfoGUID,
 			PlayerInfoAccountId,
 			PlayerInfoAccount,
-			PlayerInfoPremiumDays,
 			PlayerInfoBalance,
 			PlayerInfoStamina,
 			PlayerInfoLossSkill,

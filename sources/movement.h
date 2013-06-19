@@ -135,7 +135,6 @@ class MoveEvent : public Event
 
 		int32_t getReqLevel() const {return reqLevel;}
 		int32_t getReqMagLv() const {return reqMagLevel;}
-		bool isPremium() const {return premium;}
 
 		const VocationMap& getVocEquipMap() const {return vocEquipMap;}
 		const std::string& getVocationString() const {return vocationString;}
@@ -166,7 +165,6 @@ class MoveEvent : public Event
 
 		int32_t reqLevel;
 		int32_t reqMagLevel;
-		bool premium;
 
 		VocationMap vocEquipMap;
 		std::string vocationString;

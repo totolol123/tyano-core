@@ -28,6 +28,7 @@
 #include "monster.h"
 #include "town.h"
 
+#include "account.h"
 #include "ioguild.h"
 #include "teleport.h"
 #include "status.h"
@@ -374,19 +375,12 @@ bool TalkAction::houseBuy(Creature* creature, const std::string& cmd, const std:
 		}
 
 		uint16_t accountHouses = server.configManager().getNumber(ConfigManager::HOUSES_PER_ACCOUNT);
-		if(accountHouses > 0 && Houses::getInstance()->getHousesCount(player->getAccount()) >= accountHouses)
+		if(accountHouses > 0 && Houses::getInstance()->getHousesCount(player->getAccount()->getId()) >= accountHouses)
 		{
 			char buffer[80];
 			sprintf(buffer, "You may own only %d house%s per account.", accountHouses, (accountHouses != 1 ? "s" : ""));
 
 			player->sendCancel(buffer);
-			server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
-			return false;
-		}
-
-		if(server.configManager().getBool(ConfigManager::HOUSE_NEED_PREMIUM) && !player->isPremium())
-		{
-			player->sendCancelMessage(RET_YOUNEEDPREMIUMACCOUNT);
 			server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 			return false;
 		}
@@ -500,19 +494,12 @@ bool TalkAction::houseSell(Creature* creature, const std::string& cmd, const std
 		}
 
 		uint16_t housesPerAccount = server.configManager().getNumber(ConfigManager::HOUSES_PER_ACCOUNT);
-		if(housesPerAccount > 0 && Houses::getInstance()->getHousesCount(tradePartner->getAccount()) >= housesPerAccount)
+		if(housesPerAccount > 0 && Houses::getInstance()->getHousesCount(tradePartner->getAccount()->getId()) >= housesPerAccount)
 		{
 			char buffer[100];
 			sprintf(buffer, "Trade player has reached limit of %d house%s per account.", housesPerAccount, (housesPerAccount != 1 ? "s" : ""));
 
 			player->sendCancel(buffer);
-			server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
-			return false;
-		}
-
-		if(!tradePartner->isPremium() && !server.configManager().getBool(ConfigManager::HOUSE_NEED_PREMIUM))
-		{
-			player->sendCancel("Trade player does not have a premium account.");
 			server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 			return false;
 		}
@@ -747,15 +734,6 @@ bool TalkAction::guildCreate(Creature* creature, const std::string& cmd, const s
 	{
 		char buffer[70 + levelToFormGuild];
 		sprintf(buffer, "You have to be at least Level %d to form a guild.", levelToFormGuild);
-		player->sendCancel(buffer);
-		return true;
-	}
-
-	const int32_t premiumDays = server.configManager().getNumber(ConfigManager::GUILD_PREMIUM_DAYS);
-	if(player->getPremiumDays() < premiumDays)
-	{
-		char buffer[70 + premiumDays];
-		sprintf(buffer, "You need to have at least %d premium days to form a guild.", premiumDays);
 		player->sendCancel(buffer);
 		return true;
 	}

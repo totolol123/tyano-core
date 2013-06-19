@@ -76,7 +76,6 @@ class IOLoginData
 		bool setRecoveryKey(uint32_t accountId, std::string newRecoveryKey);
 
 		uint64_t createAccount(std::string name, std::string password);
-		void removePremium(Account& account);
 
 		const Group* getPlayerGroupByAccount(uint32_t accountId);
 
@@ -90,8 +89,6 @@ class IOLoginData
 		bool hasCustomFlag(const std::string& name, PlayerCustomFlags value);
 		bool hasFlag(PlayerFlags value, uint32_t guid);
 		bool hasCustomFlag(PlayerCustomFlags value, uint32_t guid);
-
-		bool isPremium(uint32_t guid);
 
 		bool playerExists(uint32_t guid, bool multiworld = false, bool checkCache = true);
 		bool playerExists(std::string& name, bool multiworld = false, bool checkCache = true);
@@ -113,7 +110,6 @@ class IOLoginData
 		bool getUnjustifiedDates(uint32_t guid, std::vector<time_t>& dateList, time_t _time);
 		bool getDefaultTownByName(const std::string& name, uint32_t& townId);
 
-		bool updatePremiumDays();
 		bool updateOnlineStatus(uint32_t guid, bool login);
 		bool resetGuildInformation(uint32_t guid);
 

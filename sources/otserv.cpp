@@ -46,6 +46,7 @@
 #include "outfit.h"
 #include "vocation.h"
 #include "task.h"
+#include "tools.h"
 #include "group.h"
 
 #include "items.h"

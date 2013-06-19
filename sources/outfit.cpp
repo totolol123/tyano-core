@@ -78,9 +78,6 @@ bool Outfits::parseOutfitNode(xmlNodePtr p)
 			newOutfit.storageValue = strValue;
 	}
 
-	if(readXMLString(p, "premium", strValue))
-		newOutfit.isPremium = booleanString(strValue);
-
 	for(xmlNodePtr listNode = p->children; listNode != nullptr; listNode = listNode->next)
 	{
 		if(xmlStrcmp(listNode->name, (const xmlChar*)"list"))

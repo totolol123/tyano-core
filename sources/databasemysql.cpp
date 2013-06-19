@@ -255,6 +255,38 @@ bool DatabaseMySQL::reconnect()
 LOGGER_DEFINITION(MySQLResult);
 
 
+bool MySQLResult::isNull(const std::string& field) {
+	listNames_t::iterator it = m_listNames.find(field);
+	if(it != m_listNames.end()) {
+		return (m_row[it->second] == nullptr);
+	}
+
+	if(refetch())
+		return isNull(field);
+
+	LOGe("Error during isNull(" << field << ").");
+	return 0; // Failed
+}
+
+
+uint32_t MySQLResult::getUnsigned32(const std::string& field) {
+	listNames_t::iterator it = m_listNames.find(field);
+	if(it != m_listNames.end())
+	{
+		if(!m_row[it->second])
+			return 0;
+
+		return static_cast<uint32_t>(atoll(m_row[it->second]));
+	}
+
+	if(refetch())
+		return getUnsigned32(field);
+
+	LOGe("Error during getDataInt(" << field << ").");
+	return 0; // Failed
+}
+
+
 int32_t MySQLResult::getDataInt(const std::string &s)
 {
 	listNames_t::iterator it = m_listNames.find(s);

@@ -944,12 +944,6 @@ bool Houses::payHouse(House* house, time_t _time, uint32_t bid)
 	if(!player)
 		return false;
 
-	if(!player->isPremium() && server.configManager().getBool(ConfigManager::HOUSE_NEED_PREMIUM))
-	{
-		house->setOwnerEx(0, true);
-		return false;
-	}
-
 	int32_t loginClean = server.configManager().getNumber(ConfigManager::HOUSE_CLEAN_OLD);
 	if(player->isVirtual() && loginClean && _time >= (player->getLastLogin() + loginClean))
 	{

@@ -110,10 +110,19 @@ namespace std {
 	};
 }
 
-typedef std::chrono::steady_clock  Clock;
-typedef Clock::duration            Duration;
-typedef Clock::time_point          Time;
-typedef std::unique_ptr<xmlDoc>    xmlDocP;
+typedef std::chrono::steady_clock                      Clock;
+typedef std::chrono::duration<int, std::ratio<86400>>  Days;
+typedef Clock::duration                                Duration;
+typedef std::chrono::hours                             Hours;
+typedef std::chrono::milliseconds                      Milliseconds;
+typedef std::chrono::minutes                           Minute;
+typedef std::chrono::system_clock                      RealClock;
+typedef RealClock::duration                            RealDuration;
+typedef RealClock::time_point                          RealTime;
+typedef std::chrono::seconds                           Seconds;
+typedef Clock::time_point                              Time;
+typedef std::unique_ptr<xmlDoc>                        xmlDocP;
+
 
 
 template<typename T>

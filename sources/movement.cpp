@@ -603,7 +603,6 @@ Event(_interface)
 	wieldInfo = 0;
 	reqLevel = 0;
 	reqMagLevel = 0;
-	premium = false;
 }
 
 MoveEvent::~MoveEvent()
@@ -740,13 +739,6 @@ bool MoveEvent::configureEvent(xmlNodePtr p)
 					wieldInfo |= WIELDINFO_MAGLV;
 			}
 
-			if(readXMLString(p, "prem", strValue) || readXMLString(p, "premium", strValue))
-			{
-				premium = booleanString(strValue);
-				if(premium)
-					wieldInfo |= WIELDINFO_PREMIUM;
-			}
-
 			StringVector vocStringVec;
 			std::string error = "";
 			xmlNodePtr vocationNode = p->children;
@@ -848,9 +840,6 @@ uint32_t MoveEvent::EquipItem(const MoveEventP& moveEvent, Player* player, Item*
 	if(!player->hasFlag(PlayerFlag_IgnoreEquipCheck) && moveEvent->getWieldInfo() != 0)
 	{
 		if(player->getLevel() < (uint32_t)moveEvent->getReqLevel() || player->getMagicLevel() < (uint32_t)moveEvent->getReqMagLv())
-			return 0;
-
-		if(moveEvent->isPremium() && !player->isPremium())
 			return 0;
 
 		if(!moveEvent->getVocEquipMap().empty() && moveEvent->getVocEquipMap().find(player->getVocationId()) == moveEvent->getVocEquipMap().end())
