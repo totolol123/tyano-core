@@ -123,15 +123,11 @@ bool BedItem::canUse(Player* player)
 	if(!sleeper || house->getHouseAccessLevel(player) == HOUSE_OWNER)
 		return isBed();
 
-	Player* _player = server.game().getPlayerByGuidEx(sleeper);
+	PlayerP _player = server.game().getPlayerByGuidEx(sleeper);
 	if(!_player)
 		return isBed();
 
-	bool ret = house->getHouseAccessLevel(_player) <= house->getHouseAccessLevel(player);
-	if(_player->isVirtual())
-		delete _player;
-
-	return ret;
+	return house->getHouseAccessLevel(_player.get()) <= house->getHouseAccessLevel(player);
 }
 
 void BedItem::sleep(Player* player)
@@ -175,16 +171,15 @@ void BedItem::wakeUp()
 
 	if(sleeper)
 	{
-		if(Player* player = server.game().getPlayerByGuidEx(sleeper))
+		if(PlayerP player = server.game().getPlayerByGuidEx(sleeper))
 		{
-			regeneratePlayer(player);
+			regeneratePlayer(player.get());
 			if(player->isVirtual())
 			{
-				IOLoginData::getInstance()->savePlayer(player);
-				delete player;
+				IOLoginData::getInstance()->savePlayer(player.get());
 			}
 			else
-				server.game().addCreatureHealth(player);
+				server.game().addCreatureHealth(player.get());
 		}
 	}
 

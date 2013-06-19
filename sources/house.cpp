@@ -129,7 +129,7 @@ bool House::setOwnerEx(uint32_t guid, bool transfer)
 
 	if(isGuild() && guid)
 	{
-		Player* player = server.game().getPlayerByGuidEx(guid);
+		PlayerP player = server.game().getPlayerByGuidEx(guid);
 		if(!player)
 			return false;
 
@@ -270,7 +270,7 @@ bool House::transferToDepot()
 	if(!townId)
 		return false;
 
-	Player* player = nullptr;
+	PlayerP player = nullptr;
 	if(owner)
 	{
 		uint32_t tmp = owner;
@@ -310,8 +310,7 @@ bool House::transferToDepot()
 
 		if(player->isVirtual())
 		{
-			IOLoginData::getInstance()->savePlayer(player);
-			delete player;
+			IOLoginData::getInstance()->savePlayer(player.get());
 		}
 	}
 	else
@@ -941,16 +940,13 @@ bool Houses::payHouse(House* house, time_t _time, uint32_t bid)
 		return false;
 	}
 
-	Player* player = server.game().getPlayerByNameEx(name);
+	PlayerP player = server.game().getPlayerByNameEx(name);
 	if(!player)
 		return false;
 
 	if(!player->isPremium() && server.configManager().getBool(ConfigManager::HOUSE_NEED_PREMIUM))
 	{
 		house->setOwnerEx(0, true);
-		if(player->isVirtual())
-			delete player;
-
 		return false;
 	}
 
@@ -958,16 +954,13 @@ bool Houses::payHouse(House* house, time_t _time, uint32_t bid)
 	if(player->isVirtual() && loginClean && _time >= (player->getLastLogin() + loginClean))
 	{
 		house->setOwnerEx(0, true);
-		if(player->isVirtual())
-			delete player;
-
 		return false;
 	}
 
 	if(rentPeriod == RENTPERIOD_NEVER || house->getPaidUntil() > _time || !house->getRent())
 		return true;
 
-	bool paid = payRent(player, house, bid, _time), savePlayer = false;
+	bool paid = payRent(player.get(), house, bid, _time), savePlayer = false;
 	if(!paid && _time >= (house->getLastWarning() + 86400))
 	{
 		uint32_t warningsLimit = 7;
@@ -1036,9 +1029,7 @@ bool Houses::payHouse(House* house, time_t _time, uint32_t bid)
 	if(player->isVirtual())
 	{
 		if(savePlayer)
-			IOLoginData::getInstance()->savePlayer(player);
-
-		delete player;
+			IOLoginData::getInstance()->savePlayer(player.get());
 	}
 
 	return paid;

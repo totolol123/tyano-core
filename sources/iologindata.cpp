@@ -1121,7 +1121,7 @@ bool IOLoginData::playerDeath(Player* player, const DeathList& dl)
 
 bool IOLoginData::playerMail(Creature* actor, std::string name, uint32_t townId, Item* item)
 {
-	Player* player = server.game().getPlayerByNameEx(name);
+	PlayerP player = server.game().getPlayerByNameEx(name);
 	if(!player)
 		return false;
 
@@ -1132,9 +1132,6 @@ bool IOLoginData::playerMail(Creature* actor, std::string name, uint32_t townId,
 	if(!depot || server.game().internalMoveItem(actor, item->getParent(), depot, INDEX_WHEREEVER,
 		item, item->getItemCount(), nullptr, FLAG_NOLIMIT) != RET_NOERROR)
 	{
-		if(player->isVirtual())
-			delete player;
-
 		return false;
 	}
 
@@ -1148,7 +1145,7 @@ bool IOLoginData::playerMail(Creature* actor, std::string name, uint32_t townId,
 	CreatureEventList mailEvents = player->getCreatureEvents(CREATURE_EVENT_MAIL_RECEIVE);
 	for(CreatureEventList::iterator it = mailEvents.begin(); it != mailEvents.end(); ++it)
 	{
-		if(!(*it)->executeMailReceive(player, tmp, item, opened) && result)
+		if(!(*it)->executeMailReceive(player.get(), tmp, item, opened) && result)
 			result = false;
 	}
 
@@ -1157,15 +1154,14 @@ bool IOLoginData::playerMail(Creature* actor, std::string name, uint32_t townId,
 		mailEvents = tmp->getCreatureEvents(CREATURE_EVENT_MAIL_SEND);
 		for(CreatureEventList::iterator it = mailEvents.begin(); it != mailEvents.end(); ++it)
 		{
-			if(!(*it)->executeMailSend(tmp, player, item, opened) && result)
+			if(!(*it)->executeMailSend(tmp, player.get(), item, opened) && result)
 				result = false;
 		}
 	}
 
 	if(player->isVirtual())
 	{
-		IOLoginData::getInstance()->savePlayer(player);
-		delete player;
+		IOLoginData::getInstance()->savePlayer(player.get());
 	}
 
 	return result;

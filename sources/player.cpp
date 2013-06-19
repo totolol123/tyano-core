@@ -4926,7 +4926,7 @@ bool Player::transferMoneyTo(const std::string& name, uint64_t amount)
 	if(!server.configManager().getBool(ConfigManager::BANK_SYSTEM) || amount > balance)
 		return false;
 
-	Player* target = server.game().getPlayerByNameEx(name);
+	PlayerP target = server.game().getPlayerByNameEx(name);
 	if(!target)
 		return false;
 
@@ -4934,8 +4934,7 @@ bool Player::transferMoneyTo(const std::string& name, uint64_t amount)
 	target->balance += amount;
 	if(target->isVirtual())
 	{
-		IOLoginData::getInstance()->savePlayer(target);
-		delete target;
+		IOLoginData::getInstance()->savePlayer(target.get());
 	}
 
 	return true;

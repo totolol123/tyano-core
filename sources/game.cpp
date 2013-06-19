@@ -711,7 +711,7 @@ const Map* Game::getMap() const {
 }
 
 
-Player* Game::getPlayerByName(std::string s)
+PlayerP Game::getPlayerByName(std::string s)
 {
 	if(s.empty())
 		return nullptr;
@@ -726,9 +726,9 @@ Player* Game::getPlayerByName(std::string s)
 	return nullptr;
 }
 
-Player* Game::getPlayerByNameEx(const std::string& s)
+PlayerP Game::getPlayerByNameEx(const std::string& s)
 {
-	Player* player = getPlayerByName(s);
+	PlayerP player = getPlayerByName(s);
 	if(player)
 		return player;
 
@@ -737,16 +737,15 @@ Player* Game::getPlayerByNameEx(const std::string& s)
 		return nullptr;
 
 	player = new Player(name, nullptr);
-	if(IOLoginData::getInstance()->loadPlayer(player, name))
+	if(IOLoginData::getInstance()->loadPlayer(player.get(), name))
 		return player;
 
 	LOGe("[Game::getPlayerByNameEx] Cannot load player: " << name);
 
-	delete player;
 	return nullptr;
 }
 
-Player* Game::getPlayerByGuid(uint32_t guid)
+PlayerP Game::getPlayerByGuid(uint32_t guid)
 {
 	if(!guid)
 		return nullptr;
@@ -760,9 +759,9 @@ Player* Game::getPlayerByGuid(uint32_t guid)
 	return nullptr;
 }
 
-Player* Game::getPlayerByGuidEx(uint32_t guid)
+PlayerP Game::getPlayerByGuidEx(uint32_t guid)
 {
-	Player* player = getPlayerByGuid(guid);
+	PlayerP player = getPlayerByGuid(guid);
 	if(player)
 		return player;
 
@@ -771,12 +770,11 @@ Player* Game::getPlayerByGuidEx(uint32_t guid)
 		return nullptr;
 
 	player = new Player(name, nullptr);
-	if(IOLoginData::getInstance()->loadPlayer(player, name))
+	if(IOLoginData::getInstance()->loadPlayer(player.get(), name))
 		return player;
 
 	LOGe("[Game::getPlayerByGuidEx] Cannot load player: " << name);
 
-	delete player;
 	return nullptr;
 }
 
@@ -789,7 +787,7 @@ ReturnValue Game::getPlayerByNameWildcard(std::string s, Player*& player)
 	char tmp = *s.rbegin();
 	if(tmp != '~' && tmp != '*')
 	{
-		player = getPlayerByName(s);
+		player = getPlayerByName(s).get();
 		if(!player)
 			return RET_PLAYERWITHTHISNAMEISNOTONLINE;
 
@@ -2160,11 +2158,11 @@ bool Game::playerChannelInvite(uint32_t playerId, const std::string& name)
 	if(!channel)
 		return false;
 
-	Player* invitePlayer = getPlayerByName(name);
+	PlayerP invitePlayer = getPlayerByName(name);
 	if(!invitePlayer)
 		return false;
 
-	channel->invitePlayer(player, invitePlayer);
+	channel->invitePlayer(player, invitePlayer.get());
 	return true;
 }
 
@@ -2178,11 +2176,11 @@ bool Game::playerChannelExclude(uint32_t playerId, const std::string& name)
 	if(!channel)
 		return false;
 
-	Player* excludePlayer = getPlayerByName(name);
+	PlayerP excludePlayer = getPlayerByName(name);
 	if(!excludePlayer)
 		return false;
 
-	channel->excludePlayer(player, excludePlayer);
+	channel->excludePlayer(player, excludePlayer.get());
 	return true;
 }
 
@@ -2249,7 +2247,7 @@ bool Game::playerProcessRuleViolation(uint32_t playerId, const std::string& name
 	if(!player->hasFlag(PlayerFlag_CanAnswerRuleViolations))
 		return false;
 
-	Player* reporter = getPlayerByName(name);
+	PlayerP reporter = getPlayerByName(name);
 	if(!reporter)
 		return false;
 
@@ -2279,11 +2277,11 @@ bool Game::playerCloseRuleViolation(uint32_t playerId, const std::string& name)
 	if(!player || player->isRemoved())
 		return false;
 
-	Player* reporter = getPlayerByName(name);
+	PlayerP reporter = getPlayerByName(name);
 	if(!reporter)
 		return false;
 
-	return closeRuleViolation(reporter);
+	return closeRuleViolation(reporter.get());
 }
 
 bool Game::playerCancelRuleViolation(uint32_t playerId)
@@ -3517,8 +3515,8 @@ bool Game::playerRequestAddVip(uint32_t playerId, const std::string& vipName)
 	}
 
 	bool online = false;
-	if(Player* target = getPlayerByName(name))
-		online = player->canSeeCreature(target);
+	if(PlayerP target = getPlayerByName(name))
+		online = player->canSeeCreature(target.get());
 
 	return player->addVIP(guid, name, online);
 }
@@ -3718,14 +3716,14 @@ bool Game::playerYell(Player* player, const std::string& text)
 bool Game::playerSpeakTo(Player* player, SpeakClasses type, const std::string& receiver,
 	const std::string& text)
 {
-	Player* toPlayer = getPlayerByName(receiver);
+	PlayerP toPlayer = getPlayerByName(receiver);
 	if(!toPlayer || toPlayer->isRemoved())
 	{
 		player->sendTextMessage(MSG_STATUS_SMALL, "A player with this name is not online.");
 		return false;
 	}
 
-	bool canSee = player->canSeeCreature(toPlayer);
+	bool canSee = player->canSeeCreature(toPlayer.get());
 	if(toPlayer->hasCondition(CONDITION_GAMEMASTER, GAMEMASTER_IGNORE)
 		&& !player->hasFlag(PlayerFlag_CannotBeMuted))
 	{
@@ -4929,7 +4927,7 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 	}
 
 	toLowerCaseString(name);
-	Player* target = getPlayerByNameEx(name);
+	PlayerP target = getPlayerByNameEx(name);
 	if(!target || name == "account manager")
 	{
 		player->sendCancel("A player with this name does not exist.");
@@ -5153,12 +5151,7 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 	else
 		player->sendTextMessage(MSG_STATUS_CONSOLE_RED, ss.str());
 
-	if(target->isVirtual())
-	{
-		delete target;
-		target = nullptr;
-	}
-	else if(kickAction > NONE)
+	if(!target->isVirtual() && kickAction > NONE)
 	{
 		char buffer[30];
 		sprintf(buffer, "You have been %s.", (kickAction > KICK ? "banished" : "namelocked"));

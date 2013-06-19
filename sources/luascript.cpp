@@ -243,7 +243,7 @@ void ScriptEnviroment::removeUniqueThing(Thing* thing)
 		m_globalMap.erase(it);
 }
 
-uint32_t ScriptEnviroment::addThing(Thing* thing)
+uint32_t ScriptEnviroment::addThing(ThingP thing)
 {
 	if(!thing || thing->isRemoved())
 		return 0;
@@ -287,21 +287,31 @@ void ScriptEnviroment::insertThing(uint32_t uid, Thing* thing)
 
 Thing* ScriptEnviroment::getThingByUID(uint32_t uid)
 {
-	Thing* tmp = m_localMap[uid];
-	if(tmp && !tmp->isRemoved())
-		return tmp;
+	auto iterator = m_localMap.find(uid);
+	if (iterator != m_localMap.end()) {
+		if (iterator->second->isRemoved()) {
+			m_localMap.erase(uid);
+		}
+		else {
+			return iterator->second.get();
+		}
+	}
 
-	tmp = m_globalMap[uid];
-	if(tmp && !tmp->isRemoved())
-		return tmp;
+	iterator = m_globalMap.find(uid);
+	if (iterator != m_globalMap.end()) {
+		if (iterator->second->isRemoved()) {
+			m_globalMap.erase(uid);
+		}
+		else {
+			return iterator->second.get();
+		}
+	}
 
-	if(uid >= 0x10000000)
-	{
-		tmp = server.game().getCreatureByID(uid);
-		if(tmp && !tmp->isRemoved())
-		{
-			m_localMap[uid] = tmp;
-			return tmp;
+	if (uid >= 0x10000000) {
+		CreatureP creature = server.game().getCreatureByID(uid);
+		if (creature && !creature->isRemoved()) {
+			m_localMap[uid] = creature;
+			return creature.get();
 		}
 	}
 
@@ -6061,14 +6071,14 @@ int32_t LuaScriptInterface::luaDoCombat(lua_State* L)
 
 		case VARIANT_STRING:
 		{
-			Player* target = server.game().getPlayerByName(var.text);
+			PlayerP target = server.game().getPlayerByName(var.text);
 			if(!target || !creature || !creature->canSeeCreature(target))
 			{
 				lua_pushboolean(L, false);
 				return 1;
 			}
 
-			combat->doCombat(creature, target);
+			combat->doCombat(creature, target.get());
 			break;
 		}
 
@@ -7231,7 +7241,7 @@ int32_t LuaScriptInterface::luaGetPlayerByGUID(lua_State* L)
 {
 	//getPlayerByGUID(guid)
 	ScriptEnviroment* env = getEnv();
-	if(Player* player = server.game().getPlayerByGuid(popNumber(L)))
+	if(PlayerP player = server.game().getPlayerByGuid(popNumber(L)))
 		lua_pushnumber(L, env->addThing(player));
 	else
 		lua_pushnil(L);
@@ -7243,7 +7253,7 @@ int32_t LuaScriptInterface::luaGetPlayerByGUIDEx(lua_State* L)
 {
 	//getPlayerByGUIDEx(guid)
 	ScriptEnviroment* env = getEnv();
-	if(Player* player = server.game().getPlayerByGuidEx(popNumber(L)))
+	if(PlayerP player = server.game().getPlayerByGuidEx(popNumber(L)))
 		lua_pushnumber(L, env->addThing(player));
 	else
 		lua_pushnil(L);
@@ -7280,7 +7290,7 @@ int32_t LuaScriptInterface::luaGetPlayerGUIDByName(lua_State* L)
 
 	std::string name = popString(L);
 	uint32_t guid;
-	if(Player* player = server.game().getPlayerByName(name.c_str()))
+	if(PlayerP player = server.game().getPlayerByName(name.c_str()))
 		lua_pushnumber(L, player->getGUID());
 	else if(IOLoginData::getInstance()->getGuidByName(guid, name, multiworld))
 		lua_pushnumber(L, guid);
@@ -7341,7 +7351,7 @@ int32_t LuaScriptInterface::luaGetIpByName(lua_State* L)
 	//getIpByName(name)
 	std::string name = popString(L);
 
-	if(Player* player = server.game().getPlayerByName(name))
+	if(PlayerP player = server.game().getPlayerByName(name))
 		lua_pushnumber(L, player->getIP());
 	else
 		lua_pushnumber(L, IOLoginData::getInstance()->getLastIPByName(name));
@@ -7377,7 +7387,7 @@ int32_t LuaScriptInterface::luaGetAccountIdByName(lua_State* L)
 	//getAccountIdByName(name)
 	std::string name = popString(L);
 
-	if(Player* player = server.game().getPlayerByName(name))
+	if(PlayerP player = server.game().getPlayerByName(name))
 		lua_pushnumber(L, player->getAccount());
 	else
 		lua_pushnumber(L, IOLoginData::getInstance()->getAccountIdByName(name));
@@ -7390,7 +7400,7 @@ int32_t LuaScriptInterface::luaGetAccountByName(lua_State* L)
 	//getAccountByName(name)
 	std::string name = popString(L);
 
-	if(Player* player = server.game().getPlayerByName(name))
+	if(PlayerP player = server.game().getPlayerByName(name))
 		lua_pushstring(L, player->getAccountName().c_str());
 	else
 	{

@@ -2629,8 +2629,8 @@ void ProtocolGame::sendAddCreature(const CreatureP& creature, const StackPositio
 		std::string vipName;
 		if(IOLoginData::getInstance()->getNameByGuid((*it), vipName))
 		{
-			Player* tmpPlayer = server.game().getPlayerByName(vipName);
-			sendVIP((*it), vipName, (tmpPlayer && player->canSeeCreature(tmpPlayer)));
+			PlayerP tmpPlayer = server.game().getPlayerByName(vipName);
+			sendVIP((*it), vipName, (tmpPlayer && player->canSeeCreature(tmpPlayer.get())));
 		}
 	}
 }
