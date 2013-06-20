@@ -1003,7 +1003,7 @@ void ProtocolGame::correctRegisteredCreature(const CreatureP& creature, const St
 	if (creature == player) {
 		NetworkMessage_ptr message = getOutputBuffer();
 		if (message) {
-			LOGf("\tI moved the player to " << newPosition << ".");
+			LOGf("\tI moved the player to " << newPosition << " and re-sent the map.");
 			LOGf(std::setfill('-') << std::setw(90) << "");
 
 			RemoveTileCreature(message, validationResult.expectedPosition);
@@ -2442,6 +2442,7 @@ void ProtocolGame::sendAddTileItem(const Tile* tile, const StackPosition& positi
 		TRACK_MESSAGE(msg);
 		AddTileItem(msg, position, item);
 
+		updateCreaturesAtPosition(position);
 		Tile* tile = server.game().getTile(position);
 		if (tile->getCreatures() != nullptr) {
 			StackPosition creaturePosition(position);

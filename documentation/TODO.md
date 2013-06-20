@@ -22,6 +22,8 @@ Soon
 - Complete item structure refactoring.
 - Find to-dos written directly in the code and migrate them here.
 - Refactor chat messages to be more visible (e.g. gamemaster broadcasts, etc.)
+- Refactor networking code because the current one is unstable and unsafe.  
+  E.g. what if an invisible creature becomes visible? The stack *order* of creatures would vary across clients. The current code cannot handle that!
 
 
 Improvements
