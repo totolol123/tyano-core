@@ -30,6 +30,7 @@ Soon
 Improvements
 ------------
 
+- Use separate dispatching/scheduling for cross-thread and inter-game-thread avoid unnecessary locks and to speed up everything.
 - Improve autowalking. Currently you lag when clicking multiple times and the walking randomly ends, e.g. when a creature walks into the path.
 - Add randomization to the think intervals to distribute CPU load as much as possible.
 - Use C++11 random number generators. Also check if the random number generating functions are not used concurrently.
