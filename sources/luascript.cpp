@@ -119,7 +119,7 @@ int LuaScriptInterface::luaGetPlayerPremiumExpirationText(lua_State* L) {
 	auto timeComponents = std::gmtime(&time);
 
 	char buffer[512];
-	std::strftime(buffer, sizeof(buffer) / sizeof(char), "%A, %B %e %Y %I:%M%p", timeComponents);
+	std::strftime(buffer, sizeof(buffer) / sizeof(char), "%A, %B %e %Y %I:%M%p %Z", timeComponents);
 
 	push(L, buffer);
 	return 1;
