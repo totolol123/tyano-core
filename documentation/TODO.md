@@ -10,7 +10,7 @@ Urgent
 Important
 ---------
 
-- Rework all premium stuff.
+- Nothing :)
 
 
 Soon
@@ -22,6 +22,7 @@ Soon
 - Complete item structure refactoring.
 - Find to-dos written directly in the code and migrate them here.
 - Refactor chat messages to be more visible (e.g. gamemaster broadcasts, etc.)
+- Reduce overall number of corpses and also make them disappear faster. Esp. if there are more than 7-8 corpses on a single tile it get's tricky and players may lose loot.
 - Refactor networking code because the current one is unstable and unsafe.  
   E.g. what if an invisible creature becomes visible? The stack *order* of creatures would vary across clients. The current code cannot handle that!
 

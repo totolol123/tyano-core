@@ -131,14 +131,14 @@ uint32_t DatabaseManager::updateDatabase()
 		case 0:
 		{
 			LOGi("Updating database to version: 1...");
-			db.executeQuery("CREATE TABLE IF NOT EXISTS `server_config` (`config` VARCHAR(35) NOT nullptr DEFAULT '', `value` INT NOT nullptr) ENGINE = InnoDB;");
+			db.executeQuery("CREATE TABLE IF NOT EXISTS `server_config` (`config` VARCHAR(35) NOT NULL DEFAULT '', `value` INT NOT NULL) ENGINE = InnoDB;");
 
 			db.executeQuery("INSERT INTO `server_config` VALUES ('db_version', 1);");
 
 			if(!tableExists("server_motd"))
 			{
 				//update bans table
-				if(db.executeQuery("CREATE TABLE IF NOT EXISTS `bans2` (`id` INT UNSIGNED NOT nullptr auto_increment, `type` TINYINT(1) NOT nullptr COMMENT 'this field defines if its ip, account, player, or any else ban', `value` INT UNSIGNED NOT nullptr COMMENT 'ip, player guid, account number', `param` INT UNSIGNED NOT nullptr DEFAULT 4294967295 COMMENT 'mask', `active` TINYINT(1) NOT nullptr DEFAULT TRUE, `expires` INT UNSIGNED NOT nullptr, `added` INT UNSIGNED NOT nullptr, `admin_id` INT UNSIGNED NOT nullptr DEFAULT 0, `comment` TEXT NOT nullptr, `reason` INT UNSIGNED NOT nullptr DEFAULT 0, `action` INT UNSIGNED NOT nullptr DEFAULT 0, PRIMARY KEY (`id`), KEY `type` (`type`, `value`)) ENGINE = InnoDB;"))
+				if(db.executeQuery("CREATE TABLE IF NOT EXISTS `bans2` (`id` INT UNSIGNED NOT NULL auto_increment, `type` TINYINT(1) NOT NULL COMMENT 'this field defines if its ip, account, player, or any else ban', `value` INT UNSIGNED NOT NULL COMMENT 'ip, player guid, account number', `param` INT UNSIGNED NOT NULL DEFAULT 4294967295 COMMENT 'mask', `active` TINYINT(1) NOT NULL DEFAULT TRUE, `expires` INT UNSIGNED NOT NULL, `added` INT UNSIGNED NOT NULL, `admin_id` INT UNSIGNED NOT NULL DEFAULT 0, `comment` TEXT NOT NULL, `reason` INT UNSIGNED NOT NULL DEFAULT 0, `action` INT UNSIGNED NOT NULL DEFAULT 0, PRIMARY KEY (`id`), KEY `type` (`type`, `value`)) ENGINE = InnoDB;"))
 				{
 					if(DBResultP result = db.storeQuery("SELECT * FROM `bans`;"))
 					{
@@ -182,30 +182,30 @@ uint32_t DatabaseManager::updateDatabase()
 
 				std::string queryList[] = {
 					//create server_record table
-					"CREATE TABLE IF NOT EXISTS `server_record` (`record` INT NOT nullptr, `timestamp` BIGINT NOT nullptr, PRIMARY KEY (`timestamp`)) ENGINE = InnoDB;",
+					"CREATE TABLE IF NOT EXISTS `server_record` (`record` INT NOT NULL, `timestamp` BIGINT NOT NULL, PRIMARY KEY (`timestamp`)) ENGINE = InnoDB;",
 					//create server_reports table
-					"CREATE TABLE IF NOT EXISTS `server_reports` (`id` INT NOT nullptr AUTO_INCREMENT, `player_id` INT UNSIGNED NOT nullptr DEFAULT 0, `posx` INT NOT nullptr DEFAULT 0, `posy` INT NOT nullptr DEFAULT 0, `posz` INT NOT nullptr DEFAULT 0, `timestamp` BIGINT NOT nullptr DEFAULT 0, `report` TEXT NOT nullptr, `reads` INT NOT nullptr DEFAULT 0, PRIMARY KEY (`id`), KEY (`player_id`), KEY (`reads`)) ENGINE = InnoDB;",
+					"CREATE TABLE IF NOT EXISTS `server_reports` (`id` INT NOT NULL AUTO_INCREMENT, `player_id` INT UNSIGNED NOT NULL DEFAULT 0, `posx` INT NOT NULL DEFAULT 0, `posy` INT NOT NULL DEFAULT 0, `posz` INT NOT NULL DEFAULT 0, `timestamp` BIGINT NOT NULL DEFAULT 0, `report` TEXT NOT NULL, `reads` INT NOT NULL DEFAULT 0, PRIMARY KEY (`id`), KEY (`player_id`), KEY (`reads`)) ENGINE = InnoDB;",
 					//create server_motd table
-					"CREATE TABLE `server_motd` (`id` INT NOT nullptr AUTO_INCREMENT, `text` TEXT NOT nullptr, PRIMARY KEY (`id`)) ENGINE = InnoDB;",
+					"CREATE TABLE `server_motd` (`id` INT NOT NULL AUTO_INCREMENT, `text` TEXT NOT NULL, PRIMARY KEY (`id`)) ENGINE = InnoDB;",
 					//create global_storage table
-					"CREATE TABLE IF NOT EXISTS `global_storage` (`key` INT UNSIGNED NOT nullptr, `value` INT NOT nullptr, PRIMARY KEY (`key`)) ENGINE = InnoDB;",
+					"CREATE TABLE IF NOT EXISTS `global_storage` (`key` INT UNSIGNED NOT NULL, `value` INT NOT NULL, PRIMARY KEY (`key`)) ENGINE = InnoDB;",
 					//insert data to server_record table
 					"INSERT INTO `server_record` VALUES (0, 0);",
 					//insert data to server_motd table
 					"INSERT INTO `server_motd` VALUES (1, 'Welcome to The Forgotten Server!');",
 					//update players table
-					"ALTER TABLE `players` ADD `balance` BIGINT UNSIGNED NOT nullptr DEFAULT 0 AFTER `blessings`;",
-					"ALTER TABLE `players` ADD `stamina` BIGINT UNSIGNED NOT nullptr DEFAULT 201660000 AFTER `balance`;",
-					"ALTER TABLE `players` ADD `loss_items` INT NOT nullptr DEFAULT 10 AFTER `loss_skills`;",
-					"ALTER TABLE `players` ADD `marriage` INT UNSIGNED NOT nullptr DEFAULT 0;",
+					"ALTER TABLE `players` ADD `balance` BIGINT UNSIGNED NOT NULL DEFAULT 0 AFTER `blessings`;",
+					"ALTER TABLE `players` ADD `stamina` BIGINT UNSIGNED NOT NULL DEFAULT 201660000 AFTER `balance`;",
+					"ALTER TABLE `players` ADD `loss_items` INT NOT NULL DEFAULT 10 AFTER `loss_skills`;",
+					"ALTER TABLE `players` ADD `marriage` INT UNSIGNED NOT NULL DEFAULT 0;",
 					"UPDATE `players` SET `loss_experience` = 10, `loss_mana` = 10, `loss_skills` = 10, `loss_items` = 10;",
 					//update accounts table
 					"ALTER TABLE `accounts` DROP `type`;",
 					//update player deaths table
 					"ALTER TABLE `player_deaths` DROP `is_player`;",
 					//update house table
-					"ALTER TABLE `houses` CHANGE `warnings` `warnings` INT NOT nullptr DEFAULT 0;",
-					"ALTER TABLE `houses` ADD `lastwarning` INT UNSIGNED NOT nullptr DEFAULT 0;",
+					"ALTER TABLE `houses` CHANGE `warnings` `warnings` INT NOT NULL DEFAULT 0;",
+					"ALTER TABLE `houses` ADD `lastwarning` INT UNSIGNED NOT NULL DEFAULT 0;",
 					//update triggers
 					"DROP TRIGGER IF EXISTS `ondelete_accounts`;",
 					"DROP TRIGGER IF EXISTS `ondelete_players`;",
@@ -222,7 +222,7 @@ uint32_t DatabaseManager::updateDatabase()
 		case 1:
 		{
 			LOGi("Updating database to version: 2...");
-			db.executeQuery("ALTER TABLE `players` ADD `promotion` INT NOT nullptr DEFAULT 0;");
+			db.executeQuery("ALTER TABLE `players` ADD `promotion` INT NOT NULL DEFAULT 0;");
 
 			DBResultP result;
 			if((result = db.storeQuery("SELECT `player_id`, `value` FROM `player_storage` WHERE `key` = 30018 AND `value` > 0")))
@@ -237,7 +237,7 @@ uint32_t DatabaseManager::updateDatabase()
 			}
 
 			db.executeQuery("DELETE FROM `player_storage` WHERE `key` = 30018;");
-			db.executeQuery("ALTER TABLE `accounts` ADD `name` VARCHAR(32) NOT nullptr DEFAULT '';");
+			db.executeQuery("ALTER TABLE `accounts` ADD `name` VARCHAR(32) NOT NULL DEFAULT '';");
 			if((result = db.storeQuery("SELECT `id` FROM `accounts`;")))
 			{
 				do
@@ -249,8 +249,8 @@ uint32_t DatabaseManager::updateDatabase()
 				while(result->next());
 			}
 
-			db.executeQuery("ALTER TABLE `players` ADD `deleted` TINYINT(1) NOT nullptr DEFAULT 0;");
-			db.executeQuery("ALTER TABLE `player_items` CHANGE `attributes` `attributes` BLOB NOT nullptr;");
+			db.executeQuery("ALTER TABLE `players` ADD `deleted` TINYINT(1) NOT NULL DEFAULT 0;");
+			db.executeQuery("ALTER TABLE `player_items` CHANGE `attributes` `attributes` BLOB NOT NULL;");
 
 			registerDatabaseConfig("db_version", 2);
 			return 2;
@@ -275,12 +275,12 @@ uint32_t DatabaseManager::updateDatabase()
 		case 3:
 		{
 			LOGi("Updating database to version: 4...");
-			db.executeQuery("ALTER TABLE `houses` ADD `name` VARCHAR(255) NOT nullptr;");
+			db.executeQuery("ALTER TABLE `houses` ADD `name` VARCHAR(255) NOT NULL;");
 			std::string queryList[] = {
-				"ALTER TABLE `houses` ADD `size` INT UNSIGNED NOT nullptr DEFAULT 0;",
-				"ALTER TABLE `houses` ADD `town` INT UNSIGNED NOT nullptr DEFAULT 0;",
-				"ALTER TABLE `houses` ADD `price` INT UNSIGNED NOT nullptr DEFAULT 0;",
-				"ALTER TABLE `houses` ADD `rent` INT UNSIGNED NOT nullptr DEFAULT 0;"
+				"ALTER TABLE `houses` ADD `size` INT UNSIGNED NOT NULL DEFAULT 0;",
+				"ALTER TABLE `houses` ADD `town` INT UNSIGNED NOT NULL DEFAULT 0;",
+				"ALTER TABLE `houses` ADD `price` INT UNSIGNED NOT NULL DEFAULT 0;",
+				"ALTER TABLE `houses` ADD `rent` INT UNSIGNED NOT NULL DEFAULT 0;"
 			};
 			for(uint32_t i = 0; i < sizeof(queryList) / sizeof(std::string); i++)
 				db.executeQuery(queryList[i]);
@@ -292,7 +292,7 @@ uint32_t DatabaseManager::updateDatabase()
 		case 4:
 		{
 			LOGi("Updating database to version: 5...");
-			db.executeQuery("ALTER TABLE `player_deaths` ADD `altkilled_by` VARCHAR(255) NOT nullptr;");
+			db.executeQuery("ALTER TABLE `player_deaths` ADD `altkilled_by` VARCHAR(255) NOT NULL;");
 			registerDatabaseConfig("db_version", 5);
 			return 5;
 		}
@@ -301,9 +301,9 @@ uint32_t DatabaseManager::updateDatabase()
 		{
 			LOGi("Updating database to version: 6...");
 			std::string queryList[] = {
-				"ALTER TABLE `global_storage` CHANGE `value` `value` VARCHAR(255) NOT nullptr DEFAULT '0'",
-				"ALTER TABLE `player_storage` CHANGE `value` `value` VARCHAR(255) NOT nullptr DEFAULT '0'",
-				"ALTER TABLE `tiles` CHANGE `x` `x` INT(5) UNSIGNED NOT nullptr, CHANGE `y` `y` INT(5) UNSIGNED NOT nullptr, CHANGE `z` `z` TINYINT(2) UNSIGNED NOT nullptr;",
+				"ALTER TABLE `global_storage` CHANGE `value` `value` VARCHAR(255) NOT NULL DEFAULT '0'",
+				"ALTER TABLE `player_storage` CHANGE `value` `value` VARCHAR(255) NOT NULL DEFAULT '0'",
+				"ALTER TABLE `tiles` CHANGE `x` `x` INT(5) UNSIGNED NOT NULL, CHANGE `y` `y` INT(5) UNSIGNED NOT NULL, CHANGE `z` `z` TINYINT(2) UNSIGNED NOT NULL;",
 				"ALTER TABLE `tiles` ADD INDEX (`x`, `y`, `z`);",
 				"ALTER TABLE `tile_items` ADD INDEX (`sid`);"
 			};
@@ -339,31 +339,31 @@ uint32_t DatabaseManager::updateDatabase()
 		{
 			LOGi("Updating database to version: 8...");
 			std::string queryList[] = {
-				"ALTER TABLE `server_motd` CHANGE `id` `id` INT UNSIGNED NOT nullptr;",
+				"ALTER TABLE `server_motd` CHANGE `id` `id` INT UNSIGNED NOT NULL;",
 				"ALTER TABLE `server_motd` DROP PRIMARY KEY;",
-				"ALTER TABLE `server_motd` ADD `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0;",
+				"ALTER TABLE `server_motd` ADD `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0;",
 				"ALTER TABLE `server_motd` ADD UNIQUE (`id`, `world_id`);",
 				"ALTER TABLE `server_record` DROP PRIMARY KEY;",
-				"ALTER TABLE `server_record` ADD `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0;",
+				"ALTER TABLE `server_record` ADD `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0;",
 				"ALTER TABLE `server_record` ADD UNIQUE (`timestamp`, `record`, `world_id`);",
-				"ALTER TABLE `server_reports` ADD `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0;",
+				"ALTER TABLE `server_reports` ADD `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0;",
 				"ALTER TABLE `server_reports` ADD INDEX (`world_id`);",
-				"ALTER TABLE `players` ADD `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0;",
+				"ALTER TABLE `players` ADD `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0;",
 				"ALTER TABLE `global_storage` DROP PRIMARY KEY;",
-				"ALTER TABLE `global_storage` ADD `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0;",
+				"ALTER TABLE `global_storage` ADD `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0;",
 				"ALTER TABLE `global_storage` ADD UNIQUE (`key`, `world_id`);",
-				"ALTER TABLE `guilds` ADD `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0;",
+				"ALTER TABLE `guilds` ADD `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0;",
 				"ALTER TABLE `guilds` ADD UNIQUE (`name`, `world_id`);",
-				"ALTER TABLE `house_lists` ADD `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0;",
+				"ALTER TABLE `house_lists` ADD `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0;",
 				"ALTER TABLE `house_lists` ADD UNIQUE (`house_id`, `world_id`, `listid`);",
-				"ALTER TABLE `houses` CHANGE `id` `id` INT NOT nullptr;",
+				"ALTER TABLE `houses` CHANGE `id` `id` INT NOT NULL;",
 				"ALTER TABLE `houses` DROP PRIMARY KEY;",
-				"ALTER TABLE `houses` ADD `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0;",
+				"ALTER TABLE `houses` ADD `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0;",
 				"ALTER TABLE `houses` ADD UNIQUE (`id`, `world_id`);",
-				"ALTER TABLE `tiles` CHANGE `id` `id` INT NOT nullptr;",
-				"ALTER TABLE `tiles` ADD `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0;",
+				"ALTER TABLE `tiles` CHANGE `id` `id` INT NOT NULL;",
+				"ALTER TABLE `tiles` ADD `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0;",
 				"ALTER TABLE `tiles` ADD UNIQUE (`id`, `world_id`);",
-				"ALTER TABLE `tile_items` ADD `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0;",
+				"ALTER TABLE `tile_items` ADD `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0;",
 				"ALTER TABLE `tile_items` ADD UNIQUE (`tile_id`, `world_id`, `sid`);"
 			};
 			for(uint32_t i = 0; i < sizeof(queryList) / sizeof(std::string); i++)
@@ -376,7 +376,7 @@ uint32_t DatabaseManager::updateDatabase()
 		case 8:
 		{
 			LOGi("Updating database to version: 9...");
-			db.executeQuery("ALTER TABLE `bans` ADD `statement` VARCHAR(255) NOT nullptr;");
+			db.executeQuery("ALTER TABLE `bans` ADD `statement` VARCHAR(255) NOT NULL;");
 			registerDatabaseConfig("db_version", 9);
 			return 9;
 		}
@@ -391,15 +391,15 @@ uint32_t DatabaseManager::updateDatabase()
 		case 10:
 		{
 			LOGi("Updating database to version: 11...");
-			db.executeQuery("ALTER TABLE `players` ADD `description` VARCHAR(255) NOT nullptr DEFAULT '';");
+			db.executeQuery("ALTER TABLE `players` ADD `description` VARCHAR(255) NOT NULL DEFAULT '';");
 			if(tableExists("map_storage"))
 			{
 				db.executeQuery("ALTER TABLE `map_storage` RENAME TO `house_data`;");
-				db.executeQuery("ALTER TABLE `house_data` ADD `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0 AFTER `house_id`;");
+				db.executeQuery("ALTER TABLE `house_data` ADD `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0 AFTER `house_id`;");
 			}
 			else if(!tableExists("house_storage"))
 			{
-				query << "CREATE TABLE `house_data` (`house_id` INT UNSIGNED NOT nullptr, `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0, `data` LONGBLOB NOT nullptr, UNIQUE (`house_id`, `world_id`)";
+				query << "CREATE TABLE `house_data` (`house_id` INT UNSIGNED NOT NULL, `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0, `data` LONGBLOB NOT NULL, UNIQUE (`house_id`, `world_id`)";
 				query << ")";
 				query << " ENGINE = InnoDB";
 
@@ -420,12 +420,12 @@ uint32_t DatabaseManager::updateDatabase()
 			db.executeQuery("UPDATE `players` SET `stamina` = 151200000 WHERE `stamina` > 151200000;");
 			db.executeQuery("UPDATE `players` SET `loss_experience` = `loss_experience` * 10, `loss_mana` = `loss_mana` * 10, `loss_skills` = `loss_skills` * 10, `loss_items` = `loss_items` * 10;");
 			std::string queryList[] = {
-				"ALTER TABLE `players` CHANGE `stamina` `stamina` INT NOT nullptr DEFAULT 151200000;",
-				"ALTER TABLE `players` CHANGE `loss_experience` `loss_experience` INT NOT nullptr DEFAULT 100;",
-				"ALTER TABLE `players` CHANGE `loss_mana` `loss_mana` INT NOT nullptr DEFAULT 100;",
-				"ALTER TABLE `players` CHANGE `loss_skills` `loss_skills` INT NOT nullptr DEFAULT 100;",
-				"ALTER TABLE `players` CHANGE `loss_items` `loss_items` INT NOT nullptr DEFAULT 100;",
-				"ALTER TABLE `players` ADD `loss_containers` INT NOT nullptr DEFAULT 100 AFTER `loss_skills`;"
+				"ALTER TABLE `players` CHANGE `stamina` `stamina` INT NOT NULL DEFAULT 151200000;",
+				"ALTER TABLE `players` CHANGE `loss_experience` `loss_experience` INT NOT NULL DEFAULT 100;",
+				"ALTER TABLE `players` CHANGE `loss_mana` `loss_mana` INT NOT NULL DEFAULT 100;",
+				"ALTER TABLE `players` CHANGE `loss_skills` `loss_skills` INT NOT NULL DEFAULT 100;",
+				"ALTER TABLE `players` CHANGE `loss_items` `loss_items` INT NOT NULL DEFAULT 100;",
+				"ALTER TABLE `players` ADD `loss_containers` INT NOT NULL DEFAULT 100 AFTER `loss_skills`;"
 			};
 			for(uint32_t i = 0; i < sizeof(queryList) / sizeof(std::string); i++)
 				db.executeQuery(queryList[i]);
@@ -454,9 +454,9 @@ uint32_t DatabaseManager::updateDatabase()
 		{
 			LOGi("Updating database to version: 14...");
 			std::string queryList[] = {
-				"ALTER TABLE `houses` ADD `doors` INT UNSIGNED NOT nullptr DEFAULT 0;",
-				"ALTER TABLE `houses` ADD `beds` INT UNSIGNED NOT nullptr DEFAULT 0;",
-				"ALTER TABLE `houses` ADD `guild` TINYINT(1) UNSIGNED NOT nullptr DEFAULT FALSE;"
+				"ALTER TABLE `houses` ADD `doors` INT UNSIGNED NOT NULL DEFAULT 0;",
+				"ALTER TABLE `houses` ADD `beds` INT UNSIGNED NOT NULL DEFAULT 0;",
+				"ALTER TABLE `houses` ADD `guild` TINYINT(1) UNSIGNED NOT NULL DEFAULT FALSE;"
 			};
 			for(uint32_t i = 0; i < sizeof(queryList) / sizeof(std::string); i++)
 				db.executeQuery(queryList[i]);
@@ -472,33 +472,33 @@ uint32_t DatabaseManager::updateDatabase()
 			std::string queryList[] = {
 "CREATE TABLE `player_deaths`\
 (\
-	`id` INT NOT nullptr AUTO_INCREMENT,\
-	`player_id` INT NOT nullptr,\
-	`date` BIGINT UNSIGNED NOT nullptr,\
-	`level` INT UNSIGNED NOT nullptr,\
+	`id` INT NOT NULL AUTO_INCREMENT,\
+	`player_id` INT NOT NULL,\
+	`date` BIGINT UNSIGNED NOT NULL,\
+	`level` INT UNSIGNED NOT NULL,\
 	FOREIGN KEY (`player_id`) REFERENCES `players` (`id`) ON DELETE CASCADE,\
 	PRIMARY KEY(`id`),\
 	INDEX(`date`)\
 ) ENGINE = InnoDB;",
 "CREATE TABLE `killers`\
 (\
-	`id` INT NOT nullptr AUTO_INCREMENT,\
-	`death_id` INT NOT nullptr,\
-	`final_hit` TINYINT(1) UNSIGNED NOT nullptr DEFAULT FALSE,\
+	`id` INT NOT NULL AUTO_INCREMENT,\
+	`death_id` INT NOT NULL,\
+	`final_hit` TINYINT(1) UNSIGNED NOT NULL DEFAULT FALSE,\
 	PRIMARY KEY(`id`),\
 	FOREIGN KEY (`death_id`) REFERENCES `player_deaths` (`id`) ON DELETE CASCADE\
 ) ENGINE = InnoDB;",
 "CREATE TABLE `player_killers`\
 (\
-	`kill_id` INT NOT nullptr,\
-	`player_id` INT NOT nullptr,\
+	`kill_id` INT NOT NULL,\
+	`player_id` INT NOT NULL,\
 	FOREIGN KEY (`kill_id`) REFERENCES `killers` (`id`) ON DELETE CASCADE,\
 	FOREIGN KEY (`player_id`) REFERENCES `players` (`id`) ON DELETE CASCADE\
 ) ENGINE = InnoDB;",
 "CREATE TABLE `environment_killers`\
 (\
-	`kill_id` INT NOT nullptr,\
-	`name` VARCHAR(255) NOT nullptr,\
+	`kill_id` INT NOT NULL,\
+	`name` VARCHAR(255) NOT NULL,\
 	FOREIGN KEY (`kill_id`) REFERENCES `killers` (`id`) ON DELETE CASCADE\
 ) ENGINE = InnoDB;"
 			};
@@ -514,8 +514,8 @@ uint32_t DatabaseManager::updateDatabase()
 			LOGi("Updating database to version: 16...");
 			std::string queryList[] = {
 				"ALTER TABLE `players` DROP `redskull`;",
-				"ALTER TABLE `players` CHANGE `redskulltime` `redskulltime` INT NOT nullptr DEFAULT 0;",
-				"ALTER TABLE `killers` ADD `unjustified` TINYINT(1) UNSIGNED NOT nullptr DEFAULT FALSE;",
+				"ALTER TABLE `players` CHANGE `redskulltime` `redskulltime` INT NOT NULL DEFAULT 0;",
+				"ALTER TABLE `killers` ADD `unjustified` TINYINT(1) UNSIGNED NOT NULL DEFAULT FALSE;",
 				"UPDATE `players` SET `redskulltime` = 0;"
 			};
 			for(uint32_t i = 0; i < sizeof(queryList) / sizeof(std::string); i++)
@@ -530,10 +530,10 @@ uint32_t DatabaseManager::updateDatabase()
 			LOGi("Updating database to version: 17...");
 			db.executeQuery("CREATE TABLE IF NOT EXISTS `player_namelocks`\
 (\
-	`player_id` INT NOT nullptr DEFAULT 0,\
-	`name` VARCHAR(255) NOT nullptr,\
-	`new_name` VARCHAR(255) NOT nullptr,\
-	`date` BIGINT NOT nullptr DEFAULT 0,\
+	`player_id` INT NOT NULL DEFAULT 0,\
+	`name` VARCHAR(255) NOT NULL,\
+	`new_name` VARCHAR(255) NOT NULL,\
+	`date` BIGINT NOT NULL DEFAULT 0,\
 	KEY (`player_id`),\
 	FOREIGN KEY (`player_id`) REFERENCES `players`(`id`) ON DELETE CASCADE\
 ) ENGINE = InnoDB;");
@@ -553,9 +553,9 @@ uint32_t DatabaseManager::updateDatabase()
 				"ALTER TABLE `house_lists` ADD FOREIGN KEY (`house_id`, `world_id`) REFERENCES `houses`(`id`, `world_id`) ON DELETE CASCADE;",
 				"ALTER TABLE `guild_invites` ADD FOREIGN KEY (`player_id`) REFERENCES `players`(`id`) ON DELETE CASCADE;",
 				"ALTER TABLE `guild_invites` ADD FOREIGN KEY (`guild_id`) REFERENCES `guilds`(`id`) ON DELETE CASCADE;",
-				"ALTER TABLE `tiles` ADD `house_id` INT UNSIGNED NOT nullptr AFTER `world_id`;",
+				"ALTER TABLE `tiles` ADD `house_id` INT UNSIGNED NOT NULL AFTER `world_id`;",
 				"ALTER TABLE `tiles` ADD FOREIGN KEY (`house_id`, `world_id`) REFERENCES `houses`(`id`, `world_id`) ON DELETE CASCADE;",
-				"ALTER TABLE `houses` ADD `clear` TINYINT(1) UNSIGNED NOT nullptr DEFAULT FALSE;"
+				"ALTER TABLE `houses` ADD `clear` TINYINT(1) UNSIGNED NOT NULL DEFAULT FALSE;"
 			};
 			for(uint32_t i = 0; i < sizeof(queryList) / sizeof(std::string); i++)
 				db.executeQuery(queryList[i]);
@@ -568,15 +568,15 @@ uint32_t DatabaseManager::updateDatabase()
 		{
 			LOGi("Updating database to version: 19...");
 			std::string queryList[] = {
-				"ALTER TABLE `houses` ADD `tiles` INT UNSIGNED NOT nullptr DEFAULT 0 AFTER `beds`;",
+				"ALTER TABLE `houses` ADD `tiles` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `beds`;",
 				"CREATE TABLE `house_auctions`\
 (\
-	`house_id` INT UNSIGNED NOT nullptr,\
-	`world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0,\
-	`player_id` INT NOT nullptr,\
-	`bid` INT UNSIGNED NOT nullptr DEFAULT 0,\
-	`limit` INT UNSIGNED NOT nullptr DEFAULT 0,\
-	`endtime` BIGINT UNSIGNED NOT nullptr DEFAULT 0,\
+	`house_id` INT UNSIGNED NOT NULL,\
+	`world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0,\
+	`player_id` INT NOT NULL,\
+	`bid` INT UNSIGNED NOT NULL DEFAULT 0,\
+	`limit` INT UNSIGNED NOT NULL DEFAULT 0,\
+	`endtime` BIGINT UNSIGNED NOT NULL DEFAULT 0,\
 	UNIQUE (`house_id`, `world_id`),\
 	FOREIGN KEY (`house_id`, `world_id`) REFERENCES `houses`(`id`, `world_id`) ON DELETE CASCADE,\
 	FOREIGN KEY (`player_id`) REFERENCES `players` (`id`) ON DELETE CASCADE\
@@ -593,8 +593,8 @@ uint32_t DatabaseManager::updateDatabase()
 		{
 			LOGi("Updating database to version: 20...");
 			std::string queryList[] = {
-				"ALTER TABLE `players` CHANGE `redskulltime` `skulltime` INT NOT nullptr DEFAULT 0;",
-				"ALTER TABLE `players` ADD `skull` TINYINT(1) UNSIGNED NOT nullptr DEFAULT 0 AFTER `save`;"
+				"ALTER TABLE `players` CHANGE `redskulltime` `skulltime` INT NOT NULL DEFAULT 0;",
+				"ALTER TABLE `players` ADD `skull` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 AFTER `save`;"
 			};
 			for(uint32_t i = 0; i < sizeof(queryList) / sizeof(std::string); i++)
 				db.executeQuery(queryList[i]);
@@ -621,7 +621,7 @@ uint32_t DatabaseManager::updateDatabase()
 		case 21:
 		{
 			LOGi("Updating database to version: 22...");
-			db.executeQuery("CREATE TABLE `account_viplist` (`account_id` INT NOT nullptr, `world_id` TINYINT(2) UNSIGNED NOT nullptr DEFAULT 0, `player_id` INT NOT nullptr, KEY (`account_id`), KEY (`player_id`), KEY (`world_id`), UNIQUE (`account_id`, `player_id`), FOREIGN KEY (`account_id`) REFERENCES `accounts`(`id`) ON DELETE CASCADE, FOREIGN KEY (`player_id`) REFERENCES `players`(`id`) ON DELETE CASCADE) ENGINE = InnoDB;");
+			db.executeQuery("CREATE TABLE `account_viplist` (`account_id` INT NOT NULL, `world_id` TINYINT(2) UNSIGNED NOT NULL DEFAULT 0, `player_id` INT NOT NULL, KEY (`account_id`), KEY (`player_id`), KEY (`world_id`), UNIQUE (`account_id`, `player_id`), FOREIGN KEY (`account_id`) REFERENCES `accounts`(`id`) ON DELETE CASCADE, FOREIGN KEY (`player_id`) REFERENCES `players`(`id`) ON DELETE CASCADE) ENGINE = InnoDB;");
 
 			registerDatabaseConfig("db_version", 22);
 			return 22;

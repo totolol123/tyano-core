@@ -822,7 +822,7 @@ uint32_t MoveEvent::AddItemField(Item* item)
 			if(CreatureVector* creatures = tile->getCreatures())
 			{
 				for(CreatureVector::iterator cit = creatures->begin(); cit != creatures->end(); ++cit)
-					field->onStepInField((*cit).get());
+					field->onStepInField(*cit);
 			}
 		}
 

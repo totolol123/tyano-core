@@ -91,7 +91,7 @@ bool FileLoader::openFile(const char* filename, bool write, bool caching /*= fal
 
 			if(safeSeek(4))
 			{
-				delete m_root;
+				NodeStruct::clearNet(m_root);
 				m_root = new NodeStruct();
 				m_root->start = 4;
 
@@ -139,6 +139,8 @@ bool FileLoader::parseNode(NODE node)
 
 					if(NODE childNode = new NodeStruct())
 					{
+						assert(currentNode->child == nullptr);
+
 						childNode->start = pos;
 						currentNode->propsSize = pos - currentNode->start - 2;
 						currentNode->child = childNode;
@@ -176,6 +178,8 @@ bool FileLoader::parseNode(NODE node)
 							skipNode = true;
 							if(NODE nextNode = new NodeStruct())
 							{
+								assert(currentNode->next == nullptr);
+
 								nextNode->start = pos;
 								currentNode->next = nextNode;
 								currentNode = nextNode;
