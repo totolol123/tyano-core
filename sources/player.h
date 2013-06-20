@@ -21,6 +21,7 @@
 #include "container.h"
 #include "creature.h"
 
+class Account;
 class Depot;
 class Group;
 class House;
@@ -33,6 +34,7 @@ class SchedulerTask;
 class Vocation;
 class Weapon;
 
+typedef std::shared_ptr<Account>  AccountP;
 typedef std::map<uint32_t,Outfit> OutfitMap;
 typedef std::set<uint32_t> VIPListSet;
 typedef std::vector<std::pair<uint32_t, Container*> > ContainerVector;
@@ -47,7 +49,13 @@ typedef std::list<Party*> PartyList;
 #define STAMINA_MAX (42 * 60 * 60 * 1000)
 #define STAMINA_MULTIPLIER (60 * 1000)
 
+
 class Player : public Creature, public Cylinder {
+
+public:
+
+	AccountP getAccount () const;
+
 
 protected:
 
@@ -56,6 +64,10 @@ protected:
 	virtual void onRoutingStarted   ();
 	virtual void onRoutingStopped   (bool preliminary);
 
+
+private:
+
+	AccountP _account;
 
 
 
@@ -66,7 +78,7 @@ protected:
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 		static uint32_t playerCount;
 #endif
-		Player(const std::string& name, ProtocolGame* p);
+		Player(const AccountP& account, const std::string& name, ProtocolGame* p);
 		virtual ~Player();
 
 		virtual Player* getPlayer() {return this;}
@@ -189,13 +201,8 @@ protected:
 		bool checkLoginDelay(uint32_t playerId) const;
 		bool isTrading() const {return tradePartner;}
 
-		uint32_t getAccount() const {return accountId;}
-		std::string getAccountName() const {return account;}
 		uint16_t getAccess() const;
 		uint16_t getGhostAccess() const;
-
-		bool isPremium() const;
-		int32_t getPremiumDays() const {return premiumDays;}
 
 		uint32_t getLevel() const {return level;}
 		uint64_t getExperience() const {return experience;}
@@ -660,7 +667,6 @@ protected:
 		uint16_t maxWriteLen;
 		uint16_t sex;
 
-		int32_t premiumDays;
 		int32_t soul;
 		int32_t soulMax;
 		int32_t vocation_id;
@@ -678,7 +684,6 @@ protected:
 		uint32_t clientVersion;
 		uint32_t messageTicks;
 		uint32_t idleTime;
-		uint32_t accountId;
 		uint32_t lastIP;
 		uint32_t level;
 		uint32_t levelPercent;
@@ -718,7 +723,7 @@ protected:
 		char managerChar[100];
 
 		std::string managerString, managerString2;
-		std::string account, password;
+		std::string password;
 		std::string name, nameDescription, specialDescription;
 		std::string guildName, rankName, guildNick;
 

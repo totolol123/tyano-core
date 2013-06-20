@@ -70,9 +70,6 @@ class Vocation
 		bool isAttackable() const {return attackable;}
 		void setAttackable(bool v) {attackable = v;}
 
-		bool isPremiumNeeded() const {return needPremium;}
-		void setNeedPremium(bool v) {needPremium = v;}
-
 		uint32_t getAttackSpeed() const {return attackSpeed;}
 		void setAttackSpeed(uint32_t v) {attackSpeed = v;}
 
@@ -115,7 +112,7 @@ class Vocation
 		cacheMap cacheSkill[SKILL_LAST + 1];
 		cacheMap cacheMana;
 
-		bool attackable, needPremium;
+		bool attackable;
 		int32_t lessLoss, capGain;
 		uint32_t id, fromVocation, baseSpeed, attackSpeed;
 		std::string name, description;

@@ -463,7 +463,6 @@ Spell::Spell()
 	blockingSolid = false;
 	blockingCreature = false;
 	enabled = true;
-	premium = false;
 	isAggressive = true;
 	learnable = false;
 }
@@ -518,9 +517,6 @@ bool Spell::configureSpell(xmlNodePtr p)
 
 	if(readXMLString(p, "enabled", strValue))
 		enabled = booleanString(strValue);
-
-	if(readXMLString(p, "prem", strValue) || readXMLString(p, "premium", strValue))
-		premium = booleanString(strValue);
 
 	if(readXMLString(p, "needtarget", strValue))
 		needTarget = booleanString(strValue);
@@ -601,13 +597,6 @@ bool Spell::playerSpellCheck(Player* player) const
 		if(isInstant())
 			server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 
-		return false;
-	}
-
-	if(isPremium() && !player->isPremium())
-	{
-		player->sendCancelMessage(RET_YOUNEEDPREMIUMACCOUNT);
-		server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 		return false;
 	}
 

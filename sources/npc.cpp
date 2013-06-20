@@ -73,7 +73,7 @@ Duration Npc::getWanderingInterval() const {
 		return Duration::zero();
 	}
 
-	return std::chrono::milliseconds(walkTicks);
+	return Milliseconds(walkTicks);
 }
 
 
@@ -493,8 +493,6 @@ uint32_t Npc::loadParams(xmlNodePtr node)
 				params |= RESPOND_NOAMOUNT;
 			else if(tmpParam == "lowamount")
 				params |= RESPOND_LOWAMOUNT;
-			else if(tmpParam == "premium")
-				params |= RESPOND_PREMIUM;
 			else if(tmpParam == "druid")
 				params |= RESPOND_DRUID;
 			else if(tmpParam == "knight")
@@ -2058,14 +2056,6 @@ const NpcResponse* Npc::getResponse(const ResponseList& list, const Player* play
 			if(hasBitSet(RESPOND_PZBLOCK, params))
 			{
 				if(!player->isPzLocked())
-					continue;
-
-				++matchCount;
-			}
-
-			if(hasBitSet(RESPOND_PREMIUM, params))
-			{
-				if(!player->isPremium())
 					continue;
 
 				++matchCount;

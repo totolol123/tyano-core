@@ -19,10 +19,13 @@
 #include "account.h"
 
 
+const RealTime Account::PREMIUM_NONE = RealTime::min();
+const RealTime Account::PREMIUM_UNLIMITED = RealTime::max();
+
+
+
 Account::Account(uint32_t id)
 	: _id(id),
-	  _lastDay(0),
-	  _premiumDays(0),
 	  _warnings(0)
 {}
 
@@ -46,11 +49,6 @@ uint32_t Account::getId() const {
 }
 
 
-uint32_t Account::getLastDay() const {
-	return _lastDay;
-}
-
-
 const std::string& Account::getName() const {
 	return _name;
 }
@@ -61,8 +59,35 @@ const std::string& Account::getPassword() const {
 }
 
 
-uint16_t Account::getPremiumDays() const {
-	return _premiumDays;
+Days Account::getPremiumDays() const {
+	if (_premiumExpiration == PREMIUM_NONE) {
+		return Days::zero();
+	}
+	if (_premiumExpiration == PREMIUM_UNLIMITED) {
+		return Days::max();
+	}
+
+	RealDuration premiumDuration = _premiumExpiration - RealClock::now();
+	if (premiumDuration < RealDuration::zero()) {
+		return Days::zero();
+	}
+
+	Days premiumDays = std::chrono::duration_cast<Days>(premiumDuration);
+	if (premiumDays < premiumDuration) {
+		// round up, not down
+		++premiumDays;
+	}
+
+	if (premiumDays < Days::zero()) {
+		return Days::zero();
+	}
+
+	return premiumDays;
+}
+
+
+RealTime Account::getPremiumExpiration() const {
+	return _premiumExpiration;
 }
 
 
@@ -76,8 +101,13 @@ uint32_t Account::getWarnings() const {
 }
 
 
-void Account::setLastDay(uint32_t lastDay) {
-	_lastDay = lastDay;
+bool Account::hasPremium() const {
+	return (_premiumExpiration >= RealClock::now());
+}
+
+
+bool Account::hasUnlimitedPremium() const {
+	return (_premiumExpiration == PREMIUM_UNLIMITED);
 }
 
 
@@ -91,8 +121,8 @@ void Account::setPassword(const std::string& password) {
 }
 
 
-void Account::setPremiumDays(uint16_t premiumDays) {
-	_premiumDays = premiumDays;
+void Account::setPremiumExpiration(RealTime premiumExpiration) {
+	_premiumExpiration = premiumExpiration;
 }
 
 

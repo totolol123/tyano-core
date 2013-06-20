@@ -63,6 +63,9 @@ class MySQLResult : public DBResult
 	friend class DatabaseMySQL;
 
 	public:
+		virtual bool isNull(const std::string& field);
+		virtual uint32_t getUnsigned32(const std::string& field);
+
 		int32_t getDataInt(const std::string &s);
 		int64_t getDataLong(const std::string &s);
 		std::string getDataString(const std::string &s);

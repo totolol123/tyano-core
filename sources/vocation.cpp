@@ -59,9 +59,6 @@ bool Vocations::parseVocationNode(xmlNodePtr p)
 	if(readXMLString(p, "description", strValue))
 		voc->setDescription(strValue);
 
-	if(readXMLString(p, "needpremium", strValue))
-		voc->setNeedPremium(booleanString(strValue));
-
 	if(readXMLInteger(p, "gaincap", intValue) || readXMLInteger(p, "gaincapacity", intValue))
 		voc->setGainCap(intValue);
 
@@ -460,7 +457,6 @@ void Vocation::reset()
 	memset(reflect[REFLECT_PERCENT], 0, sizeof(reflect[REFLECT_PERCENT]));
 	memset(reflect[REFLECT_CHANCE], 0, sizeof(reflect[REFLECT_CHANCE]));
 
-	needPremium = false;
 	attackable = true;
 	lessLoss = fromVocation = 0;
 	gain[GAIN_SOUL] = 100;

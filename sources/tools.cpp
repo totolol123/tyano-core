@@ -1541,3 +1541,72 @@ std::string getFilePath(FileType filetype, std::string filename)
 
 	return path;
 }
+
+
+
+
+// We convert UNIX timestamps to a more recent epoch before converting it to RealTime,
+// because the system and UNIX timestamps handle leap seconds different. The closer the
+// epoch is to the actual UNIX timestamp, the more accurate is the conversion beween
+// UNIX timestamp and RealTime.
+
+const RealTime UnixTimestamp::_epoch = realTimeForUtcDate(1, 7, 2013);
+const uint32_t UnixTimestamp::_epochValue = 1372636800;  // July 1st 2013, 00:00:00 UTC
+
+
+
+UnixTimestamp::UnixTimestamp(uint32_t value)
+	: _value(value)
+{}
+
+
+UnixTimestamp::UnixTimestamp(const RealTime& time)
+	: _value(realTimeToUnixTimestampValue(time))
+{}
+
+
+RealTime UnixTimestamp::realTimeForUtcDate(int day, int month, int year) {
+	// see http://stackoverflow.com/questions/14504870/convert-stdchronotime-point-to-unix-timestamp
+
+	// Set up components for the time we'd like to have as RealTime in UTC time zone.
+	std::tm localComponents;
+	memset(&localComponents, 0, sizeof(localComponents));
+	localComponents.tm_mday  = day;
+	localComponents.tm_mon   = month - 1;
+	localComponents.tm_year  = year - 1900;
+	localComponents.tm_isdst = -1;
+
+	// Get local time from components.
+	auto localTime = std::mktime(&localComponents);
+
+	// Get components from local time with UTC offset applied.
+	auto offsetComponents = std::gmtime(&localTime);
+	offsetComponents->tm_isdst = -1;
+
+	// Get local time again using adjusted components.
+	auto offsetTime = std::mktime(offsetComponents);
+
+	// Compute different between offset time and local time to get the actual UTC time.
+	auto utcTime = localTime - (offsetTime - localTime);
+
+	// The rest is easy :)
+	return RealClock::from_time_t(utcTime);
+}
+
+
+uint32_t UnixTimestamp::realTimeToUnixTimestampValue(const RealTime& time) {
+	auto duration = time - _epoch;
+	auto durationInSeconds = std::chrono::duration_cast<Seconds>(duration);
+	return durationInSeconds.count() + _epochValue;
+}
+
+
+UnixTimestamp::operator RealTime() const {
+	// Convert value to our internal epoch and use it as duration relative to our epoch in RealTime.
+	return _epoch + Seconds(static_cast<int64_t>(_value) - _epochValue);
+}
+
+
+std::ostream& operator << (std::ostream& stream, const UnixTimestamp& timestamp) {
+	return stream << timestamp._value;
+}

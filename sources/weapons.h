@@ -87,7 +87,6 @@ class Weapon : public Event
 		uint32_t getReqLevel() const {return level;}
 		uint32_t getReqMagLv() const {return magLevel;}
 		bool hasExhaustion() const {return exhaustion;}
-		bool isPremium() const {return premium;}
 		bool isWieldedUnproperly() const {return wieldUnproperly;}
 
 	protected:
@@ -107,7 +106,6 @@ class Weapon : public Event
 
 		uint16_t id;
 		bool enabled;
-		bool premium;
 		uint32_t exhaustion;
 		bool wieldUnproperly;
 		int32_t level;

@@ -115,9 +115,9 @@ void Game::clear() {
 
 void Game::start(ServiceManager* servicer)
 {
-	checkDecayEvent = server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(EVENT_DECAYINTERVAL),
+	checkDecayEvent = server.scheduler().addTask(SchedulerTask::create(Milliseconds(EVENT_DECAYINTERVAL),
 		std::bind(&Game::checkDecay, this)));
-	checkLightEvent = server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(EVENT_LIGHTINTERVAL),
+	checkLightEvent = server.scheduler().addTask(SchedulerTask::create(Milliseconds(EVENT_LIGHTINTERVAL),
 		std::bind(&Game::checkLight, this)));
 
 	services = servicer;
@@ -164,7 +164,7 @@ void Game::start(ServiceManager* servicer)
 
 		uint32_t hoursLeftInMs = 60000 * 60 * hoursLeft, minutesLeftInMs = 60000 * (minutesLeft - minutesToRemove);
 		if(!ignoreEvent && (hoursLeftInMs + minutesLeftInMs) > 0)
-			saveEvent = server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(hoursLeftInMs + minutesLeftInMs),
+			saveEvent = server.scheduler().addTask(SchedulerTask::create(Milliseconds(hoursLeftInMs + minutesLeftInMs),
 				std::bind(&Game::prepareGlobalSave, this)));
 	}
 }
@@ -200,8 +200,6 @@ void Game::setGameState(GameState_t newState)
 				server.globalEvents().startup();
 
 				IOBan::getInstance()->clearTemporials();
-				if(server.configManager().getBool(ConfigManager::REMOVE_PREMIUM_ON_INIT))
-					IOLoginData::getInstance()->updatePremiumDays();
 				break;
 			}
 
@@ -451,7 +449,7 @@ void Game::proceduralRefresh(RefreshTiles::iterator* it/* = nullptr*/)
 
 	// Refresh some items every 100 ms until all tiles has been checked
 	// For 100k tiles, this would take 100000/2500 = 40s = half a minute
-	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(100),
+	server.scheduler().addTask(SchedulerTask::create(Milliseconds(100),
 		std::bind(&Game::proceduralRefresh, this, it)));
 }
 
@@ -726,18 +724,26 @@ PlayerP Game::getPlayerByName(std::string s)
 	return nullptr;
 }
 
-PlayerP Game::getPlayerByNameEx(const std::string& s)
+PlayerP Game::getPlayerByNameEx(const std::string& name)
 {
-	PlayerP player = getPlayerByName(s);
+	PlayerP player = getPlayerByName(name);
 	if(player)
 		return player;
 
-	std::string name = s;
-	if(!IOLoginData::getInstance()->playerExists(name))
-		return nullptr;
+	auto io = *IOLoginData::getInstance();
 
-	player = new Player(name, nullptr);
-	if(IOLoginData::getInstance()->loadPlayer(player.get(), name))
+	auto accountId = io.getAccountIdByName(name);
+	if (accountId == 0) {
+		return nullptr;
+	}
+
+	AccountP account = io.loadAccount(accountId, true);
+	if (account == nullptr) {
+		return nullptr;
+	}
+
+	player = new Player(account, name, nullptr);
+	if(io.loadPlayer(player.get(), name))
 		return player;
 
 	LOGe("[Game::getPlayerByNameEx] Cannot load player: " << name);
@@ -769,8 +775,20 @@ PlayerP Game::getPlayerByGuidEx(uint32_t guid)
 	if(!IOLoginData::getInstance()->getNameByGuid(guid, name))
 		return nullptr;
 
-	player = new Player(name, nullptr);
-	if(IOLoginData::getInstance()->loadPlayer(player.get(), name))
+	auto io = *IOLoginData::getInstance();
+
+	auto accountId = io.getAccountIdByName(name);
+	if (accountId == 0) {
+		return nullptr;
+	}
+
+	AccountP account = io.loadAccount(accountId, true);
+	if (account == nullptr) {
+		return nullptr;
+	}
+
+	player = new Player(account, name, nullptr);
+	if(io.loadPlayer(player.get(), name))
 		return player;
 
 	LOGe("[Game::getPlayerByGuidEx] Cannot load player: " << name);
@@ -824,7 +842,7 @@ Player* Game::getPlayerByAccount(uint32_t acc)
 {
 	for(AutoList<Player>::iterator it = Player::autoList.begin(); it != Player::autoList.end(); ++it)
 	{
-		if(!it->second->isRemoved() && it->second->getAccount() == acc)
+		if(!it->second->isRemoved() && it->second->getAccount() != nullptr && it->second->getAccount()->getId() == acc)
 			return it->second.get();
 	}
 
@@ -849,7 +867,7 @@ PlayerVector Game::getPlayersByAccount(uint32_t acc)
 	PlayerVector players;
 	for(AutoList<Player>::iterator it = Player::autoList.begin(); it != Player::autoList.end(); ++it)
 	{
-		if(!it->second->isRemoved() && it->second->getAccount() == acc)
+		if(!it->second->isRemoved() && it->second->getAccount() != nullptr && it->second->getAccount()->getId() == acc)
 			players.push_back(it->second.get());
 	}
 
@@ -1033,7 +1051,7 @@ bool Game::playerMoveThing(uint32_t playerId, const ExtendedPosition& origin, co
 		uint32_t delay = server.configManager().getNumber(ConfigManager::PUSH_CREATURE_DELAY);
 		if(Position::areInRange<1,1,0>(movingCreature->getPosition(), player->getPosition()) && delay > 0)
 		{
-			player->setNextActionTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(&Game::playerMoveCreature, this,
+			player->setNextActionTask(SchedulerTask::create(Milliseconds(delay), std::bind(&Game::playerMoveCreature, this,
 					player->getID(), movingCreature->getID(), movingCreature->getPosition(), toCylinder->getPosition())));
 		}
 		else
@@ -2141,7 +2159,7 @@ bool Game::playerBroadcastMessage(Player* player, SpeakClasses type, const std::
 bool Game::playerCreatePrivateChannel(uint32_t playerId)
 {
 	Player* player = getPlayerByID(playerId);
-	if(!player || player->isRemoved() || !player->isPremium())
+	if(!player || player->isRemoved())
 		return false;
 
 	ChatChannel* channel = server.chat().createChannel(player, 0xFFFF);
@@ -2426,7 +2444,7 @@ bool Game::playerUseItemEx(uint32_t playerId, const ExtendedPosition& origin, co
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
 					this, player->getID(), route)));
 
-				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerUseItemEx, this,
+				player->setNextWalkActionTask(SchedulerTask::create(Milliseconds(400), std::bind(&Game::playerUseItemEx, this,
 						playerId, position, destination)));
 				return true;
 			}
@@ -2493,7 +2511,7 @@ bool Game::playerUseItem(uint32_t playerId, const ExtendedPosition& origin, uint
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
 					this, player->getID(), route)));
 
-				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerUseItem, this,
+				player->setNextWalkActionTask(SchedulerTask::create(Milliseconds(400), std::bind(&Game::playerUseItem, this,
 						playerId, origin, openContainerId)));
 				return true;
 			}
@@ -2569,7 +2587,7 @@ bool Game::playerUseBattleWindow(uint32_t playerId, const ExtendedPosition& orig
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
 					this, player->getID(), route)));
 
-				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerUseBattleWindow, this,
+				player->setNextWalkActionTask(SchedulerTask::create(Milliseconds(400), std::bind(&Game::playerUseBattleWindow, this,
 						playerId, origin, creatureId)));
 				return true;
 			}
@@ -2682,7 +2700,7 @@ bool Game::playerRotateItem(uint32_t playerId, const ExtendedPosition& position)
 			server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
 				this, player->getID(), route)));
 
-			player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerRotateItem, this,
+			player->setNextWalkActionTask(SchedulerTask::create(Milliseconds(400), std::bind(&Game::playerRotateItem, this,
 					playerId, position)));
 			return true;
 		}
@@ -2836,7 +2854,7 @@ bool Game::playerRequestTrade(uint32_t playerId, const ExtendedPosition& positio
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
 					this, player->getID(), route)));
 
-				player->setNextWalkActionTask(SchedulerTask::create(std::chrono::milliseconds(400), std::bind(&Game::playerRequestTrade, this,
+				player->setNextWalkActionTask(SchedulerTask::create(Milliseconds(400), std::bind(&Game::playerRequestTrade, this,
 						playerId, position, tradePlayerId)));
 				return true;
 			}
@@ -4544,7 +4562,7 @@ void Game::checkDecay()
 {
 	int64_t startTime = OTSYS_TIME();
 
-	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(EVENT_DECAYINTERVAL),
+	server.scheduler().addTask(SchedulerTask::create(Milliseconds(EVENT_DECAYINTERVAL),
 		std::bind(&Game::checkDecay, this)));
 
 	size_t bucket = (lastBucket + 1) % EVENT_DECAYBUCKETS;
@@ -4606,7 +4624,7 @@ void Game::checkDecay()
 
 void Game::checkLight()
 {
-	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(EVENT_LIGHTINTERVAL),
+	server.scheduler().addTask(SchedulerTask::create(Milliseconds(EVENT_LIGHTINTERVAL),
 		std::bind(&Game::checkLight, this)));
 
 	lightHour = lightHour + lightHourDelta;
@@ -4929,10 +4947,7 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 		return false;
 	}
 
-	AccountP account = IOLoginData::getInstance()->loadAccount(target->getAccount(), true);
-	if (account == nullptr) {
-		return false;
-	}
+	AccountP account = target->getAccount();
 
 	enum KickAction {
 		NONE = 1,
@@ -5147,7 +5162,7 @@ bool Game::playerViolationWindow(uint32_t playerId, std::string name, uint8_t re
 		target->sendTextMessage(MSG_INFO_DESCR, buffer);
 
 		addMagicEffect(target->getPosition(), MAGIC_EFFECT_WRAPS_GREEN);
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(1000), std::bind(
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(1000), std::bind(
 			&Game::kickPlayer, this, target->getID(), false)));
 	}
 
@@ -5613,7 +5628,7 @@ void Game::checkHighscores()
 	if(tmp <= 0)
 		return;
 
-	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(tmp), std::bind(&Game::checkHighscores, this)));
+	server.scheduler().addTask(SchedulerTask::create(Milliseconds(tmp), std::bind(&Game::checkHighscores, this)));
 }
 
 std::string Game::getHighscoreString(uint16_t skill)
@@ -6008,19 +6023,19 @@ void Game::prepareGlobalSave()
 		globalSaveMessage[0] = true;
 
 		broadcastMessage("Server is going down for a global save within 5 minutes. Please logout.", MSG_STATUS_WARNING);
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(120000), std::bind(&Game::prepareGlobalSave, this)));
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(120000), std::bind(&Game::prepareGlobalSave, this)));
 	}
 	else if(!globalSaveMessage[1])
 	{
 		globalSaveMessage[1] = true;
 		broadcastMessage("Server is going down for a global save within 3 minutes. Please logout.", MSG_STATUS_WARNING);
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(120000), std::bind(&Game::prepareGlobalSave, this)));
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(120000), std::bind(&Game::prepareGlobalSave, this)));
 	}
 	else if(!globalSaveMessage[2])
 	{
 		globalSaveMessage[2] = true;
 		broadcastMessage("Server is going down for a global save in one minute, please logout!", MSG_STATUS_WARNING);
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(60000), std::bind(&Game::prepareGlobalSave, this)));
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(60000), std::bind(&Game::prepareGlobalSave, this)));
 	}
 	else
 		globalSave();
@@ -6048,9 +6063,6 @@ void Game::globalSave()
 	Houses::getInstance()->payHouses();
 	//clear temporial and expired bans
 	IOBan::getInstance()->clearTemporials();
-	//remove premium days globally if configured to
-	if(server.configManager().getBool(ConfigManager::REMOVE_PREMIUM_ON_INIT))
-		IOLoginData::getInstance()->updatePremiumDays();
 
 	//reload everything
 	reloadInfo(RELOAD_ALL);
@@ -6059,7 +6071,7 @@ void Game::globalSave()
 		setGlobalSaveMessage(i, false);
 
 	//prepare for next global save after 24 hours
-	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(86100000), std::bind(&Game::prepareGlobalSave, this)));
+	server.scheduler().addTask(SchedulerTask::create(Milliseconds(86100000), std::bind(&Game::prepareGlobalSave, this)));
 	//open server
 	server.dispatcher().addTask(Task::create(std::bind(&Game::setGameState, this, GAME_STATE_NORMAL)));
 }

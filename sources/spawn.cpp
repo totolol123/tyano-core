@@ -265,7 +265,7 @@ LOGGER_DEFINITION(Spawn);
 void Spawn::startEvent()
 {
 	if(checkSpawnEvent == 0)
-		checkSpawnEvent = server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(getInterval()), std::bind(&Spawn::checkSpawn, this)));
+		checkSpawnEvent = server.scheduler().addTask(SchedulerTask::create(Milliseconds(getInterval()), std::bind(&Spawn::checkSpawn, this)));
 }
 
 Spawn::Spawn(const Position& _pos, int32_t _radius)
@@ -402,7 +402,7 @@ void Spawn::checkSpawn()
 	}
 
 	if(spawnedMap.size() < spawnMap.size())
-		checkSpawnEvent = server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(getInterval()), std::bind(&Spawn::checkSpawn, this)));
+		checkSpawnEvent = server.scheduler().addTask(SchedulerTask::create(Milliseconds(getInterval()), std::bind(&Spawn::checkSpawn, this)));
 }
 
 bool Spawn::addMonster(const std::string& _name, const Position& _pos, Direction _dir, uint32_t _interval)

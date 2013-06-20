@@ -1087,7 +1087,7 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 		else if(!xmlStrcmp(p->name, (const xmlChar*)"targetchange"))
 		{
 			if(readXMLInteger(p, "speed", intValue) || readXMLInteger(p, "interval", intValue))
-				mType->retargetInterval = std::chrono::milliseconds(std::max(1, intValue));
+				mType->retargetInterval = Milliseconds(std::max(1, intValue));
 			else
 				SHOW_XML_WARNING("Missing targetchange.speed");
 
@@ -1304,7 +1304,7 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 		else if(!xmlStrcmp(p->name, (const xmlChar*)"voices"))
 		{
 			if(readXMLInteger(p, "speed", intValue) || readXMLInteger(p, "interval", intValue))
-				mType->babbleInterval = std::chrono::milliseconds(intValue);
+				mType->babbleInterval = Milliseconds(intValue);
 			else
 				SHOW_XML_WARNING("Missing voices.speed");
 
