@@ -2105,6 +2105,7 @@ bool Game::playerMove(uint32_t playerId, Direction dir)
 		return false;
 	}
 
+	player->stopFollowing();
 	player->stopRouting();
 
 	Time nextMoveTime = player->getNextMoveTime();
@@ -2114,8 +2115,12 @@ bool Game::playerMove(uint32_t playerId, Direction dir)
 		return false;
 	}
 
-	player->stopFollowing();
 	player->setIdleTime(0);
+
+	if (player->shouldStagger()) {
+		player->stagger();
+		return true;
+	}
 
 	return internalMoveCreature(player, dir) == RET_NOERROR;
 }

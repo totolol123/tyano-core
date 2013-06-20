@@ -133,7 +133,7 @@ public:
 	        CreaturePC   getFinalOwner           () const;
 	        CreatureP    getFollowedCreature     () const;
 	        Time         getNextMoveTime         () const;
-	        Direction    getRandomStepDirection  () const;
+	        Direction    getRandomStepDirection  (bool includesNone = true) const;
 	        const Route& getRoute                () const;
 	        bool         hasController           () const;
 	        bool         hasDirectOwner          () const;
@@ -156,6 +156,7 @@ public:
 	        void         releaseSummons          ();
 	        bool         remove                  ();
 	        Direction    route                   ();
+	        bool         shouldStagger           () const;
 	        Direction    stagger                 ();
 	        void         setDefaultOutfit        (Outfit_t defaultOutfit);
 	        bool         startFollowing          (const CreatureP& target);
@@ -172,26 +173,26 @@ public:
 
 protected:
 
-	virtual Direction getWanderingDirection    () const;
-	virtual Duration  getWanderingInterval     () const;
-	virtual bool      hasSomethingToThinkAbout () const;
-	virtual bool      hasToThinkAboutCreature  (const CreaturePC& creature) const;
-	virtual void      onFollowingStarted       ();
-	virtual void      onFollowingStopped       (bool preliminary);
-	virtual void      onMonsterMasterChanged   (const MonsterP& monster, const CreatureP& previousMaster);
-	virtual void      onMove                   (Tile& originTile, Tile& destinationTile);
-	virtual void      onRoutingStarted         ();
-	virtual void      onRoutingStopped         (bool preliminary);
-	virtual void      onThink                  (Duration elapsedTime);
-	virtual void      onThinkingStarted        ();
-	virtual void      onThinkingStopped        ();
-	virtual void      onWanderingStarted       ();
-	virtual void      onWanderingStopped       ();
+	virtual uint32_t  getPreferredFollowDistance () const;
+	virtual Direction getWanderingDirection      () const;
+	virtual Duration  getWanderingInterval       () const;
+	virtual bool      hasSomethingToThinkAbout   () const;
+	virtual bool      hasToThinkAboutCreature    (const CreaturePC& creature) const;
+	virtual void      onFollowingStarted         ();
+	virtual void      onFollowingStopped         (bool preliminary);
+	virtual void      onMonsterMasterChanged     (const MonsterP& monster, const CreatureP& previousMaster);
+	virtual void      onMove                     (Tile& originTile, Tile& destinationTile);
+	virtual void      onRoutingStarted           ();
+	virtual void      onRoutingStopped           (bool preliminary);
+	virtual void      onThink                    (Duration elapsedTime);
+	virtual void      onThinkingStarted          ();
+	virtual void      onThinkingStopped          ();
+	virtual void      onWanderingStarted         ();
+	virtual void      onWanderingStopped         ();
 
 
 private:
 
-	bool shouldStagger   () const;
 	void stopFollowing   (bool preliminary);
 	void think           ();
 	void updateFollowing ();
@@ -315,7 +316,7 @@ private:
 		bool startAutoWalk(const DirectionRoute& route);
 
 		//combat functions
-		Creature* getAttackedCreature() {return attackedCreature;}
+		Creature* getAttackedCreature() const {return attackedCreature;}
 		virtual bool setAttackedCreature(Creature* creature);
 		virtual BlockType_t blockHit(Creature* attacker, CombatType_t combatType, int32_t& damage,
 			bool checkDefense = false, bool checkArmor = false);

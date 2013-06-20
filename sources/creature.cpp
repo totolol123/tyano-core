@@ -306,7 +306,12 @@ Time Creature::getNextMoveTime() const {
 }
 
 
-Direction Creature::getRandomStepDirection() const {
+uint32_t Creature::getPreferredFollowDistance() const {
+	return 1;
+}
+
+
+Direction Creature::getRandomStepDirection(bool includesNone) const {
 	if (!isAlive()) {
 		return Direction::NONE;
 	}
@@ -314,7 +319,6 @@ Direction Creature::getRandomStepDirection() const {
 	Game& game = server.game();
 
 	std::vector<Direction> directions(9);
-	directions.push_back(Direction::NONE);
 	directions.push_back(Direction::EAST);
 	directions.push_back(Direction::NORTH);
 	directions.push_back(Direction::NORTH_EAST);
@@ -323,6 +327,9 @@ Direction Creature::getRandomStepDirection() const {
 	directions.push_back(Direction::SOUTH_EAST);
 	directions.push_back(Direction::SOUTH_WEST);
 	directions.push_back(Direction::WEST);
+	if (includesNone) {
+		directions.push_back(Direction::NONE);
+	}
 
 	std::random_shuffle(directions.begin(), directions.end());
 
@@ -882,7 +889,7 @@ void Creature::updateFollowing() {
 		return;
 	}
 
-	if (getPosition().distanceTo(_followedCreature->getPosition()) <= 1) {
+	if (getPosition().distanceTo(_followedCreature->getPosition()) == getPreferredFollowDistance()) {
 		return;
 	}
 

@@ -214,6 +214,18 @@ CreatureP Monster::getMaster() const {
 }
 
 
+uint32_t Monster::getPreferredFollowDistance() const {
+	if (getAttackedCreature() != nullptr) {
+		return std::max(_type->targetDistance, 1u);
+	}
+	if (hasMaster()) {
+		return 2;
+	}
+
+	return Creature::getPreferredFollowDistance();
+}
+
+
 Direction Monster::getWanderingDirection() const {
 	if (!isAlive()) {
 		return Direction::NONE;
@@ -1149,6 +1161,10 @@ Direction Monster::getDanceStep(bool keepAttack /*= true*/, bool keepDistance /*
 	const Position& centerPos = attackedCreature->getPosition();
 
 	uint32_t tmpDist, centerToDist = std::max(std::abs(static_cast<signed>(position.x) - static_cast<signed>(centerPos.x)), std::abs(static_cast<signed>(position.y) - static_cast<signed>(centerPos.y)));
+	if (centerToDist == 0) {
+		return getRandomStepDirection(false);
+	}
+
 	std::vector<Direction> dirVector;
 	if(!keepDistance || position.y >= centerPos.y)
 	{

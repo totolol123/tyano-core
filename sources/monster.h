@@ -75,12 +75,13 @@ public:
 
 protected:
 
-	virtual Direction getWanderingDirection    () const;
-	virtual Duration  getWanderingInterval     () const;
-    virtual bool      hasSomethingToThinkAbout () const;
-	virtual bool      hasToThinkAboutCreature  (const CreaturePC& creature) const;
-	virtual void      onThink                  (Duration elapsedTime);
-	virtual void      onThinkingStarted        ();
+	virtual uint32_t  getPreferredFollowDistance () const;
+	virtual Direction getWanderingDirection      () const;
+	virtual Duration  getWanderingInterval       () const;
+	virtual bool      hasSomethingToThinkAbout   () const;
+	virtual bool      hasToThinkAboutCreature    (const CreaturePC& creature) const;
+	virtual void      onThink                    (Duration elapsedTime);
+	virtual void      onThinkingStarted          ();
 
 
 private:
