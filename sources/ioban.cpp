@@ -104,7 +104,7 @@ bool IOBan::addIpBanishment(uint32_t ip, int64_t banTime, uint32_t reasonId,
 	DBQuery query;
 
 	query << "INSERT INTO `bans` (`id`, `type`, `value`, `param`, `expires`, `added`, `admin_id`, `comment`, `reason`, `statement`) ";
-	query << "VALUES (nullptr, " << BAN_IP << ", " << ip << ", " << mask << ", " << banTime << ", " << time(nullptr) << ", " << gamemaster;
+	query << "VALUES (NULL, " << BAN_IP << ", " << ip << ", " << mask << ", " << banTime << ", " << time(nullptr) << ", " << gamemaster;
 	query << ", " << db.escapeString(comment.c_str()) << ", " << reasonId << ", " << db.escapeString(statement.c_str()) << ")";
 	return db.executeQuery(query.str());
 }
@@ -119,7 +119,7 @@ bool IOBan::addPlayerBanishment(uint32_t playerId, int64_t banTime, uint32_t rea
 	DBQuery query;
 
 	query << "INSERT INTO `bans` (`id`, `type`, `value`, `param`, `expires`, `added`, `admin_id`, `comment`, `reason`, `action`, `statement`) ";
-	query << "VALUES (nullptr, " << BAN_PLAYER << ", " << playerId << ", " << type << ", " << banTime << ", " << time(nullptr) << ", " << gamemaster;
+	query << "VALUES (NULL, " << BAN_PLAYER << ", " << playerId << ", " << type << ", " << banTime << ", " << time(nullptr) << ", " << gamemaster;
 	query << ", " << db.escapeString(comment.c_str()) << ", " << reasonId << ", " << actionId << ", " << db.escapeString(statement.c_str()) << ")";
 	return db.executeQuery(query.str());
 }
@@ -142,7 +142,7 @@ bool IOBan::addAccountBanishment(uint32_t account, int64_t banTime, uint32_t rea
 	DBQuery query;
 
 	query << "INSERT INTO `bans` (`id`, `type`, `value`, `param`, `expires`, `added`, `admin_id`, `comment`, `reason`, `action`, `statement`) ";
-	query << "VALUES (nullptr, " << BAN_ACCOUNT << ", " << account << ", " << playerId << ", " << banTime << ", " << time(nullptr) << ", " << gamemaster;
+	query << "VALUES (NULL, " << BAN_ACCOUNT << ", " << account << ", " << playerId << ", " << banTime << ", " << time(nullptr) << ", " << gamemaster;
 	query << ", " << db.escapeString(comment.c_str()) << ", " << reasonId << ", " << actionId << ", " << db.escapeString(statement.c_str()) << ")";
 	return db.executeQuery(query.str());
 }
@@ -154,7 +154,7 @@ bool IOBan::addNotation(uint32_t account, uint32_t reasonId,
 	DBQuery query;
 
 	query << "INSERT INTO `bans` (`id`, `type`, `value`, `param`, `expires`, `added`, `admin_id`, `comment`, `reason`, `statement`) ";
-	query << "VALUES (nullptr, " << BAN_NOTATION << ", " << account << ", " << playerId << ", '-1', " << time(nullptr) << ", " << gamemaster;
+	query << "VALUES (NULL, " << BAN_NOTATION << ", " << account << ", " << playerId << ", '-1', " << time(nullptr) << ", " << gamemaster;
 	query << ", " << db.escapeString(comment.c_str()) << ", " << reasonId << ", " << db.escapeString(statement.c_str()) << ")";
 	return db.executeQuery(query.str());
 }
@@ -169,7 +169,7 @@ bool IOBan::addStatement(uint32_t playerId, uint32_t reasonId,
 	if(channelId >= 0)
 		query << "`param`, ";
 
-	query << "`expires`, `added`, `admin_id`, `comment`, `reason`, `statement`) VALUES (nullptr, " << BAN_STATEMENT << ", " << playerId;
+	query << "`expires`, `added`, `admin_id`, `comment`, `reason`, `statement`) VALUES (NULL, " << BAN_STATEMENT << ", " << playerId;
 	if(channelId >= 0)
 		query << ", " << channelId;
 

@@ -322,7 +322,7 @@ uint64_t IOLoginData::createAccount(std::string name, std::string password)
 	Database& db = server.database();
 
 	DBQuery query;
-	query << "INSERT INTO `accounts` (`id`, `name`, `password`) VALUES (nullptr, " << db.escapeString(name) << ", " << db.escapeString(password) << ")";
+	query << "INSERT INTO `accounts` (`id`, `name`, `password`) VALUES (NULL, " << db.escapeString(name) << ", " << db.escapeString(password) << ")";
 	if(!db.executeQuery(query.str()))
 		return 0;
 
@@ -1464,7 +1464,7 @@ bool IOLoginData::createCharacter(uint32_t accountId, std::string characterName,
 	Database& db = server.database();
 	DBQuery query;
 
-	query << "INSERT INTO `players` (`id`, `name`, `world_id`, `group_id`, `account_id`, `level`, `vocation`, `health`, `healthmax`, `experience`, `lookbody`, `lookfeet`, `lookhead`, `looklegs`, `looktype`, `lookaddons`, `maglevel`, `mana`, `manamax`, `manaspent`, `soul`, `town_id`, `posx`, `posy`, `posz`, `conditions`, `cap`, `sex`, `lastlogin`, `lastip`, `skull`, `skulltime`, `save`, `rank_id`, `guildnick`, `lastlogout`, `blessings`, `online`) VALUES (nullptr, " << db.escapeString(characterName) << ", " << server.configManager().getNumber(ConfigManager::WORLD_ID) << ", 1, " << accountId << ", " << level << ", " << vocationId << ", " << healthMax << ", " << healthMax << ", " << exp << ", 68, 76, 78, 39, " << lookType << ", 0, " << server.configManager().getNumber(ConfigManager::START_MAGICLEVEL) << ", " << manaMax << ", " << manaMax << ", 0, 100, " << server.configManager().getNumber(ConfigManager::SPAWNTOWN_ID) << ", " << server.configManager().getNumber(ConfigManager::SPAWNPOS_X) << ", " << server.configManager().getNumber(ConfigManager::SPAWNPOS_Y) << ", " << server.configManager().getNumber(ConfigManager::SPAWNPOS_Z) << ", 0, " << capMax << ", " << sex << ", 0, 0, 0, 0, 1, 0, '', 0, 0, 0)";
+	query << "INSERT INTO `players` (`id`, `name`, `world_id`, `group_id`, `account_id`, `level`, `vocation`, `health`, `healthmax`, `experience`, `lookbody`, `lookfeet`, `lookhead`, `looklegs`, `looktype`, `lookaddons`, `maglevel`, `mana`, `manamax`, `manaspent`, `soul`, `town_id`, `posx`, `posy`, `posz`, `conditions`, `cap`, `sex`, `lastlogin`, `lastip`, `skull`, `skulltime`, `save`, `rank_id`, `guildnick`, `lastlogout`, `blessings`, `online`) VALUES (NULL, " << db.escapeString(characterName) << ", " << server.configManager().getNumber(ConfigManager::WORLD_ID) << ", 1, " << accountId << ", " << level << ", " << vocationId << ", " << healthMax << ", " << healthMax << ", " << exp << ", 68, 76, 78, 39, " << lookType << ", 0, " << server.configManager().getNumber(ConfigManager::START_MAGICLEVEL) << ", " << manaMax << ", " << manaMax << ", 0, 100, " << server.configManager().getNumber(ConfigManager::SPAWNTOWN_ID) << ", " << server.configManager().getNumber(ConfigManager::SPAWNPOS_X) << ", " << server.configManager().getNumber(ConfigManager::SPAWNPOS_Y) << ", " << server.configManager().getNumber(ConfigManager::SPAWNPOS_Z) << ", 0, " << capMax << ", " << sex << ", 0, 0, 0, 0, 1, 0, '', 0, 0, 0)";
 	return db.executeQuery(query.str());
 }
 
