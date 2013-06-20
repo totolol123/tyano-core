@@ -928,6 +928,10 @@ bool Player::canWalkthrough(const Creature* creature) const
 	if(creature == this)
 		return false;
 
+	if (isGhost()) {
+		return true;
+	}
+
 	const Player* player = creature->getPlayer();
 	if(!player)
 		return false;
@@ -936,7 +940,7 @@ bool Player::canWalkthrough(const Creature* creature) const
 		&& player->getTile()->ground->getId() != ITEM_GLOWING_SWITCH)
 		return true;
 
-	return (this->isGhost() || player->isGhost());
+	return (player->isGhost());
 }
 
 Depot* Player::getDepot(uint32_t depotId, bool autoCreateDepot)
