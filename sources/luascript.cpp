@@ -8933,7 +8933,7 @@ int32_t LuaScriptInterface::luaGetPlayersOnline(lua_State* L)
 	for(int32_t i = 1; it != Player::autoList.end(); ++it, ++i)
 	{
 		lua_pushnumber(L, i);
-		lua_pushnumber(L, env->addThing(it->second.get()));
+		lua_pushnumber(L, env->addThing(it->second));
 		pushTable(L);
 	}
 	return 1;
