@@ -33,6 +33,7 @@ class  ServiceManager;
 typedef boost::intrusive_ptr<Creature>                  CreatureP;
 typedef std::vector<boost::intrusive_ptr<Creature>>     CreatureVector;
 typedef std::vector<Player*>                            PlayerVector;
+typedef boost::intrusive_ptr<Item>                      ItemP;
 typedef std::list<boost::intrusive_ptr<Item>>           ItemList;
 typedef boost::intrusive_ptr<Player>                    PlayerP;
 typedef std::map<boost::intrusive_ptr<Item>, uint32_t>  TradeItemMap;
@@ -400,7 +401,7 @@ public:
 		  * \param newCount is the new count value, use default value (-1) to not change it
 		  * \returns true if the tranformation was successful
 		  */
-		Item* transformItem(Item* item, uint16_t newId, int32_t newCount = -1);
+		ItemP transformItem(const ItemP& item, uint16_t newId, int32_t newCount = -1);
 
 		/**
 		  * Teleports an object to another position

@@ -577,13 +577,13 @@ bool Monster::targetClosestEnemy() {
 	SpectatorList spectators;
 	server.game().getSpectators(spectators, position);
 
-	uint32_t closestDistance = std::numeric_limits<uint32_t>::max();
-	Creature* closestSpectator = nullptr;
-
 	if (spectators.empty()) {
 		target(nullptr);
 		return false;
 	}
+
+	uint32_t closestDistance = std::numeric_limits<uint32_t>::max();
+	Creature* closestSpectator = nullptr;
 
 	for (auto spectator : spectators) {
 		if (!isEnemy(spectator)) {
@@ -591,7 +591,7 @@ bool Monster::targetClosestEnemy() {
 		}
 
 		auto distance = position.distanceTo(spectator->getPosition());
-		if (distance <= _type->targetDistance && distance < closestDistance) {
+		if (distance < closestDistance) {
 			closestSpectator = spectator;
 			if (distance == 1) {
 				break;

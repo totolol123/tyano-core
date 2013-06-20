@@ -511,7 +511,7 @@ uint32_t ScriptEnviroment::addThing(ThingP thing)
 	return m_lastUID;
 }
 
-void ScriptEnviroment::insertThing(uint32_t uid, Thing* thing)
+void ScriptEnviroment::insertThing(uint32_t uid, const ThingP& thing)
 {
 	if(!m_localMap[uid])
 		m_localMap[uid] = thing;
@@ -3772,7 +3772,7 @@ int32_t LuaScriptInterface::luaDoTransformItem(lua_State* L)
 	if(kind && kind->stackable && count > 100)
 		count = 100;
 
-	Item* newItem = server.game().transformItem(item, newId, count);
+	ItemP newItem = server.game().transformItem(item, newId, count);
 	if(item->isRemoved())
 		env->removeThing(uid);
 
