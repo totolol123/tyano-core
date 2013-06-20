@@ -2137,6 +2137,7 @@ bool Game::playerMove(uint32_t playerId, Direction dir)
 
 	if (player->shouldStagger()) {
 		player->stagger();
+		player->sendCancelWalk();
 		return true;
 	}
 
