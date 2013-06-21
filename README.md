@@ -35,7 +35,7 @@ complete this list over time :)
 - Reworked the logging with a beautiful log format, various configurable log levels and additional disk-logging.
 - Reworked map loading which uses a 2-dimensional array per floor now. Much faster to load, to use and uses much less memory.
   Problem is that it only works for small maps. I'll figure out something new when I've got time for that.
-- Reworked scheduler ad dispatcher.
+- Reworked scheduler and dispatcher.
 - Reworked how persistable item attributes are saved so that they consume less memory. They'll also enfore their type to catch programming and
   scripting errors earlier.
 - Added an admin protocol command to execute LUA scripts and get the result.
