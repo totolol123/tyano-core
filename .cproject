@@ -18,7 +18,7 @@
 					<folderInfo id="cdt.managedbuild.toolchain.gnu.cygwin.base.653106004.927136123" name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.cygwin.base.2093403012" name="cdt.managedbuild.toolchain.gnu.cygwin.base" superClass="cdt.managedbuild.toolchain.gnu.cygwin.base">
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.Cygwin_PE" id="cdt.managedbuild.target.gnu.platform.cygwin.base.1454866477" name="Debug Platform" osList="win32" superClass="cdt.managedbuild.target.gnu.platform.cygwin.base"/>
-							<builder arguments="-c -- &quot;cd \&quot;`pwd`\&quot; &amp;&amp; $0 $*&quot; ./make.sh --no-print-directory" buildPath="${workspace_loc:/The Forgotten Tyano Server}" command="sh" id="cdt.managedbuild.target.gnu.builder.cygwin.base.556640286" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="3" superClass="cdt.managedbuild.target.gnu.builder.cygwin.base">
+							<builder arguments="-c -- &quot;cd \&quot;`pwd`\&quot; &amp;&amp; $0 $*&quot; ./make.sh --no-print-directory" buildPath="${workspace_loc:/Tyano Core}" command="sh" id="cdt.managedbuild.target.gnu.builder.cygwin.base.556640286" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="3" superClass="cdt.managedbuild.target.gnu.builder.cygwin.base">
 								<outputEntries>
 									<entry flags="VALUE_WORKSPACE_PATH" kind="outputPath" name=".intermediate"/>
 								</outputEntries>
@@ -30,14 +30,14 @@
 							<tool id="cdt.managedbuild.tool.gnu.archiver.cygwin.base.854352900" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.cygwin.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.cygwin.base.1541398430" name="Cygwin C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.cygwin.base">
 								<option id="gnu.cpp.compiler.option.include.paths.975778818" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/The Forgotten Tyano Server/sources}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Tyano Core/sources}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.2080833452" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.cygwin.2000771563" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input.cygwin"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.cygwin.base.1938564674" name="Cygwin C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.cygwin.base">
 								<option id="gnu.c.compiler.option.include.paths.1183259677" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/The Forgotten Tyano Server/sources}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Tyano Core/sources}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.cygwin.1742750552" superClass="cdt.managedbuild.tool.gnu.c.compiler.input.cygwin"/>
 							</tool>
@@ -56,12 +56,12 @@
 		</cconfiguration>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-		<project id="the-forgotten-tyano-server.null.1938707447" name="The Forgotten Tyano Server"/>
+		<project id="tyano-core.null.1938707447" name="Tyano Core"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
 	<storageModule moduleId="refreshScope" versionNumber="2">
 		<configuration configurationName="Default">
-			<resource resourceType="PROJECT" workspacePath="/The Forgotten Tyano Server"/>
+			<resource resourceType="PROJECT" workspacePath="/Tyano Core"/>
 		</configuration>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
