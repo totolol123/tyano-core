@@ -16,7 +16,8 @@ Important
 Soon
 ----
 
-- Create new effficient scheduler/dispatcher system based on C++11 STL (and refactor `Item::ReleaseInfo::release` after that).
+- Rework teleporters.
+- Create new efficient scheduler/dispatcher system based on C++11 STL (and refactor `Item::ReleaseInfo::release` after that).
 - Broadcast message with pop-up because a server-wide red chat message will actually not be read by most players.
 - Refactor talkaction system to unify commands & help system.
 - Fix that one boost network socket leaks every time a new connection is accepted.
@@ -31,6 +32,8 @@ Soon
 Improvements
 ------------
 
+- Make monsters think in groups. E.g. a boss is attacked, the other monsters should support him. 
+  And if a summon is attacked, the master should support it.
 - Once there are too many corpses and/or items on a tile, merge them into a box?
 - Make separate item class for item type for corpses?
 - `Game::internalMoveItem` deletes and re-creates a full stack of stackable items which is inefficient. 
