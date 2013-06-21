@@ -19,9 +19,30 @@
 
 #include "creature.h"
 #include "fileloader.h"
+#include "movement.h"
 #include "game.h"
 #include "server.h"
 
+
+
+bool Teleport::canTeleport(const ThingPC& thing) const {
+	assert(thing != nullptr);
+
+	if (server.moveEvents().getEvent(this, MOVE_EVENT_STEP_IN) != nullptr) {
+		// scripted teleporter
+		return true;
+	}
+
+	Tile* destinationTile = server.game().getTile(destination);
+	if (destinationTile == nullptr) {
+		return false;
+	}
+	if (destinationTile->__queryAdd(INDEX_WHEREEVER, thing.get(), 1, 0) != RET_NOERROR) {
+		return false;
+	}
+
+	return true;
+}
 
 
 Teleport::ClassAttributesP Teleport::getClassAttributes() {
@@ -70,8 +91,9 @@ void Teleport::__addThing(Creature* actor, int32_t index, Thing* thing)
 
 	if(Creature* creature = thing->getCreature())
 	{
-		creature->getTile()->moveCreature(actor, creature, destTile);
-		server.game().addMagicEffect(destTile->getPosition(), MAGIC_EFFECT_TELEPORT, creature->isGhost());
+		if (creature->getTile()->moveCreature(actor, creature, destTile)) {
+			server.game().addMagicEffect(destTile->getPosition(), MAGIC_EFFECT_TELEPORT, creature->isGhost());
+		}
 	}
 	else if(Item* item = thing->getItem())
 		server.game().internalMoveItem(actor, getTile(), destTile, INDEX_WHEREEVER, item, item->getItemCount(), nullptr);

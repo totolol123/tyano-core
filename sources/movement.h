@@ -63,9 +63,9 @@ class MoveEvents : public BaseEvents<MoveEvent>
 		uint32_t onPlayerDeEquip(Player* player, Item* item, slots_t slot, bool isRemoval);
 		uint32_t onItemMove(Creature* actor, Item* item, Tile* tile, bool isAdd);
 
-		std::shared_ptr<MoveEvent> getEvent(Item* item, MoveEvent_t eventType);
-		bool hasEquipEvent(Item* item);
-		bool hasTileEvent(Item* item);
+		std::shared_ptr<MoveEvent> getEvent(const Item* item, MoveEvent_t eventType) const;
+		bool hasEquipEvent(const Item* item) const;
+		bool hasTileEvent(const Item* item) const;
 
 		void onRemoveTileItem(const Tile* tile, Item* item);
 		void onAddTileItem(const Tile* tile, Item* item);
@@ -99,10 +99,10 @@ class MoveEvents : public BaseEvents<MoveEvent>
 		MovePosListMap m_positionMap;
 
 		void addEvent(const MoveEventP& moveEvent, int32_t id, MoveListMap& map, bool override);
-		MoveEventP getEvent(Item* item, MoveEvent_t eventType, slots_t slot);
+		MoveEventP getEvent(const Item* item, MoveEvent_t eventType, slots_t slot) const;
 
 		void addEvent(const MoveEventP& moveEvent, Position pos, MovePosListMap& map, bool override);
-		MoveEventP getEvent(const Tile* tile, MoveEvent_t eventType);
+		MoveEventP getEvent(const Tile* tile, MoveEvent_t eventType) const;
 };
 
 typedef uint32_t (MoveFunction)(Item* item);

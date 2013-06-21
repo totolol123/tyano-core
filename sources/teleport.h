@@ -22,6 +22,8 @@
 #include "item.h"
 #include "position.h"
 
+using ThingPC = boost::intrusive_ptr<const Thing>;
+
 
 class Teleport : public Item, public Cylinder
 {
@@ -42,6 +44,8 @@ class Teleport : public Item, public Cylinder
 
 		void setDestination(const Position& pos) {destination = pos;}
 		Position getDestination() const {return destination;}
+
+		bool canTeleport(const ThingPC& thing) const;
 
 		//cylinder implementations
 		virtual Cylinder* getParent() {return Item::getParent();}

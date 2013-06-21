@@ -286,15 +286,14 @@ void MoveEvents::addEvent(const MoveEventP& moveEvent, int32_t id, MoveListMap& 
 	}
 }
 
-MoveEventP MoveEvents::getEvent(Item* item, MoveEvent_t eventType)
+MoveEventP MoveEvents::getEvent(const Item* item, MoveEvent_t eventType) const
 {
-	MoveListMap::iterator it;
 	if(item->getUniqueId())
 	{
-		it = m_uniqueIdMap.find(item->getUniqueId());
+		auto it = m_uniqueIdMap.find(item->getUniqueId());
 		if(it != m_uniqueIdMap.end())
 		{
-			EventList& moveEventList = it->second.moveEvent[eventType];
+			const auto& moveEventList = it->second.moveEvent[eventType];
 			if(!moveEventList.empty())
 				return *moveEventList.begin();
 		}
@@ -302,19 +301,19 @@ MoveEventP MoveEvents::getEvent(Item* item, MoveEvent_t eventType)
 
 	if(item->getActionId())
 	{
-		it = m_actionIdMap.find(item->getActionId());
+		auto it = m_actionIdMap.find(item->getActionId());
 		if(it != m_actionIdMap.end())
 		{
-			EventList& moveEventList = it->second.moveEvent[eventType];
+			const auto& moveEventList = it->second.moveEvent[eventType];
 			if(!moveEventList.empty())
 				return *moveEventList.begin();
 		}
 	}
 
-	it = m_itemIdMap.find(item->getId());
+	auto it = m_itemIdMap.find(item->getId());
 	if(it != m_itemIdMap.end())
 	{
-		EventList& moveEventList = it->second.moveEvent[eventType];
+		const auto& moveEventList = it->second.moveEvent[eventType];
 		if(!moveEventList.empty())
 			return *moveEventList.begin();
 	}
@@ -322,7 +321,7 @@ MoveEventP MoveEvents::getEvent(Item* item, MoveEvent_t eventType)
 	return nullptr;
 }
 
-MoveEventP MoveEvents::getEvent(Item* item, MoveEvent_t eventType, slots_t slot)
+MoveEventP MoveEvents::getEvent(const Item* item, MoveEvent_t eventType, slots_t slot) const
 {
 	uint32_t slotp = 0;
 	switch(slot)
@@ -361,12 +360,12 @@ MoveEventP MoveEvents::getEvent(Item* item, MoveEvent_t eventType, slots_t slot)
 			break;
 	}
 
-	MoveListMap::iterator it = m_itemIdMap.find(item->getId());
+	auto it = m_itemIdMap.find(item->getId());
 	if(it == m_itemIdMap.end())
 		return nullptr;
 
-	EventList& moveEventList = it->second.moveEvent[eventType];
-	for(EventList::iterator it = moveEventList.begin(); it != moveEventList.end(); ++it)
+	const auto& moveEventList = it->second.moveEvent[eventType];
+	for(auto it = moveEventList.begin(); it != moveEventList.end(); ++it)
 	{
 		if(((*it)->getSlot() & slotp))
 			return *it;
@@ -403,25 +402,25 @@ void MoveEvents::addEvent(const MoveEventP& moveEvent, Position pos, MovePosList
 	}
 }
 
-MoveEventP MoveEvents::getEvent(const Tile* tile, MoveEvent_t eventType)
+MoveEventP MoveEvents::getEvent(const Tile* tile, MoveEvent_t eventType) const
 {
-	MovePosListMap::iterator it = m_positionMap.find(tile->getPosition());
+	auto it = m_positionMap.find(tile->getPosition());
 	if(it == m_positionMap.end())
 		return nullptr;
 
-	EventList& moveEventList = it->second.moveEvent[eventType];
+	const auto& moveEventList = it->second.moveEvent[eventType];
 	if(!moveEventList.empty())
 		return *moveEventList.begin();
 
 	return nullptr;
 }
 
-bool MoveEvents::hasEquipEvent(Item* item)
+bool MoveEvents::hasEquipEvent(const Item* item) const
 {
 	return getEvent(item, MOVE_EVENT_EQUIP) && getEvent(item, MOVE_EVENT_DEEQUIP);
 }
 
-bool MoveEvents::hasTileEvent(Item* item)
+bool MoveEvents::hasTileEvent(const Item* item) const
 {
 	return (getEvent(item, MOVE_EVENT_STEP_IN) || getEvent(item, MOVE_EVENT_STEP_OUT) || getEvent(item,
 		MOVE_EVENT_ADD_ITEM_ITEMTILE) || getEvent(item, MOVE_EVENT_REMOVE_ITEM_ITEMTILE));

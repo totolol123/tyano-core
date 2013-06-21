@@ -345,6 +345,8 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 						kind->type = ItemType::CONTAINER;
 						kind->group = ITEM_GROUP_CONTAINER;
 					}
+					else if(tmpStrValue == "generic")
+						kind->type = ItemType::GENERIC;
 					else if(tmpStrValue == "key")
 						kind->type = ItemType::KEY;
 					else if(tmpStrValue == "magicfield")
