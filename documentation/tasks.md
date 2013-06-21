@@ -31,6 +31,8 @@ Soon
 Improvements
 ------------
 
+- Once there are too many corpses and/or items on a tile, merge them into a box?
+- Make separate item class for item type for corpses?
 - `Game::internalMoveItem` deletes and re-creates a full stack of stackable items which is inefficient. 
 - Replace `boost::function` with `std::function`.
 - Replace all occurrences of `std::(shared|unique|weak)_ptr` with `Shared|Unique|Weak`.
