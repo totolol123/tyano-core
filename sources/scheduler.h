@@ -31,14 +31,14 @@ public:
 		STOPPING,
 	};
 
-	typedef uint32_t                        TaskId;
-	typedef std::unique_ptr<SchedulerTask>  TaskP;
+	typedef uint32_t               TaskId;
+	typedef Shared<SchedulerTask>  TaskP;
 
 
 	Scheduler();
 	virtual ~Scheduler();
 
-	TaskId addTask         (TaskP task);
+	TaskId addTask         (const TaskP& task);
 	bool   cancelTask      (TaskId taskId);
 	State  getState        ();
 	void   start           ();

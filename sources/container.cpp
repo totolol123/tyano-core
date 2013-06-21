@@ -84,6 +84,7 @@ void Container::addItem(Item* item)
 {
 	itemlist.push_back(item);
 	item->setParent(this);
+	item->retain();
 }
 
 Attr_ReadValue Container::readAttr(AttrTypes_t attr, PropStream& propStream)
@@ -468,6 +469,7 @@ void Container::__addThing(Creature* actor, int32_t index, Thing* thing)
 	}
 
 	item->setParent(this);
+	item->retain();
 
 	/*
 	// needs netcode update!
@@ -513,6 +515,7 @@ void Container::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
 	const double oldWeight = item->getWeight();
 	item->setKind(newType);
 	item->setSubType(count);
+	item->retain();
 
 	const double diffWeight = -oldWeight + item->getWeight();
 	totalWeight += diffWeight;
@@ -556,7 +559,8 @@ void Container::__replaceThing(uint32_t index, Thing* thing)
 
 	itemlist.insert(cit, item);
 	item->setParent(this);
-	//send change to client
+	item->retain();
+
 	if(getParent())
 	{
 		onUpdateContainerItem(index, (*cit).get(), existingItem->getKind(), item, item->getKind());
@@ -768,7 +772,9 @@ void Container::__internalAddThing(uint32_t index, Thing* thing)
 	}
 
 	itemlist.push_front(item);
+
 	item->setParent(this);
+	item->retain();
 
 	totalWeight += item->getWeight();
 	if(Container* parentContainer = getParentContainer())

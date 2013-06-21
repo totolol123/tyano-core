@@ -114,13 +114,19 @@ typedef std::chrono::duration<int, std::ratio<86400>>  Days;
 typedef Clock::duration                                Duration;
 typedef std::chrono::hours                             Hours;
 typedef std::chrono::milliseconds                      Milliseconds;
-typedef std::chrono::minutes                           Minute;
+typedef std::chrono::minutes                           Minutes;
 typedef std::chrono::system_clock                      RealClock;
 typedef RealClock::duration                            RealDuration;
 typedef RealClock::time_point                          RealTime;
 typedef std::chrono::seconds                           Seconds;
 typedef Clock::time_point                              Time;
 typedef std::unique_ptr<xmlDoc>                        xmlDocP;
+
+using Function = boost::function<void(void)>;
+
+template<class T> using Shared = std::shared_ptr<T>;
+template<class T> using Unique = std::unique_ptr<T>;
+template<class T> using Weak   = std::weak_ptr<T>;
 
 
 

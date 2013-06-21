@@ -131,7 +131,6 @@ struct RefreshBlock_t
 typedef std::map<uint32_t, boost::shared_ptr<RuleViolation> > RuleViolationsMap;
 typedef std::map<Tile*, RefreshBlock_t> RefreshTiles;
 typedef std::vector< std::pair<std::string, uint32_t> > Highscore;
-typedef std::list<Position> Trash;
 typedef std::map<int32_t, float> StageList;
 
 #define EVENT_LIGHTINTERVAL 10000
@@ -544,11 +543,9 @@ public:
 		void saveGameState(bool shallow);
 		void loadGameState();
 
-		void cleanMap(uint32_t& count);
 		void refreshMap(RefreshTiles::iterator* it = nullptr, uint32_t limit = 0);
 		void proceduralRefresh(RefreshTiles::iterator* it = nullptr);
 
-		void addTrash(Position pos) {trash.push_back(pos);}
 		void addRefreshTile(Tile* tile, RefreshBlock_t rb) {refreshTiles[tile] = rb;}
 
 		//Events
@@ -646,7 +643,6 @@ public:
 		bool globalSaveMessage[3];
 
 		RefreshTiles refreshTiles;
-		Trash trash;
 
 		StageList stages;
 		uint32_t lastStageLevel;

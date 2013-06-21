@@ -16,6 +16,7 @@ Important
 Soon
 ----
 
+- Create new effficient scheduler/dispatcher system based on C++11 STL (and refactor `Item::ReleaseInfo::release` after that).
 - Broadcast message with pop-up because a server-wide red chat message will actually not be read by most players.
 - Refactor talkaction system to unify commands & help system.
 - Fix that one boost network socket leaks every time a new connection is accepted.
@@ -30,6 +31,11 @@ Soon
 Improvements
 ------------
 
+- `Game::internalMoveItem` deletes and re-creates a full stack of stackable items which is inefficient. 
+- Replace `boost::function` with `std::function`.
+- Replace all occurrences of `std::(shared|unique|weak)_ptr` with `Shared|Unique|Weak`.
+- Replace `const Time&` with just `Time` as `timepoint_t` is backed by `duration` which is a primitive type. 
+- Use separate dispatching/scheduling for cross-thread and inter-game-thread avoid unnecessary locks and to speed up everything.
 - Use other approach to load the map because the current approach is limited to small maps.
 - Improve autowalking. Currently you lag when clicking multiple times and the walking randomly ends, e.g. when a creature walks into the path.
 - Add randomization to the think intervals to distribute CPU load as much as possible.

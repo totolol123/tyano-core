@@ -27,18 +27,18 @@ SchedulerTask::SchedulerTask(Time time, const Function& function)
 {}
 
 
-SchedulerTask::UniquePointer SchedulerTask::create(Duration delay, const Function& function) {
+auto SchedulerTask::create(Duration delay, const Function& function) -> SchedulerTaskP {
 	if (delay <= Duration::zero()) {
 		assert(delay > Duration::zero());
 		delay = Duration::zero();
 	}
 
-	return UniquePointer(new SchedulerTask(Clock::now() + delay, function));
+	return std::make_shared<SchedulerTask>(Clock::now() + delay, function);
 }
 
 
-SchedulerTask::UniquePointer SchedulerTask::create(Time time, const Function& function) {
-	return UniquePointer(new SchedulerTask(time, function));
+auto SchedulerTask::create(Time time, const Function& function) -> SchedulerTaskP {
+	return std::make_shared<SchedulerTask>(time, function);
 }
 
 

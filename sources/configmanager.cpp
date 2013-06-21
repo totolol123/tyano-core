@@ -109,7 +109,6 @@ bool ConfigManager::load()
 		m_confString[HOUSE_RENT_PERIOD] = getGlobalString("houseRentPeriod", "monthly");
 		m_confNumber[WORLD_ID] = getGlobalNumber("worldId", 0);
 		m_confBool[RANDOMIZE_TILES] = getGlobalBool("randomizeTiles", true);
-		m_confBool[STORE_TRASH] = getGlobalBool("storeTrash", true);
 		m_confBool[EXPERIENCE_STAGES] = getGlobalBool("experienceStages", false);
 		m_confString[DEFAULT_PRIORITY] = getGlobalString("defaultPriority", "high");
 		m_confBool[GUILD_HALLS] = getGlobalBool("guildHalls", false);
@@ -175,7 +174,6 @@ bool ConfigManager::load()
 	m_confDouble[EFP_MIN_THRESHOLD] = getGlobalDouble("minLevelThresholdForKilledPlayer", 0.9f);
 	m_confDouble[EFP_MAX_THRESHOLD] = getGlobalDouble("maxLevelThresholdForKilledPlayer", 1.1f);
 	m_confBool[SHUTDOWN_AT_GLOBALSAVE] = getGlobalBool("shutdownAtGlobalSave", false);
-	m_confBool[CLEAN_MAP_AT_GLOBALSAVE] = getGlobalBool("cleanMapAtGlobalSave", true);
 	m_confNumber[PROTECTION_LEVEL] = getGlobalNumber("protectionLevel", 1);
 	m_confBool[ADMIN_LOGS_ENABLED] = getGlobalBool("adminLogsEnabled", false);
 	m_confNumber[STATUSQUERY_TIMEOUT] = getGlobalNumber("statusTimeout", 5 * 60 * 1000);
@@ -208,7 +206,6 @@ bool ConfigManager::load()
 	m_confBool[PVP_TILE_IGNORE_PROTECTION] = getGlobalBool("pvpTileIgnoreLevelAndVocationProtection", true);
 	m_confBool[DISPLAY_CRITICAL_HIT] = getGlobalBool("displayCriticalHitNotify", false);
 	m_confBool[ADVANCING_SKILL_LEVEL] = getGlobalBool("displaySkillLevelOnAdvance", false);
-	m_confBool[CLEAN_PROTECTED_ZONES] = getGlobalBool("cleanProtectedZones", true);
 	m_confBool[SPELL_NAME_INSTEAD_WORDS] = getGlobalBool("spellNameInsteadOfWords", false);
 	m_confBool[EMOTE_SPELLS] = getGlobalBool("emoteSpells", false);
 	m_confNumber[MAX_PLAYER_SUMMONS] = getGlobalNumber("maxPlayerSummons", 2);

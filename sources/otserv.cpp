@@ -136,10 +136,6 @@ void signalHandler(int32_t sig)
 				std::bind(&Game::saveGameState, &game, false)));
 			break;
 
-		case SIGTRAP:
-			game.cleanMap(tmp);
-			break;
-
 		case SIGCHLD:
 			game.proceduralRefresh();
 			break;
@@ -216,7 +212,6 @@ int main(int argc, char *argv[]) {
 
 	// register signals
 	signal(SIGHUP, signalHandler); //save
-	signal(SIGTRAP, signalHandler); //clean
 	signal(SIGCHLD, signalHandler); //refresh
 	signal(SIGUSR1, signalHandler); //close server
 	signal(SIGUSR2, signalHandler); //open server

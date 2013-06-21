@@ -920,13 +920,14 @@ void Tile::__addThing(Creature* actor, int32_t index, Thing* thing)
 	if(items && items->size() >= 0xFFFF)
 		return/* RET_NOTPOSSIBLE*/;
 
-	if(server.configManager().getBool(ConfigManager::STORE_TRASH) && !hasFlag(TILESTATE_TRASHED))
-	{
-		server.game().addTrash(pos);
-		setFlag(TILESTATE_TRASHED);
+	item->setParent(this);
+	if (isHouseTile()) {
+		item->retain();
+	}
+	else {
+		item->release();
 	}
 
-	item->setParent(this);
 	if(item->isGroundTile())
 	{
 		if(ground)
@@ -1072,6 +1073,13 @@ void Tile::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
 	item->setKind(newKind);
 	item->setSubType(count);
 
+	if (isHouseTile()) {
+		item->retain();
+	}
+	else {
+		item->release();
+	}
+
 	updateTileFlags(item, false);
 	onUpdateTileItem(item, oldKind, item, newKind);
 }
@@ -1145,6 +1153,13 @@ void Tile::__replaceThing(uint32_t index, Thing* thing)
 	if(oldItem)
 	{
 		item->setParent(this);
+		if (isHouseTile()) {
+			item->retain();
+		}
+		else {
+			item->release();
+		}
+
 		updateTileFlags(oldItem.get(), true);
 		updateTileFlags(item, false);
 
@@ -1644,6 +1659,13 @@ void Tile::__internalAddThing(uint32_t index, Thing* thing)
 	}
 
 	thing->setParent(this);
+	if (isHouseTile()) {
+		item->retain();
+	}
+	else {
+		item->release();
+	}
+
 	++thingCount;
 
 	updateTileFlags(item, false);
