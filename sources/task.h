@@ -23,25 +23,20 @@ class Task {
 
 public:
 
-	typedef boost::function<void(void)>  Function;
-	typedef std::unique_ptr<Task>        UniquePointer;
+	typedef Shared<Task>  TaskP;
 
 
-	static UniquePointer create(const Function& function);
-	static UniquePointer create(Duration duration, const Function& function);
+	static TaskP create(const Function& function);
+	static TaskP create(Duration duration, const Function& function);
 
-	virtual ~Task();
+	Task          (const Function& function);
+	Task          (Duration duration, const Function& function);
+	virtual ~Task ();
 
 	Time getExpiration() const;
 	void setExpiration(Time expiration);
 
 	void operator()() const;
-
-
-protected:
-
-	Task(const Function& function);
-	Task(Duration duration, const Function& function);
 
 
 private:

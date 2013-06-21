@@ -62,7 +62,7 @@ Scheduler::~Scheduler() {
 }
 
 
-Scheduler::TaskId Scheduler::addTask(TaskP task) {
+auto Scheduler::addTask(const TaskP& task) -> TaskId {
 	if (task == nullptr) {
 		assert(task != nullptr);
 		return 0;
@@ -86,7 +86,7 @@ Scheduler::TaskId Scheduler::addTask(TaskP task) {
 		}
 
 		_pendingTaskIds.insert(taskId);
-		_tasks.push(std::move(task));
+		_tasks.push(task);
 
 		if (_tasks.top()->getId() == taskId) {
 			_signal.notify_one();
@@ -179,8 +179,7 @@ void Scheduler::thread() {
 			continue;
 		}
 
-		// we use const_cast because of problem in C++11x: https://groups.google.com/d/topic/comp.lang.c++.moderated/rXa3SEgy0Vw/discussion
-		auto task = std::move(const_cast<TaskP&>(_tasks.top()));
+		auto task = std::move(_tasks.top());
 		_tasks.pop();
 
 		auto i = _pendingTaskIds.find(task->getId());
@@ -194,7 +193,7 @@ void Scheduler::thread() {
 		uniqueLock.unlock();
 
 		task->setExpiration(Time::max());
-		server.dispatcher().addTask(std::move(task));
+		server.dispatcher().addTask(task);
 	}
 
 	_mutex.lock();

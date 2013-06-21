@@ -39,11 +39,14 @@ class  Player;
 class  PropStream;
 class  PropWriteStream;
 class  Raid;
+class  SchedulerTask;
 class  Teleport;
 class  TrashHolder;
 
-typedef std::shared_ptr<ItemKind>        ItemKindP;
-typedef std::shared_ptr<const ItemKind>  ItemKindPC;
+using ItemKindP      = Shared<ItemKind>;
+using ItemKindPC     = Shared<const ItemKind>;
+using SchedulerTaskP = Shared<SchedulerTask>;
+using ItemP          = boost::intrusive_ptr<Item>;
 
 
 enum ITEMPROPERTY
@@ -132,7 +135,65 @@ struct TeleportDest
 };
 #pragma pack()
 
+
 class Item : public Thing {
+
+public:
+
+	virtual ~Item();
+
+	void copyReleaseInfo   (const Item& item);
+	Time getExpirationTime () const;
+	bool isReleasable      () const;
+	bool isReleased        () const;
+	bool isRetained        () const;
+	void release           ();
+	void retain            ();
+
+
+private:
+
+	class ReleaseInfo {
+
+	public:
+
+		ReleaseInfo() = default;
+
+		void           copy              (const ReleaseInfo& releaseInfo, const Function& testExpirationCallback);
+		SchedulerTaskP getTask           () const;
+		Time           getExpirationTime () const;
+		bool           isExpired         () const;
+		bool           isReleased        () const;
+		bool           isRetained        () const;
+		void           release           (Duration expirationDelay, const Function& testExpirationCallback);
+		void           retain            ();
+
+
+	private:
+
+		ReleaseInfo (const ReleaseInfo&) = delete;
+		ReleaseInfo (ReleaseInfo&&) = delete;
+
+
+		static constexpr const Time BREAK_TIME_NEVER      = Time::min();
+		static constexpr const Time EXPIRATION_TIME_NEVER = Time::max();
+
+		Time                _breakTime       = BREAK_TIME_NEVER;
+		Duration            _expirationDelay;
+		Time                _expirationTime  = EXPIRATION_TIME_NEVER;
+		Weak<SchedulerTask> _task;
+
+	};
+
+
+	void testReleaseExpiration();
+
+
+	Unique<ReleaseInfo> _releaseInfo;
+
+
+
+
 
 	public:
 
@@ -182,7 +243,6 @@ class Item : public Thing {
 
 		// Constructor for items
 		Item(const ItemKindPC& kind, uint16_t amount = 0);
-		virtual ~Item() {}
 
 		virtual boost::intrusive_ptr<Item> clone() const;
 		virtual void copyAttributes(Item* item);

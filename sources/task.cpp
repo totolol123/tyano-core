@@ -36,13 +36,13 @@ Task::~Task() {
 }
 
 
-Task::UniquePointer Task::create(const Function& function) {
-	return UniquePointer(new Task(function));
+auto Task::create(const Function& function) -> TaskP {
+	return std::make_shared<Task>(function);
 }
 
 
-Task::UniquePointer Task::create(Duration duration, const Function& function) {
-	return UniquePointer(new Task(duration, function));
+auto Task::create(Duration duration, const Function& function) -> TaskP {
+	return std::make_shared<Task>(duration, function);
 }
 
 

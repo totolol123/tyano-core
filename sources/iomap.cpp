@@ -83,7 +83,6 @@ Tile* IOMap::createTile(Item* ground, Item* item, uint16_t px, uint16_t py, uint
 		if(ground->getDecaying() != DECAYING_TRUE)
 		{
 			ground->__startDecaying();
-			ground->setLoadedFromMap(true);
 		}
 	}
 	else //no ground on this tile, so it will always block
@@ -362,6 +361,8 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 									return false;
 								}
 
+								item->setLoadedFromMap(true);
+
 								if (item->canDecay(true)) {
 									++totalDecayingItems;
 									++decayingItems[item->getId()];
@@ -385,7 +386,6 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 									}
 
 									item->__startDecaying();
-									item->setLoadedFromMap(true);
 								}
 								else if(item->isGroundTile())
 								{
@@ -397,7 +397,6 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 									tile->__internalAddThing(item.get());
 
 									item->__startDecaying();
-									item->setLoadedFromMap(true);
 
 									ground = nullptr;
 								}
@@ -434,6 +433,8 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 								return false;
 							}
 
+							item->setLoadedFromMap(true);
+
 							if (item->canDecay(true)) {
 								++totalDecayingItems;
 								++decayingItems[item->getId()];
@@ -451,7 +452,6 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 								{
 									tile->__internalAddThing(item.get());
 									item->__startDecaying();
-									item->setLoadedFromMap(true);
 								}
 								else if(item->isGroundTile())
 								{
@@ -461,9 +461,7 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 								{
 									tile = createTile(ground.get(), item.get(), px, py, pz);
 									tile->__internalAddThing(item.get());
-
 									item->__startDecaying();
-									item->setLoadedFromMap(true);
 
 									ground = nullptr;
 								}

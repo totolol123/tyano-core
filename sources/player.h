@@ -44,6 +44,8 @@ typedef std::list<std::string> LearnedInstantSpellList;
 typedef std::list<uint32_t> InvitedToGuildsList;
 typedef std::list<Party*> PartyList;
 
+using SchedulerTaskP = Shared<SchedulerTask>;
+
 #define SPEED_MAX 1500
 #define SPEED_MIN 10
 #define STAMINA_MAX (42 * 60 * 60 * 1000)
@@ -577,9 +579,9 @@ private:
 		void updateInventoryGoods(const ItemKindPC& itemKind);
 		void updateItemsLight(bool internal = false);
 
-		void setNextWalkActionTask(std::unique_ptr<SchedulerTask> task);
-		void setNextWalkTask(std::unique_ptr<SchedulerTask> task);
-		void setNextActionTask(std::unique_ptr<SchedulerTask> task);
+		void setNextWalkActionTask(const SchedulerTaskP& task);
+		void setNextWalkTask(const SchedulerTaskP& task);
+		void setNextActionTask(const SchedulerTaskP& task);
 
 		virtual bool onDeath();
 		virtual boost::intrusive_ptr<Item> createCorpse(DeathList deathList);
@@ -732,7 +734,7 @@ private:
 
 		Vocation* vocation;
 		ProtocolGame* client;
-		std::unique_ptr<SchedulerTask> walkTask;
+		SchedulerTaskP walkTask;
 		Party* party;
 		Group* group;
 		boost::intrusive_ptr<Item> inventory[11];

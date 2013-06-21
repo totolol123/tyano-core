@@ -33,13 +33,13 @@ public:
 		STOPPING,
 	};
 
-	typedef std::unique_ptr<Task>  TaskP;
+	typedef Shared<Task>  TaskP;
 
 
 	Dispatcher();
 	~Dispatcher();
 
-	void  addTask         (TaskP task, bool urgent = false);
+	void  addTask         (const TaskP& task, bool urgent = false);
 	State getState        ();
 	void  start           ();
 	void  stop            ();

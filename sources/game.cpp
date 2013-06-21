@@ -285,154 +285,6 @@ int32_t Game::loadMap(std::string filename)
 	return map->load(getFilePath(FileType::OTHER, std::string("world/" + filename + ".otbm")));
 }
 
-void Game::cleanMap(uint32_t& count)
-{
-	uint64_t start = OTSYS_TIME();
-	uint32_t tiles = 0; count = 0;
-
-	int32_t marked = -1;
-	if(gameState == GAME_STATE_NORMAL)
-		setGameState(GAME_STATE_MAINTAIN);
-
-	Tile* tile = nullptr;
-	ItemVector::iterator tit;
-	if(server.configManager().getBool(ConfigManager::STORE_TRASH))
-	{
-		marked = trash.size();
-		Trash::iterator it = trash.begin();
-		if(server.configManager().getBool(ConfigManager::CLEAN_PROTECTED_ZONES))
-		{
-			for(; it != trash.end(); ++it)
-			{
-				if(!(tile = getTile(*it)))
-					continue;
-
-				tile->resetFlag(TILESTATE_TRASHED);
-				if(tile->hasFlag(TILESTATE_HOUSE) || !tile->getItemList())
-					continue;
-
-				++tiles;
-				tit = tile->getItemList()->begin();
-				while(tile->getItemList() && tit != tile->getItemList()->end())
-				{
-					if((*tit)->isMoveable() && !(*tit)->isLoadedFromMap()
-						&& !(*tit)->isScriptProtected())
-					{
-						internalRemoveItem(nullptr, (*tit).get());
-						if(tile->getItemList())
-							tit = tile->getItemList()->begin();
-
-						++count;
-					}
-					else
-						++tit;
-				}
-			}
-
-			trash.clear();
-		}
-		else
-		{
-			for(; it != trash.end(); ++it)
-			{
-				if(!(tile = getTile(*it)))
-					continue;
-
-				tile->resetFlag(TILESTATE_TRASHED);
-				if(tile->hasFlag(TILESTATE_PROTECTIONZONE) || !tile->getItemList())
-					continue;
-
-				++tiles;
-				tit = tile->getItemList()->begin();
-				while(tile->getItemList() && tit != tile->getItemList()->end())
-				{
-					if((*tit)->isMoveable() && !(*tit)->isLoadedFromMap()
-						&& !(*tit)->isScriptProtected())
-					{
-						internalRemoveItem(nullptr, (*tit).get());
-						if(tile->getItemList())
-							tit = tile->getItemList()->begin();
-
-						++count;
-					}
-					else
-						++tit;
-				}
-			}
-
-			trash.clear();
-		}
-	}
-	else if(server.configManager().getBool(ConfigManager::CLEAN_PROTECTED_ZONES))
-	{
-		for(uint16_t z = 0; z < (uint16_t)MAP_MAX_LAYERS; z++)
-		{
-			for(uint16_t y = 1; y <= map->getHeight(); y++)
-			{
-				for(uint16_t x = 1; x <= map->getWidth(); x++)
-				{
-					if(!(tile = getTile(x, y, z)) || tile->hasFlag(TILESTATE_HOUSE) || !tile->getItemList())
-						continue;
-
-					++tiles;
-					tit = tile->getItemList()->begin();
-					while(tile->getItemList() && tit != tile->getItemList()->end())
-					{
-						if((*tit)->isMoveable() && !(*tit)->isLoadedFromMap()
-							&& !(*tit)->isScriptProtected())
-						{
-							internalRemoveItem(nullptr, (*tit).get());
-							if(tile->getItemList())
-								tit = tile->getItemList()->begin();
-
-							++count;
-						}
-						else
-							++tit;
-					}
-				}
-			}
-		}
-	}
-	else
-	{
-		for(uint16_t z = 0; z < (uint16_t)MAP_MAX_LAYERS; z++)
-		{
-			for(uint16_t y = 1; y <= map->getHeight(); y++)
-			{
-				for(uint16_t x = 1; x <= map->getWidth(); x++)
-				{
-					if(!(tile = getTile(x, y, z)) || tile->hasFlag(TILESTATE_PROTECTIONZONE) || !tile->getItemList())
-						continue;
-
-					++tiles;
-					tit = tile->getItemList()->begin();
-					while(tile->getItemList() && tit != tile->getItemList()->end())
-					{
-						if((*tit)->isMoveable() && !(*tit)->isLoadedFromMap()
-							&& !(*tit)->isScriptProtected())
-						{
-							internalRemoveItem(nullptr, (*tit).get());
-							if(tile->getItemList())
-								tit = tile->getItemList()->begin();
-
-							++count;
-						}
-						else
-							++tit;
-					}
-				}
-			}
-		}
-	}
-
-	if(gameState == GAME_STATE_MAINTAIN)
-		setGameState(GAME_STATE_NORMAL);
-
-	LOGi("CLEAN: Removed " << count << " item" << (count != 1 ? "s" : "")
-		<< " from " << tiles << " tile" << (tiles != 1 ? "s" : "") << " (" << marked << " were marked)"
-		<< " in " << (OTSYS_TIME() - start) / (1000.) << " seconds.");
-}
 
 void Game::proceduralRefresh(RefreshTiles::iterator* it/* = nullptr*/)
 {
@@ -1539,8 +1391,10 @@ ReturnValue Game::internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cyli
 			updateItem = toItem;
 		}
 
-		if(m - n > 0)
+		if(m - n > 0) {
 			moveItem = Item::CreateItem(item->getId(), m - n);
+			moveItem->copyReleaseInfo(*item);
+		}
 		else
 			moveItem = nullptr;
 	}
@@ -2015,6 +1869,8 @@ ItemP Game::transformItem(const ItemP& item, uint16_t newId, int32_t newCount /*
 			return nullptr;
 
 		newItem->copyAttributes(item.get());
+		newItem->copyReleaseInfo(*item);
+
 		if(internalAddItem(nullptr, cylinder, newItem.get(), INDEX_WHEREEVER, FLAG_NOLIMIT) == RET_NOERROR)
 			return newItem;
 
@@ -2073,6 +1929,8 @@ ItemP Game::transformItem(const ItemP& item, uint16_t newId, int32_t newCount /*
 		LOGe("[Game::transformItem] Item of type " << item->getId() << " transforming into invalid type " << newId);
 		return nullptr;
 	}
+
+	newItem->copyReleaseInfo(*item);
 
 	cylinder->__replaceThing(itemIndex, newItem.get());
 	cylinder->postAddNotification(nullptr, newItem.get(), cylinder, itemIndex);
@@ -3359,29 +3217,28 @@ bool Game::playerLookAt(uint32_t playerId, const ExtendedPosition& position)
 	if(deny)
 		return false;
 
+	Item* item = thing->getItem();
+
 	std::stringstream ss;
 	ss << "You see " << thing->getDescription(lookDistance);
-	if(player->hasCustomFlag(PlayerCustomFlag_CanSeeItemDetails))
+	if(player->hasCustomFlag(PlayerCustomFlag_CanSeeItemDetails) && item)
 	{
-		if(Item* item = thing->getItem())
-		{
-			ss << std::endl << "ItemID: [" << item->getId() << "]";
-			if(item->getActionId() > 0)
-				ss << ", ActionID: [" << item->getActionId() << "]";
+		ss << std::endl << "ItemID: [" << item->getId() << "]";
+		if(item->getActionId() > 0)
+			ss << ", ActionID: [" << item->getActionId() << "]";
 
-			if(item->getUniqueId() > 0)
-				ss << ", UniqueID: [" << item->getUniqueId() << "]";
+		if(item->getUniqueId() > 0)
+			ss << ", UniqueID: [" << item->getUniqueId() << "]";
 
-			ss << ".";
+		ss << ".";
 
-			ItemKindPC kind = item->getKind();
-			if(kind->transformEquipTo)
-				ss << std::endl << "TransformTo: [" << kind->transformEquipTo << "] (onEquip).";
-			else if(kind->transformDeEquipTo)
-				ss << std::endl << "TransformTo: [" << kind->transformDeEquipTo << "] (onDeEquip).";
-			else if(kind->decayTo != -1)
-				ss << std::endl << "DecayTo: [" << kind->decayTo << "].";
-		}
+		ItemKindPC kind = item->getKind();
+		if(kind->transformEquipTo)
+			ss << std::endl << "TransformTo: [" << kind->transformEquipTo << "] (onEquip).";
+		else if(kind->transformDeEquipTo)
+			ss << std::endl << "TransformTo: [" << kind->transformDeEquipTo << "] (onDeEquip).";
+		else if(kind->decayTo != -1)
+			ss << std::endl << "DecayTo: [" << kind->decayTo << "].";
 	}
 
 	if(player->hasCustomFlag(PlayerCustomFlag_CanSeeCreatureDetails))
@@ -3398,6 +3255,34 @@ bool Game::playerLookAt(uint32_t playerId, const ExtendedPosition& position)
 
 	if(player->hasCustomFlag(PlayerCustomFlag_CanSeePosition))
 		ss << std::endl << "Position: [X: " << thingPos.x << "] [Y: " << thingPos.y << "] [Z: " << thingPos.z << "].";
+
+	if(player->hasCustomFlag(PlayerCustomFlag_CanSeeItemDetails) && item) {
+		if (item->isReleased()) {
+			ss << std::endl << std::endl << "Expires in ";
+
+			auto expirationDelay = item->getExpirationTime() - Clock::now();
+			if (expirationDelay >= Minutes(1)) {
+				auto minutes = std::chrono::duration_cast<Minutes>(expirationDelay + Seconds(59));
+				if (minutes == Minutes(1)) {
+					ss << "one minute";
+				}
+				else {
+					ss << minutes.count() << " minutes";
+				}
+			}
+			else {
+				auto seconds = std::chrono::duration_cast<Seconds>(expirationDelay + Milliseconds(999));
+				if (seconds == Seconds(1)) {
+					ss << "one second";
+				}
+				else {
+					ss << seconds.count() << " seconds";
+				}
+			}
+
+			ss << ".";
+		}
+	}
 
 	player->sendTextMessage(MSG_INFO_DESCR, ss.str());
 
@@ -6053,12 +5938,6 @@ void Game::globalSave()
 
 	//close server
 	server.dispatcher().addTask(Task::create(std::bind(&Game::setGameState, this, GAME_STATE_CLOSED)));
-	//clean map if configured to
-	if(server.configManager().getBool(ConfigManager::CLEAN_MAP_AT_GLOBALSAVE))
-	{
-		uint32_t dummy;
-		cleanMap(dummy);
-	}
 
 	//pay houses
 	Houses::getInstance()->payHouses();

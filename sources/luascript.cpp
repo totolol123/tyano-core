@@ -2815,9 +2815,6 @@ void LuaScriptInterface::registerFunctions()
 	//doCleanHouse(houseId)
 	lua_register(m_luaState, "doCleanHouse", LuaScriptInterface::luaDoCleanHouse);
 
-	//doCleanMap()
-	lua_register(m_luaState, "doCleanMap", LuaScriptInterface::luaDoCleanMap);
-
 	//doRefreshMap()
 	lua_register(m_luaState, "doRefreshMap", LuaScriptInterface::luaDoRefreshMap);
 
@@ -5060,7 +5057,6 @@ int32_t LuaScriptInterface::luaGetTileInfo(lua_State* L)
 		setFieldBool(L, "nologout", tile->hasFlag(TILESTATE_NOLOGOUT));
 		setFieldBool(L, "pvp", tile->hasFlag(TILESTATE_PVPZONE));
 		setFieldBool(L, "refresh", tile->hasFlag(TILESTATE_REFRESH));
-		setFieldBool(L, "trashed", tile->hasFlag(TILESTATE_TRASHED));
 		setFieldBool(L, "house", tile->hasFlag(TILESTATE_HOUSE));
 		setFieldBool(L, "bed", tile->hasFlag(TILESTATE_BED));
 		setFieldBool(L, "depot", tile->hasFlag(TILESTATE_DEPOT));
@@ -9423,15 +9419,6 @@ int32_t LuaScriptInterface::luaDoCleanHouse(lua_State* L)
 	else
 		lua_pushboolean(L, false);
 
-	return 1;
-}
-
-int32_t LuaScriptInterface::luaDoCleanMap(lua_State* L)
-{
-	//doCleanMap()
-	uint32_t count = 0;
-	server.game().cleanMap(count);
-	lua_pushnumber(L, count);
 	return 1;
 }
 

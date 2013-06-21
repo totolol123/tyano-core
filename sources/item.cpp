@@ -42,6 +42,8 @@
 #include "movement.h"
 #include "player.h"
 #include "raids.h"
+#include "scheduler.h"
+#include "schedulertask.h"
 #include "server.h"
 
 
@@ -72,6 +74,42 @@ const std::string Item::ATTRIBUTE_WRITER("writer");
 
 LOGGER_DEFINITION(Item);
 
+
+
+Item::~Item() {
+	if (_releaseInfo != nullptr) {
+		auto task = _releaseInfo->getTask();
+		if (task != nullptr) {
+			server.scheduler().cancelTask(task->getId());
+		}
+	}
+}
+
+
+void Item::copyReleaseInfo(const Item& item) {
+	if (&item == this) {
+		return;
+	}
+
+	if (item._releaseInfo == nullptr) {
+		if (_releaseInfo != nullptr) {
+			auto task = _releaseInfo->getTask();
+			if (task != nullptr) {
+				server.scheduler().cancelTask(task->getId());
+			}
+
+			_releaseInfo.reset();
+		}
+
+		return;
+	}
+
+	if (_releaseInfo == nullptr) {
+		_releaseInfo.reset(new ReleaseInfo);
+	}
+
+	_releaseInfo->copy(*item._releaseInfo, std::bind(&Item::testReleaseExpiration, ItemP(this)));
+}
 
 
 Item::Attributes& Item::getAttributes() {
@@ -123,9 +161,217 @@ const std::string& Item::getClassName() {
 }
 
 
+Time Item::getExpirationTime() const {
+	if (_releaseInfo == nullptr) {
+		return Time::max();
+	}
+
+	return _releaseInfo->getExpirationTime();
+}
+
+
 uint16_t Item::getId() const {
 	return kind->id;
 }
+
+
+bool Item::isReleasable() const {
+	if (isLoadedFromMap()) {
+		return false;
+	}
+	if (!isMoveable()) {
+		return false;
+	}
+	if (isScriptProtected()) {
+		return false;
+	}
+	if (kind->expirationDelay == Duration::zero()) {
+		return false;
+	}
+
+	return true;
+}
+
+
+bool Item::isReleased() const {
+	if (_releaseInfo == nullptr) {
+		return false;
+	}
+
+	return _releaseInfo->isReleased();
+}
+
+
+bool Item::isRetained() const {
+	if (_releaseInfo == nullptr) {
+		return true;
+	}
+
+	return _releaseInfo->isRetained();
+}
+
+
+void Item::release() {
+	if (!isReleasable()) {
+		return;
+	}
+
+	LOGt("Releasing item '" << getName() << "' at " << getPosition() << ".");
+
+	if (_releaseInfo == nullptr) {
+		_releaseInfo.reset(new ReleaseInfo);
+	}
+
+	_releaseInfo->release(kind->expirationDelay, std::bind(&Item::testReleaseExpiration, ItemP(this)));
+}
+
+
+void Item::retain() {
+	LOGt("Retaining item '" << getName() << "' at " << getPosition() << ".");
+
+	if (_releaseInfo == nullptr) {
+		return;
+	}
+
+	_releaseInfo->retain();
+}
+
+
+void Item::testReleaseExpiration() {
+	if (_releaseInfo == nullptr) {
+		return;
+	}
+	if (!_releaseInfo->isReleased() || !isReleasable()) {
+		LOGt("Item '" << getName() << "' at " << getPosition() << " was retained again. Will free release info memory.");
+		_releaseInfo.reset();
+		return;
+	}
+
+	assert(_releaseInfo->isExpired());
+
+	auto parent = getParent();
+	if (parent != nullptr) {
+		LOGt("Removing expired item '" << getName() << "' at " << getPosition() << ".");
+
+		server.game().internalRemoveItem(nullptr, this, -1);
+	}
+}
+
+
+
+
+constexpr const Time Item::ReleaseInfo::BREAK_TIME_NEVER;
+constexpr const Time Item::ReleaseInfo::EXPIRATION_TIME_NEVER;
+
+
+void Item::ReleaseInfo::copy(const ReleaseInfo& releaseInfo, const Function& testExpirationCallback) {
+	if (&releaseInfo == this) {
+		return;
+	}
+
+	auto task = getTask();
+	if (task != nullptr) {
+		server.scheduler().cancelTask(task->getId());
+	}
+
+	_breakTime = releaseInfo._breakTime;
+	_expirationDelay = releaseInfo._expirationDelay;
+	_expirationTime = releaseInfo._expirationTime;
+
+	server.scheduler().addTask(SchedulerTask::create(_expirationTime, testExpirationCallback));
+}
+
+
+SchedulerTaskP Item::ReleaseInfo::getTask() const {
+	return _task.lock();
+}
+
+
+Time Item::ReleaseInfo::getExpirationTime() const {
+	return _expirationTime;
+}
+
+
+bool Item::ReleaseInfo::isExpired() const {
+	return (_breakTime == BREAK_TIME_NEVER && _expirationTime <= Clock::now());
+}
+
+
+bool Item::ReleaseInfo::isReleased() const {
+	return (_breakTime == BREAK_TIME_NEVER);
+}
+
+
+bool Item::ReleaseInfo::isRetained() const {
+	return (_breakTime != BREAK_TIME_NEVER);
+}
+
+
+void Item::ReleaseInfo::release(Duration expirationDelay, const Function& testExpirationCallback) {
+	auto now = Clock::now();
+	auto task = _task.lock();
+
+	Time newExpirationTime;
+	if (expirationDelay == _expirationDelay) {
+		if (isReleased()) {
+			newExpirationTime = _expirationTime;
+		}
+		else {
+			Duration continuationDuration = expirationDelay / 2;
+			Duration durationSinceBreak = now - _breakTime;
+			if (durationSinceBreak <= continuationDuration) {
+				newExpirationTime = _expirationTime + durationSinceBreak;
+			}
+			else {
+				newExpirationTime = now + expirationDelay;
+			}
+		}
+	}
+	else {
+		newExpirationTime = now + expirationDelay;
+	}
+
+	if (task != nullptr) {
+		if (_expirationTime != newExpirationTime) {
+			server.scheduler().cancelTask(task->getId());
+			task = nullptr;
+		}
+	}
+
+	if (task == nullptr) {
+		task = SchedulerTask::create(newExpirationTime, testExpirationCallback);
+
+		server.scheduler().addTask(task);
+		_task = task;
+	}
+
+	_breakTime = BREAK_TIME_NEVER;
+	_expirationDelay = expirationDelay;
+	_expirationTime = newExpirationTime;
+}
+
+
+void Item::ReleaseInfo::retain() {
+	if (isRetained()) {
+		return;
+	}
+
+	_breakTime = Clock::now();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 boost::intrusive_ptr<Item> Item::CreateItem(uint16_t kindId, uint16_t amount/* = 1*/) {

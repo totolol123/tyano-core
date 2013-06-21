@@ -550,6 +550,8 @@ bool TalkAction::houseSell(Creature* creature, const std::string& cmd, const std
 	player->transferContainer.__addThing(nullptr, transferItem.get());
 
 	player->transferContainer.setParent(player);
+	player->transferContainer.retain();
+
 	if(!server.game().internalStartTrade(player, tradePartner, transferItem.get()))
 		transferItem->onTradeEvent(ON_TRADE_CANCEL, player, nullptr);
 

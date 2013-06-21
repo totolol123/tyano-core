@@ -291,6 +291,8 @@ class ItemKind {
 		items::ClassP _class;
 		ItemType type;
 
+		Duration expirationDelay;
+
 		uint16_t charges, transformUseTo[2], transformToFree, transformEquipTo, transformDeEquipTo,
 			id, clientId, maxItems, speed, maxTextLen, writeOnceItemId;
 

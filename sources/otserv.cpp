@@ -140,10 +140,6 @@ void signalHandler(int32_t sig)
 				std::bind(&Game::saveGameState, &game, false)));
 			break;
 
-		case SIGTRAP:
-			game.cleanMap(tmp);
-			break;
-
 		case SIGCHLD:
 			game.proceduralRefresh();
 			break;

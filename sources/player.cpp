@@ -1691,7 +1691,7 @@ void Player::checkTradeState(const Item* item)
 		server.game().internalCloseTrade(this);
 }
 
-void Player::setNextWalkActionTask(std::unique_ptr<SchedulerTask> task)
+void Player::setNextWalkActionTask(const SchedulerTaskP& task)
 {
 	if(walkTaskEvent)
 	{
@@ -1699,11 +1699,11 @@ void Player::setNextWalkActionTask(std::unique_ptr<SchedulerTask> task)
 		walkTaskEvent = 0;
 	}
 
-	walkTask = std::move(task);
+	walkTask = task;
 	setIdleTime(0);
 }
 
-void Player::setNextWalkTask(std::unique_ptr<SchedulerTask> task)
+void Player::setNextWalkTask(const SchedulerTaskP& task)
 {
 	if(nextStepEvent)
 	{
@@ -1713,12 +1713,12 @@ void Player::setNextWalkTask(std::unique_ptr<SchedulerTask> task)
 
 	if(task)
 	{
-		nextStepEvent = server.scheduler().addTask(std::move(task));
+		nextStepEvent = server.scheduler().addTask(task);
 		setIdleTime(0);
 	}
 }
 
-void Player::setNextActionTask(std::unique_ptr<SchedulerTask> task)
+void Player::setNextActionTask(const SchedulerTaskP& task)
 {
 	if(actionTaskEvent)
 	{
@@ -1728,7 +1728,7 @@ void Player::setNextActionTask(std::unique_ptr<SchedulerTask> task)
 
 	if(task)
 	{
-		actionTaskEvent = server.scheduler().addTask(std::move(task));
+		actionTaskEvent = server.scheduler().addTask(task);
 		setIdleTime(0);
 	}
 }
@@ -2892,6 +2892,8 @@ void Player::__addThing(Creature* actor, int32_t index, Thing* thing)
 	}
 
 	item->setParent(this);
+	item->retain();
+
 	inventory[index] = item;
 
 	//send to client
@@ -2923,6 +2925,7 @@ void Player::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
 
 	item->setKind(newKind);
 	item->setSubType(count);
+	item->retain();
 
 	//send to client
 	sendUpdateInventoryItem((slots_t)index, item, item);
@@ -2958,6 +2961,8 @@ void Player::__replaceThing(uint32_t index, Thing* thing)
 	onUpdateInventoryItem((slots_t)index, oldItem, oldKind, item, newKind);
 
 	item->setParent(this);
+	item->retain();
+
 	inventory[index] = item;
 }
 
@@ -3221,7 +3226,9 @@ void Player::__internalAddThing(uint32_t index, Thing* thing)
 		}
 
 		inventory[index] = item;
+
 		item->setParent(this);
+		item->retain();
 	}
 }
 

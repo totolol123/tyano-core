@@ -87,6 +87,7 @@ ItemKind::ItemKind() :
 		slotPosition(SLOTP_HAND | SLOTP_AMMO),
 		wieldPosition(slots_t::HAND),
 		type(ItemType::GENERIC),
+		expirationDelay(Minutes(10)),
 		charges(0),
 		transformUseTo {0, 0},
 		transformToFree(0),
@@ -383,6 +384,12 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 			{
 				if(readXMLString(node, "value", strValue))
 					kind->article = strValue;
+			}
+			else if(tmpStrValue == "expirationDelay")
+			{
+				if(readXMLInteger(node, "value", intValue)) {
+					kind->expirationDelay = Seconds(std::max(0, intValue));
+				}
 			}
 			else if(tmpStrValue == "plural")
 			{
