@@ -255,9 +255,8 @@ void Server::setupLogging() {
 	}
 
 	LOGi(std::setfill('-') << std::setw(90) << "");
-	LOGi(SOFTWARE_NAME " " SOFTWARE_VERSION " (OpenTibia " SOFTWARE_PROTOCOL ")");
-	LOGi("Compiled with " BOOST_COMPILER " at " __DATE__ ", " __TIME__ ".");
-	LOGi("A server developed by " SOFTWARE_DEVELOPERS ".");
+	LOGi(SOFTWARE_NAME " " SOFTWARE_VERSION " for Tibia(R) " SOFTWARE_PROTOCOL);
+	LOGi(X_PROJECT_URL);
 	LOGi(std::setfill('-') << std::setw(90) << "");
 
 	if (configurationFileMissing) {
