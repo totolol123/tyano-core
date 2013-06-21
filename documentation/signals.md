@@ -8,7 +8,6 @@ The server can be controlled using the following signals:
 - `HUP`  saves all data.
 - `QUIT` shuts down the server after saving it.
 - `TERM` shuts down the server without saving it.
-- `TRAP` cleans the map.
 - `USR1` closes the server.
 - `USR2` opens the server.
 
