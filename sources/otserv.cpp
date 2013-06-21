@@ -212,7 +212,6 @@ int main(int argc, char *argv[]) {
 
 	// register signals
 	signal(SIGHUP, signalHandler); //save
-	signal(SIGTRAP, signalHandler); //clean
 	signal(SIGCHLD, signalHandler); //refresh
 	signal(SIGUSR1, signalHandler); //close server
 	signal(SIGUSR2, signalHandler); //open server
