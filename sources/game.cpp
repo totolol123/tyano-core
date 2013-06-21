@@ -63,6 +63,7 @@
 #include "scheduler.h"
 #include "schedulertask.h"
 #include "server.h"
+#include "teleport.h"
 
 
 LOGGER_DEFINITION(Game);
@@ -1491,6 +1492,14 @@ ReturnValue Game::internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cyli
 	if(retMaxCount != RET_NOERROR && !maxQueryCount)
 		return retMaxCount;
 
+	ItemP toItemCylinder = toCylinder->getItem();
+	if (toItemCylinder != nullptr) {
+		Teleport* teleport = toItemCylinder->getTeleport();
+		if (teleport != nullptr && !teleport->canTeleport(item)) {
+			return RET_DESTINATIONOUTOFREACH;
+		}
+	}
+
 	uint32_t m = maxQueryCount, n = 0;
 	if(item->isStackable())
 		m = std::min((uint32_t)count, m);
@@ -2079,12 +2088,13 @@ ReturnValue Game::internalTeleport(Thing* thing, const Position& newPos, bool pu
 	{
 		if(Creature* creature = thing->getCreature())
 		{
+			bool success;
 			if(Position::areInRange<1,1,0>(creature->getPosition(), newPos) && pushMove)
-				creature->getTile()->moveCreature(nullptr, creature, toTile, false);
+				success = creature->getTile()->moveCreature(nullptr, creature, toTile, false);
 			else
-				creature->getTile()->moveCreature(nullptr, creature, toTile, true);
+				success = creature->getTile()->moveCreature(nullptr, creature, toTile, true);
 
-			return RET_NOERROR;
+			return (success ? RET_NOERROR : RET_NOTPOSSIBLE);
 		}
 
 		if(Item* item = thing->getItem())
