@@ -1126,6 +1126,7 @@ bool Monster::pushCreature(Creature* creature)
 void Monster::pushCreatures(Tile* tile) {
 	if (tile->getCreatures() == nullptr) {
 		return;
+	}
 
 	auto creatures = *tile->getCreatures();
 
