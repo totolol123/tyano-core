@@ -21,10 +21,9 @@
 #include "config.h"
 
 
-#define SOFTWARE_NAME       PACKAGE_NAME
-#define SOFTWARE_VERSION    PACKAGE_VERSION
-#define SOFTWARE_DEVELOPERS "Elf, Talaturen, BeniS, Tryller, xanitex and fluidsonic"
-#define SOFTWARE_PROTOCOL   "8.60"
+#define SOFTWARE_NAME      PACKAGE_NAME
+#define SOFTWARE_VERSION   PACKAGE_VERSION
+#define SOFTWARE_PROTOCOL  "8.60"
 
 #define X_PROJECT_URL         "https://github.com/fluidsonic/tyano-core"
 #define X_PROJECT_ISSUES_URL  X_PROJECT_URL "/issues"
