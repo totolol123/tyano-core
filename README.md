@@ -8,27 +8,16 @@ This is a game server built for [Tibia](http://www.tibia.com/)®, a massively mu
 maintained by [CipSoft](http://www.cipsoft.com/).
 
 This server is derived from one of the most popular open-source servers currently available for Tibia®:
-[The Forgotten Server](http://otland.net/project.php?projectid=2).
+[The Forgotten Server](http://otland.net/project.php?projectid=2) (Version 0.3.6).
 This server is in turn derived from an older version of [OpenTibia server](https://github.com/opentibia/server) (aka OTServ).
 
-
-Usage
------
-
-Tyano Core is based primarily on The Forgotten Server 0.3.6 and is targeted towards the **Tibia® 8.60** game client.
+Tyano Core is targeted towards the **Tibia® 8.60** game client.
 
 In order to connect to a custom Tibia® server you need a custom loader or an IP changer.
 I recommend [Tibia® Loader](http://otservlist.org/ipc) by [OTServList.org](http://otservlist.org/).
 
 
-Setup
------
-
-Once the remaining bigger issues (e.g. missing data folder) are solved I'll set up a step-by-step guide to get your first
-Tyano Core server up and running :)
-
-
-Upgrades
+Changes
 --------
 
 Although based on The Forgotten Server, Tyano Core received plenty of changes so far. My goal is not to stay compatible with
@@ -69,6 +58,13 @@ complete this list over time :)
 **If you notice any changes or features in Tyano Core which are not part of The Forgotten Server then please tell me so I can update this list :)**
 
 
+Setup
+-----
+
+Once the remaining bigger issues (e.g. missing data folder) are solved I'll set up a step-by-step guide to get your first
+Tyano Core server up and running :)
+
+
 Issues
 ------
 
@@ -89,7 +85,7 @@ Also a few features of The Forgotten Server are (at least parially) broken for n
 - Maps with large dimensions (no matter if there are a lot of holes or not) take more memory than they should.
 
 - There aren't more than 9 items or 10 items+creatures per tile allowed. That currently leads to some problems e.g. if a creature dies on a tile
-  with 9 items on it. There will be no corpse and thus the loot is lost. 
+  with 9 items on it. There will be no corpse and thus the loot is lost.
 
 
 Support
@@ -110,6 +106,15 @@ Resources
 - [License](documentation/license.md)
 - [Signals](documentation/signals.md)
 - [Tasks](documentation/tasks.md)
+
+
+Branches
+--------
+
+- `master` is the primary branch with the latest set of completed features and fixes.
+- `stable` is the latest version known to be as stable as possible.
+- `cutting-edge` has the most-recent changes and new features which are still in development. Once completed and tested, changes here will be merged into `master`.
+- All other branches are for working on a single new feature or bigger change (e.g. refactoring something) and will be merged into `cutting-edge` once completed.
 
 
 Notes
