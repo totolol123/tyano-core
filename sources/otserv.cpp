@@ -91,10 +91,6 @@ bool argumentsHandler(StringVector args)
 
 		if((*it) == "--version")
 		{
-			std::cout << SOFTWARE_NAME << ", version " << SOFTWARE_VERSION << "\n"
-			"Compiled with " << BOOST_COMPILER << " at " << __DATE__ << ", " << __TIME__ << ".\n"
-			"A server developed by " << SOFTWARE_DEVELOPERS << ">.\n"
-			"The Forgotten Server " << SOFTWARE_PROTOCOL << ".\n";
 			return false;
 		}
 
