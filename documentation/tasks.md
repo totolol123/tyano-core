@@ -16,6 +16,7 @@ Important
 Soon
 ----
 
+- Add popup window which informs players about new server updates when connecting. 
 - Rework teleporters.
 - Create new efficient scheduler/dispatcher system based on C++11 STL (and refactor `Item::ReleaseInfo::release` after that).
 - Broadcast message with pop-up because a server-wide red chat message will actually not be read by most players.
