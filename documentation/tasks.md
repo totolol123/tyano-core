@@ -1,5 +1,5 @@
-TODO
-====
+Tasks
+=====
 
 Urgent
 ------
@@ -10,7 +10,7 @@ Urgent
 Important
 ---------
 
-- Nothing :)
+- Make items automatically disappear after a while on the ground instead of regulary cleaning the map to distribute CPU load.
 
 
 Soon
@@ -31,6 +31,7 @@ Improvements
 ------------
 
 - Use separate dispatching/scheduling for cross-thread and inter-game-thread avoid unnecessary locks and to speed up everything.
+- Use other approach to load the map because the current approach is limited to small maps.
 - Improve autowalking. Currently you lag when clicking multiple times and the walking randomly ends, e.g. when a creature walks into the path.
 - Add randomization to the think intervals to distribute CPU load as much as possible.
 - Use C++11 random number generators. Also check if the random number generating functions are not used concurrently.
@@ -39,7 +40,6 @@ Improvements
 - Restructure old sourcecode (e.g. using namespaces and using `.hpp` instead of `.h` etc.).
 - Refactor raid system to be much more reliable and easier to use. Also make non-ref's raid monsters and items disappear when the raid ended.
 - Use `Scheduler` for decaying items instead of a regular task in `Game` to better distribute CPU load.
-- Make items automatically disappear after a while on the ground instead of regulary cleaning the map to distribute CPU load.
 - Validate that all client IDs for items are valid (`< 0xFF00 && (< 0x61 || > 0x63)`, i.e. not reserved by netcode) and have no duplicates.
 - Revisit relationship between master and summon creatures regarding thinking-logic and automatic targeting.
 - Replace `boots::intrusive_ptr` by `std::shared_ptr`.
