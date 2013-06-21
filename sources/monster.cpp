@@ -1122,34 +1122,37 @@ bool Monster::pushCreature(Creature* creature)
 	return false;
 }
 
-void Monster::pushCreatures(Tile* tile)
-{
-	CreatureVector* creatures = tile->getCreatures();
-	if(!creatures)
+
+void Monster::pushCreatures(Tile* tile) {
+	if (tile->getCreatures() == nullptr) {
 		return;
 
-	bool effect = false;
-	Monster* monster = nullptr;
-	for(uint32_t i = 0; i < creatures->size();)
-	{
-		if((monster = creatures->at(i)->getMonster()) && monster->isPushable())
-		{
-			if(pushCreature(monster))
-				continue;
+	auto creatures = *tile->getCreatures();
 
-			monster->setDropLoot(LOOT_DROP_NONE);
-			monster->changeHealth(-monster->getHealth());
-			if(!effect)
-				effect = true;
+	bool killedCreatures = false;
+	for (const auto& creature : creatures) {
+		auto monster = creature->getMonster();
+		if (monster == nullptr) {
+			continue;
+		}
+		if (!monster->isPushable()) {
+			continue;
 		}
 
-		++i;
+		if (pushCreature(monster)) {
+			continue;
+		}
+
+		monster->setDropLoot(LOOT_DROP_NONE);
+		monster->changeHealth(-monster->getHealth());
+
+		killedCreatures = true;
 	}
 
-	if(effect)
+	if (killedCreatures) {
 		server.game().addMagicEffect(tile->getPosition(), MAGIC_EFFECT_BLOCKHIT);
+	}
 }
-
 
 
 Direction Monster::getDanceStep(bool keepAttack /*= true*/, bool keepDistance /*= true*/) const
