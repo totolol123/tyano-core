@@ -4115,7 +4115,7 @@ void Game::changeLight(const Creature* creature)
 	}
 }
 
-bool Game::combatBlockHit(CombatType_t combatType, Creature* attacker, Creature* target,
+bool Game::combatBlockHit(CombatType_t combatType, const CreatureP& attacker, const CreatureP& target,
 	int32_t& healthChange, bool checkDefense, bool checkArmor)
 {
 	if(healthChange > 0)
@@ -4175,7 +4175,7 @@ bool Game::combatBlockHit(CombatType_t combatType, Creature* attacker, Creature*
 	return true;
 }
 
-bool Game::combatChangeHealth(CombatType_t combatType, Creature* attacker, Creature* target, int32_t healthChange,
+bool Game::combatChangeHealth(CombatType_t combatType, const CreatureP& attacker, const CreatureP& target, int32_t healthChange,
 	MagicEffect_t hitEffect/* = MAGIC_EFFECT_UNKNOWN*/, TextColor_t hitColor/* = TEXTCOLOR_UNKNOWN*/, bool force/* = false*/)
 {
 	const Position& targetPos = target->getPosition();
@@ -4393,7 +4393,7 @@ bool Game::combatChangeHealth(CombatType_t combatType, Creature* attacker, Creat
 	return true;
 }
 
-bool Game::combatChangeMana(Creature* attacker, Creature* target, int32_t manaChange)
+bool Game::combatChangeMana(const CreatureP& attacker, const CreatureP& target, int32_t manaChange)
 {
 	const Position& targetPos = target->getPosition();
 	if(manaChange > 0)
@@ -4461,19 +4461,19 @@ bool Game::combatChangeMana(Creature* attacker, Creature* target, int32_t manaCh
 	return true;
 }
 
-void Game::addCreatureHealth(const Creature* target)
+void Game::addCreatureHealth(const CreatureP& target)
 {
 	const SpectatorList& list = getSpectators(target->getPosition());
 	addCreatureHealth(list, target);
 }
 
-void Game::addCreatureHealth(const SpectatorList& list, const Creature* target)
+void Game::addCreatureHealth(const SpectatorList& list, const CreatureP& target)
 {
 	Player* player = nullptr;
 	for(SpectatorList::const_iterator it = list.begin(); it != list.end(); ++it)
 	{
 		if((player = (*it)->getPlayer()))
-			player->sendCreatureHealth(target);
+			player->sendCreatureHealth(target.get());
 	}
 }
 

@@ -550,16 +550,16 @@ class Game
 		void checkCreatureAttack(uint32_t creatureId);
 		void checkLight();
 
-		bool combatBlockHit(CombatType_t combatType, Creature* attacker, Creature* target,
+		bool combatBlockHit(CombatType_t combatType, const CreatureP& attacker, const CreatureP& target,
 			int32_t& healthChange, bool checkDefense, bool checkArmor);
 
-		bool combatChangeHealth(CombatType_t combatType, Creature* attacker, Creature* target, int32_t healthChange,
+		bool combatChangeHealth(CombatType_t combatType, const CreatureP& attacker, const CreatureP& target, int32_t healthChange,
 			MagicEffect_t hitEffect = MAGIC_EFFECT_UNKNOWN, TextColor_t hitColor = TEXTCOLOR_UNKNOWN, bool force = false);
-		bool combatChangeMana(Creature* attacker, Creature* target, int32_t manaChange);
+		bool combatChangeMana(const CreatureP& attacker, const CreatureP& target, int32_t manaChange);
 
 		//animation help functions
-		void addCreatureHealth(const Creature* target);
-		void addCreatureHealth(const SpectatorList& list, const Creature* target);
+		void addCreatureHealth(const CreatureP& target);
+		void addCreatureHealth(const SpectatorList& list, const CreatureP& target);
 		void addAnimatedText(const Position& pos, uint8_t textColor, const std::string& text);
 		void addAnimatedText(const SpectatorList& list, const Position& pos, uint8_t textColor, const std::string& text);
 		void addMagicEffect(const Position& pos, uint8_t effect, bool ghostMode = false);

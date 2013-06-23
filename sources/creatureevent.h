@@ -25,7 +25,8 @@ class Tile;
 
 class CreatureEvent;
 
-typedef std::shared_ptr<CreatureEvent> CreatureEventP;
+using CreatureP      = boost::intrusive_ptr<Creature>;
+using CreatureEventP = std::shared_ptr<CreatureEvent>;
 
 
 
@@ -94,12 +95,12 @@ class CreatureEvent : public Event
 		uint32_t executeThink(Creature* creature, uint32_t interval);
 		uint32_t executeDirection(Creature* creature, Direction old, Direction current);
 		uint32_t executeOutfit(Creature* creature, const Outfit_t& old, const Outfit_t& current);
-		uint32_t executeStatsChange(Creature* creature, Creature* attacker, StatsChange_t type, CombatType_t combat, int32_t value);
-		uint32_t executeCombatArea(Creature* creature, Tile* tile, bool isAggressive);
+		uint32_t executeStatsChange(const CreatureP& creature, const CreatureP& attacker, StatsChange_t type, CombatType_t combat, int32_t value);
+		uint32_t executeCombatArea(const CreatureP& creature, Tile* tile, bool isAggressive);
 		uint32_t executePush(Player* player, Creature* target);
-		uint32_t executeTarget(Creature* creature, Creature* target);
+		uint32_t executeTarget(const CreatureP& creature, const CreatureP& target);
 		uint32_t executeFollow(Creature* creature, Creature* target);
-		uint32_t executeCombat(Creature* creature, Creature* target);
+		uint32_t executeCombat(const CreatureP& creature, const CreatureP& target);
 		uint32_t executeAttack(Creature* creature, Creature* target);
 		uint32_t executeCast(Creature* creature, Creature* target = nullptr);
 		uint32_t executeKill(Creature* creature, Creature* target, bool lastHit);

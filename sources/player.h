@@ -348,8 +348,8 @@ class Player : public Creature, public Cylinder
 		int32_t getWeaponSkill(const Item* item) const;
 		void getShieldAndWeapon(const Item* &shield, const Item* &weapon) const;
 
-		virtual void drainHealth(Creature* attacker, CombatType_t combatType, int32_t damage);
-		virtual void drainMana(Creature* attacker, CombatType_t combatType, int32_t damage);
+		virtual void drainHealth(const CreatureP& attacker, CombatType_t combatType, int32_t damage);
+		virtual void drainMana(const CreatureP& attacker, CombatType_t combatType, int32_t damage);
 
 		void addExperience(uint64_t exp);
 		void removeExperience(uint64_t exp, bool updateStats = true);
@@ -372,7 +372,7 @@ class Player : public Creature, public Cylinder
 		virtual void onAddCondition(ConditionType_t type, bool hadCondition);
 		virtual void onAddCombatCondition(ConditionType_t type, bool hadCondition);
 		virtual void onEndCondition(ConditionType_t type);
-		virtual void onCombatRemoveCondition(const Creature* attacker, Condition* condition);
+		virtual void onCombatRemoveCondition(const CreatureP& attacker, Condition* condition);
 		virtual void onTickCondition(ConditionType_t type, int32_t interval, bool& _remove);
 		virtual void onAttackedCreature(Creature* target);
 		virtual void onSummonAttackedCreature(Creature* summon, Creature* target);

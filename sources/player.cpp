@@ -1797,7 +1797,7 @@ void Player::removeMessageBuffer()
 	}
 }
 
-void Player::drainHealth(Creature* attacker, CombatType_t combatType, int32_t damage)
+void Player::drainHealth(const CreatureP& attacker, CombatType_t combatType, int32_t damage)
 {
 	Creature::drainHealth(attacker, combatType, damage);
 	char buffer[150];
@@ -1810,7 +1810,7 @@ void Player::drainHealth(Creature* attacker, CombatType_t combatType, int32_t da
 	sendTextMessage(MSG_EVENT_DEFAULT, buffer);
 }
 
-void Player::drainMana(Creature* attacker, CombatType_t combatType, int32_t damage)
+void Player::drainMana(const CreatureP& attacker, CombatType_t combatType, int32_t damage)
 {
 	Creature::drainMana(attacker, combatType, damage);
 	char buffer[150];
@@ -3471,7 +3471,7 @@ void Player::onEndCondition(ConditionType_t type)
 	sendIcons();
 }
 
-void Player::onCombatRemoveCondition(const Creature* attacker, Condition* condition)
+void Player::onCombatRemoveCondition(const CreatureP& attacker, Condition* condition)
 {
 	//Creature::onCombatRemoveCondition(attacker, condition);
 	bool remove = true;
@@ -3531,7 +3531,7 @@ void Player::onAttackedCreature(Creature* target)
 		return;
 	}
 
-	if(Combat::isInPvpZone(this, targetPlayer) || isPartner(targetPlayer) || (server.configManager().getBool(
+	if(Combat::isInPvpZone(*this, *targetPlayer) || isPartner(targetPlayer) || (server.configManager().getBool(
 		ConfigManager::ALLOW_FIGHTBACK) && targetPlayer->hasAttacked(this)))
 		return;
 
@@ -3643,7 +3643,7 @@ bool Player::onKilledCreature(Creature* target, uint32_t& flags)
 		return true;
 
 	Player* targetPlayer = target->getPlayer();
-	if(!targetPlayer || Combat::isInPvpZone(this, targetPlayer) || !hasCondition(CONDITION_INFIGHT) || isPartner(targetPlayer))
+	if(!targetPlayer || Combat::isInPvpZone(*this, *targetPlayer) || !hasCondition(CONDITION_INFIGHT) || isPartner(targetPlayer))
 		return true;
 
 	if(!targetPlayer->hasAttacked(this) && target->getSkull() == SKULL_NONE && targetPlayer != this

@@ -745,7 +745,7 @@ bool Spell::playerInstantSpellCheck(Player* player, Creature* creature)
 	}
 
 	Player* targetPlayer = creature->getPlayer();
-	if(!isAggressive || !targetPlayer || Combat::isInPvpZone(player, targetPlayer)
+	if(!isAggressive || !targetPlayer || Combat::isInPvpZone(*player, *targetPlayer)
 		|| player->getSkullClient(targetPlayer) != SKULL_NONE)
 		return true;
 
@@ -905,7 +905,7 @@ bool Spell::playerRuneSpellCheck(Player* player, const ExtendedPosition& destina
 	}
 
 	Player* targetPlayer = targetCreature->getPlayer();
-	if(!isAggressive || !targetPlayer || Combat::isInPvpZone(player, targetPlayer)
+	if(!isAggressive || !targetPlayer || Combat::isInPvpZone(*player, *targetPlayer)
 		|| player->getSkullClient(targetPlayer) != SKULL_NONE)
 		return true;
 
