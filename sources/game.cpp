@@ -63,7 +63,7 @@
 #include "scheduler.h"
 #include "schedulertask.h"
 #include "server.h"
-#include "teleport.h"
+#include "teleporter.h"
 
 
 LOGGER_DEFINITION(Game);
@@ -1359,14 +1359,6 @@ ReturnValue Game::internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cyli
 	ReturnValue retMaxCount = toCylinder->__queryMaxCount(index, item, count, maxQueryCount, flags);
 	if(retMaxCount != RET_NOERROR && !maxQueryCount)
 		return retMaxCount;
-
-	ItemP toItemCylinder = toCylinder->getItem();
-	if (toItemCylinder != nullptr) {
-		Teleport* teleport = toItemCylinder->getTeleport();
-		if (teleport != nullptr && !teleport->canTeleport(item)) {
-			return RET_DESTINATIONOUTOFREACH;
-		}
-	}
 
 	uint32_t m = maxQueryCount, n = 0;
 	if(item->isStackable())

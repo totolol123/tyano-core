@@ -23,7 +23,7 @@
 #include "container.h"
 #include "depot.h"
 
-#include "teleport.h"
+#include "teleporter.h"
 #include "trashholder.h"
 #include "fileloader.h"
 #include "mailbox.h"
@@ -423,8 +423,8 @@ boost::intrusive_ptr<Item> Item::CreateItem(uint16_t kindId, uint16_t amount/* =
 		item = new Depot(kind);
 	else if(kind->isContainer())
 		item = new Container(kind);
-	else if(kind->isTeleport())
-		item = new Teleport(kind);
+	else if(kind->isTeleporter())
+		item = new Teleporter(kind);
 	else if(kind->isMagicField())
 		item = new MagicField(kind);
 	else if(kind->isDoor())
@@ -635,7 +635,7 @@ bool Item::isSplash() const {return kind->isSplash();}
 bool Item::isFluidContainer() const {return (kind->isFluidContainer());}
 bool Item::isDoor() const {return kind->isDoor();}
 bool Item::isMagicField() const {return kind->isMagicField();}
-bool Item::isTeleport() const {return kind->isTeleport();}
+bool Item::isTeleporter() const {return kind->isTeleporter();}
 bool Item::isKey() const {return kind->isKey();}
 bool Item::isDepot() const {return kind->isDepot();}
 bool Item::isMailbox() const {return kind->isMailbox();}
@@ -984,16 +984,6 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 		{
 			uint8_t door;
 			if(!propStream.GET_UCHAR(door))
-				return ATTR_READ_ERROR;
-
-			break;
-		}
-
-		//Teleport class
-		case ATTR_TELE_DEST:
-		{
-			TeleportDest* dest;
-			if(!propStream.GET_STRUCT(dest))
 				return ATTR_READ_ERROR;
 
 			break;
@@ -2086,7 +2076,7 @@ typedef enum {
 
 
 
-bool Item::serializeAttr(PropWriteStream& stream) const
+void Item::serializeAttr(PropWriteStream& stream) const
 {
 	if(isStackable() || isFluidContainer() || isSplash())
 	{
@@ -2130,8 +2120,6 @@ bool Item::serializeAttr(PropWriteStream& stream) const
 			}
 		}
 	}
-
-	return true;
 }
 
 

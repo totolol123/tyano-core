@@ -48,8 +48,9 @@ public:
 	Position          (Position&& position) = default;
 	explicit Position (uint16_t x, uint16_t y, uint8_t z);
 
-	uint32_t distanceTo (const Position& position) const;
-	bool     isValid    () const;
+	uint32_t              distanceTo      (const Position& position) const;
+	bool                  isValid         () const;
+	std::vector<Position> directNeighbors () const;
 
 	Position& operator =  (const Position& position);
 	bool      operator == (const Position& position) const;

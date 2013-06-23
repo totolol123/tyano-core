@@ -40,7 +40,7 @@ class  PropStream;
 class  PropWriteStream;
 class  Raid;
 class  SchedulerTask;
-class  Teleport;
+class  Teleporter;
 class  TrashHolder;
 
 using ItemKindP      = Shared<ItemKind>;
@@ -125,15 +125,6 @@ enum Attr_ReadValue
 	ATTR_READ_ERROR,
 	ATTR_READ_END
 };
-
-// from iomap.h
-#pragma pack(1)
-struct TeleportDest
-{
-	uint16_t _x, _y;
-	uint8_t _z;
-};
-#pragma pack()
 
 
 class Item : public Thing {
@@ -253,8 +244,8 @@ private:
 		virtual Container* getContainer() {return nullptr;}
 		virtual const Container* getContainer() const {return nullptr;}
 
-		virtual Teleport* getTeleport() {return nullptr;}
-		virtual const Teleport* getTeleport() const {return nullptr;}
+		virtual Teleporter* asTeleporter() {return nullptr;}
+		virtual const Teleporter* asTeleporter() const {return nullptr;}
 
 		virtual TrashHolder* getTrashHolder() {return nullptr;}
 		virtual const TrashHolder* getTrashHolder() const {return nullptr;}
@@ -288,7 +279,7 @@ private:
 		//serialization
 		virtual Attr_ReadValue readAttr(AttrTypes_t attr, PropStream& propStream);
 		virtual bool unserializeAttr(PropStream& propStream);
-		virtual bool serializeAttr(PropWriteStream& propWriteStream) const;
+		virtual void serializeAttr(PropWriteStream& propWriteStream) const;
 		virtual bool unserializeItemNode(FileLoader& f, const NodeStruct* node, PropStream& propStream) {return unserializeAttr(propStream);}
 
 		// Item attributes
@@ -383,7 +374,7 @@ private:
 		bool isFluidContainer() const;
 		bool isDoor() const;
 		bool isMagicField() const;
-		bool isTeleport() const;
+		bool isTeleporter() const;
 		bool isKey() const;
 		bool isDepot() const;
 		bool isMailbox() const;

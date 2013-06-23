@@ -1260,7 +1260,7 @@ enum itemgroup_t
 	ITEM_GROUP_AMMUNITION, //deprecated
 	ITEM_GROUP_ARMOR, //deprecated
 	ITEM_GROUP_CHARGES,
-	ITEM_GROUP_TELEPORT, //deprecated
+	ITEM_GROUP_TELEPORTER, //deprecated
 	ITEM_GROUP_MAGICFIELD, //deprecated
 	ITEM_GROUP_WRITEABLE, //deprecated
 	ITEM_GROUP_KEY, //deprecated
@@ -1394,7 +1394,7 @@ enum class ItemType : uint8_t {
 	CONTAINER,
 	DOOR,
 	MAGICFIELD,
-	TELEPORT,
+	TELEPORTER,
 	BED,
 	KEY,
 	LAST = KEY

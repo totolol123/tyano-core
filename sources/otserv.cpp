@@ -128,7 +128,6 @@ void signalHandler(int32_t sig)
 
 	Game& game = server.game();
 
-	uint32_t tmp = 0;
 	switch(sig)
 	{
 		case SIGHUP:

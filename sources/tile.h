@@ -28,7 +28,7 @@ class HouseTile;
 class Player;
 class MagicField;
 class Mailbox;
-class Teleport;
+class Teleporter;
 class TrashHolder;
 
 typedef std::vector<boost::intrusive_ptr<Creature>> CreatureVector;
@@ -57,7 +57,7 @@ enum tileflags_t
 	TILESTATE_FLOORCHANGE_SOUTH_EX = 1 << 14,
 	TILESTATE_FLOORCHANGE_EAST_EX = 1 << 15,
 	TILESTATE_FLOORCHANGE_WEST_EX = 1 << 16,
-	TILESTATE_TELEPORT = 1 << 17,
+	TILESTATE_TELEPORTER = 1 << 17,
 	TILESTATE_MAGICFIELD = 1 << 18,
 	TILESTATE_MAILBOX = 1 << 19,
 	TILESTATE_TRASHHOLDER = 1 << 20,
@@ -123,8 +123,13 @@ class TileItemVector
 		friend class Tile;
 };
 
-class Tile : public Cylinder
-{
+class Tile : public Cylinder {
+
+public:
+
+	std::vector<Tile*> neighbors (uint32_t distance = 1) const;
+
+
 	public:
 		Tile(uint16_t x, uint16_t y, uint16_t z);
 		virtual ~Tile();
@@ -142,7 +147,7 @@ class Tile : public Cylinder
 		bool isHouseTile() const {return hasFlag(TILESTATE_HOUSE);}
 
 		MagicField* getFieldItem() const;
-		Teleport* getTeleportItem() const;
+		Teleporter* getTeleporter() const;
 		TrashHolder* getTrashHolder() const;
 		Mailbox* getMailbox() const;
 		BedItem* getBedItem() const;
@@ -169,7 +174,7 @@ class Tile : public Cylinder
 		void setFlag(tileflags_t flag) {m_flags |= (uint32_t)flag;}
 		void resetFlag(tileflags_t flag) {m_flags &= ~(uint32_t)flag;}
 
-		bool positionChange() const {return hasFlag(TILESTATE_TELEPORT);}
+		bool positionChange() const {return hasFlag(TILESTATE_TELEPORTER);}
 		bool floorChange(FloorChange_t change = CHANGE_NONE) const
 		{
 			switch(change)

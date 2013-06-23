@@ -219,7 +219,7 @@ ConditionType_t Combat::DamageToConditionType(CombatType_t type)
 
 ReturnValue Combat::canDoCombat(const CreatureP& caster, Tile* tile, bool isAggressive)
 {
-	if(tile->hasProperty(BLOCKPROJECTILE) || tile->floorChange() || tile->getTeleportItem())
+	if(tile->hasProperty(BLOCKPROJECTILE) || tile->floorChange() || tile->getTeleporter())
 		return RET_NOTENOUGHROOM;
 
 	if(caster)

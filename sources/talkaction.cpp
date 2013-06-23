@@ -30,7 +30,6 @@
 
 #include "account.h"
 #include "ioguild.h"
-#include "teleport.h"
 #include "status.h"
 #include "textlogger.h"
 #include "vocation.h"
@@ -805,14 +804,6 @@ bool TalkAction::thingProporties(Creature* creature, const std::string& cmd, con
 				int32_t tmp = atoi(parseParams(it, tokens.end()).c_str());
 				if(tmp >= 1000 || tmp <= 0xFFFF)
 					item->setUniqueId(tmp);
-			}
-			else if(action == "destination" || action == "position"
-				|| action == "pos" || action == "dest") //TODO: doesn't work
-			{
-				if(Teleport* teleport = item->getTeleport())
-					teleport->setDestination(Position(atoi(parseParams(it,
-						tokens.end()).c_str()), atoi(parseParams(it, tokens.end()).c_str()),
-						atoi(parseParams(it, tokens.end()).c_str())));
 			}
 			else
 			{

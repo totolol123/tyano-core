@@ -84,7 +84,7 @@ server_SOURCES = sources/otpch.h.gch \
                  sources/status.cpp \
                  sources/talkaction.cpp \
                  sources/task.cpp \
-                 sources/teleport.cpp \
+                 sources/teleporter.cpp \
                  sources/textlogger.cpp \
                  sources/thing.cpp \
                  sources/tile.cpp \

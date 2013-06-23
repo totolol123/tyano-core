@@ -25,7 +25,7 @@
 
 #include "player.h"
 #include "item.h"
-#include "teleport.h"
+#include "teleporter.h"
 
 #include "account.h"
 #include "town.h"
@@ -4696,9 +4696,9 @@ int32_t LuaScriptInterface::luaGetTileItemByType(lua_State* L)
 
 	bool found = true;
 	switch(static_cast<ItemType>(rType)) {
-		case ItemType::TELEPORT:
+		case ItemType::TELEPORTER:
 		{
-			if(!tile->hasFlag(TILESTATE_TELEPORT))
+			if(!tile->hasFlag(TILESTATE_TELEPORTER))
 				found = false;
 
 			break;
@@ -4956,7 +4956,7 @@ int32_t LuaScriptInterface::luaDoCreateTeleport(lua_State* L)
 	}
 
 	boost::intrusive_ptr<Item> newItem = Item::CreateItem(itemId);
-	Teleport* newTeleport = newItem->getTeleport();
+	auto newTeleport = newItem->asTeleporter();
 	if(!newTeleport)
 	{
 		lua_pushboolean(L, false);

@@ -22,7 +22,7 @@
 #include "player.h"
 #include "creature.h"
 
-#include "teleport.h"
+#include "teleporter.h"
 #include "trashholder.h"
 #include "mailbox.h"
 
@@ -167,20 +167,20 @@ uint32_t Tile::getDownItemCount() const
 	return 0;
 }
 
-Teleport* Tile::getTeleportItem() const
+Teleporter* Tile::getTeleporter() const
 {
-	if(!hasFlag(TILESTATE_TELEPORT))
+	if(!hasFlag(TILESTATE_TELEPORTER))
 		return nullptr;
 
-	if(ground && ground->getTeleport())
-		return ground->getTeleport();
+	if(ground && ground->asTeleporter())
+		return ground->asTeleporter();
 
 	if(const TileItemVector* items = getItemList())
 	{
 		for(ItemVector::const_reverse_iterator it = items->rbegin(); it != items->rend(); ++it)
 		{
-			if((*it)->getTeleport())
-				return (*it)->getTeleport();
+			if((*it)->asTeleporter())
+				return (*it)->asTeleporter();
 		}
 	}
 
@@ -533,15 +533,17 @@ bool Tile::moveCreature(Creature* actor, Creature* creature, Cylinder* toCylinde
 ReturnValue Tile::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
 	uint32_t flags) const
 {
-	if (!hasRoomForThing(*thing)) {
-		return RET_TILEISFULL;
-	}
-
-	if (hasFlag(TILESTATE_TELEPORT)) {
-		Teleport* teleport = getTeleportItem();
-		if (teleport != nullptr && !teleport->canTeleport(thing)) {
+	Teleporter* teleporter = getTeleporter();
+	if (teleporter != nullptr) {
+		if (teleporter->getAvailableDestinationTile(*thing) == nullptr) {
 			return RET_DESTINATIONOUTOFREACH;
 		}
+
+		return RET_NOERROR;
+	}
+
+	if (!hasRoomForThing(*thing)) {
+		return RET_TILEISFULL;
 	}
 
 	const CreatureVector* creatures = getCreatures();
@@ -585,7 +587,7 @@ ReturnValue Tile::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
 					}
 				}
 			}
-			else if(creatures && !creatures->empty())
+			else if(creatures && !creatures->empty() && !hasBitSet(FLAG_IGNOREBLOCKCREATURE, flags))
 			{
 				for(CreatureVector::const_iterator cit = creatures->begin(); cit != creatures->end(); ++cit)
 				{
@@ -906,6 +908,22 @@ Cylinder* Tile::__queryDestination(int32_t& index, const Thing* thing, Item** de
 void Tile::__addThing(Creature* actor, int32_t index, Thing* thing)
 {
 	assert(thing->getParent() == nullptr || thing->getParent() == &VirtualCylinder::virtualCylinder);
+
+	Teleporter* teleporter = getTeleporter();
+	if (teleporter != nullptr) {
+		Tile* destinationTile = teleporter->getAvailableDestinationTile(*thing);
+		if (destinationTile != nullptr) {
+			destinationTile->__addThing(actor, thing);
+
+			Creature* creature = thing->getCreature();
+			if (creature != nullptr) {
+				server.game().addMagicEffect(pos, MAGIC_EFFECT_TELEPORT, creature->isGhost());
+				server.game().addMagicEffect(destinationTile->pos, MAGIC_EFFECT_TELEPORT, creature->isGhost());
+			}
+		}
+
+		return;
+	}
 
 	if (!hasRoomForThing(*thing)) {
 		return;
@@ -1531,12 +1549,7 @@ void Tile::postAddNotification(Creature* actor, Thing* thing, const Cylinder* ol
 			server.moveEvents().onItemMove(actor, item, this, true);
 		}
 
-		if(hasFlag(TILESTATE_TELEPORT))
-		{
-			if(Teleport* teleport = getTeleportItem())
-				teleport->__addThing(actor, thing);
-		}
-		else if(hasFlag(TILESTATE_TRASHHOLDER))
+		if(hasFlag(TILESTATE_TRASHHOLDER))
 		{
 			if(TrashHolder* trashHolder = getTrashHolder())
 				trashHolder->__addThing(actor, thing);
@@ -1745,8 +1758,8 @@ void Tile::updateTileFlags(Item* item, bool removed)
 			}
 		}
 
-		if(item->getTeleport())
-			setFlag(TILESTATE_TELEPORT);
+		if(item->asTeleporter())
+			setFlag(TILESTATE_TELEPORTER);
 
 		if(item->getMagicField())
 			setFlag(TILESTATE_MAGICFIELD);
@@ -1834,8 +1847,8 @@ void Tile::updateTileFlags(Item* item, bool removed)
 			resetFlag(TILESTATE_FLOORCHANGE_WEST_EX);
 		}
 
-		if(item->getTeleport())
-			resetFlag(TILESTATE_TELEPORT);
+		if(item->asTeleporter())
+			resetFlag(TILESTATE_TELEPORTER);
 
 		if(item->getMagicField())
 			resetFlag(TILESTATE_MAGICFIELD);

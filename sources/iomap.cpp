@@ -32,7 +32,6 @@
 #include "spawn.h"
 #include "status.h"
 
-#include "teleport.h"
 #include "beds.h"
 
 #include "game.h"

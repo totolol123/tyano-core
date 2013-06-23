@@ -147,7 +147,7 @@ class ItemKind {
 
 		bool isDoor() const {return (type == ItemType::DOOR);}
 		bool isMagicField() const {return (type == ItemType::MAGICFIELD);}
-		bool isTeleport() const {return (type == ItemType::TELEPORT);}
+		bool isTeleporter() const {return (type == ItemType::TELEPORTER);}
 		bool isKey() const {return (type == ItemType::KEY);}
 		bool isDepot() const {return (type == ItemType::DEPOT);}
 		bool isMailbox() const {return (type == ItemType::MAILBOX);}

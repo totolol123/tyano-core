@@ -29,7 +29,7 @@
 #include "mailbox.h"
 #include "server.h"
 #include "spells.h"
-#include "teleport.h"
+#include "teleporter.h"
 #include "trashholder.h"
 #include "weapons.h"
 
@@ -358,7 +358,9 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 					else if(tmpStrValue == "trashholder")
 						kind->type = ItemType::TRASHHOLDER;
 					else if(tmpStrValue == "teleport")
-						kind->type = ItemType::TELEPORT;
+						kind->type = ItemType::TELEPORTER;
+					else if(tmpStrValue == "teleporter")
+						kind->type = ItemType::TELEPORTER;
 					else if(tmpStrValue == "door")
 						kind->type = ItemType::DOOR;
 					else if(tmpStrValue == "bed")
@@ -1654,8 +1656,8 @@ bool Items::loadKindsFromOtb() {
 				kind->type = ItemType::MAGICFIELD;
 				break;
 
-			case ITEM_GROUP_TELEPORT: // unused
-				kind->type = ItemType::TELEPORT;
+			case ITEM_GROUP_TELEPORTER: // unused
+				kind->type = ItemType::TELEPORTER;
 				break;
 
 			case ITEM_GROUP_NONE:
@@ -2010,7 +2012,7 @@ void Items::setupClasses() {
 	_classes[ItemType::MAGICFIELD] = makeClass<MagicField>();
 	_classes[ItemType::MAILBOX] = makeClass<Mailbox>();
 	_classes[ItemType::GENERIC] = makeClass<Item>();
-	_classes[ItemType::TELEPORT] = makeClass<Teleport>();
+	_classes[ItemType::TELEPORTER] = makeClass<Teleporter>();
 	_classes[ItemType::TRASHHOLDER] = makeClass<TrashHolder>();
 	_classes[ItemType::KEY] = makeClass<Key>();
 }
