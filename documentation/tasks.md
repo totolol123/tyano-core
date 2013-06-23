@@ -3,21 +3,20 @@ Tasks
 
 Urgent
 ------
-
-- Nothing is urgent right now! :)
+ 
+- Rework teleporters and stairs.
 
 
 Important
 ---------
 
-- Make items automatically disappear after a while on the ground instead of regulary cleaning the map to distribute CPU load.
+- Nothing is important right now :)
 
 
 Soon
 ----
 
-- Add popup window which informs players about new server updates when connecting. 
-- Rework teleporters.
+- Add popup window which informs players about new server updates when connecting.
 - Create new efficient scheduler/dispatcher system based on C++11 STL (and refactor `Item::ReleaseInfo::release` after that).
 - Broadcast message with pop-up because a server-wide red chat message will actually not be read by most players.
 - Refactor talkaction system to unify commands & help system.
@@ -33,6 +32,8 @@ Soon
 Improvements
 ------------
 
+- Use scheduler for decaying items.
+- Corpse lifecycles without difficult decaying configuration and flexible lifetime (e.g. corpses of bosses and players should last longer and be immobile for longer).
 - Make monsters think in groups. E.g. a boss is attacked, the other monsters should support him. 
   And if a summon is attacked, the master should support it.
 - Once there are too many corpses and/or items on a tile, merge them into a box?
