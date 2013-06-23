@@ -1440,7 +1440,7 @@ bool Creature::setStorage(const uint32_t key, const std::string& value)
 	return true;
 }
 
-void Creature::gainHealth(Creature* caster, int32_t healthGain)
+void Creature::gainHealth(const CreatureP& caster, int32_t healthGain)
 {
 	if(healthGain > 0)
 	{
@@ -1455,7 +1455,7 @@ void Creature::gainHealth(Creature* caster, int32_t healthGain)
 		changeHealth(healthGain);
 }
 
-void Creature::drainHealth(Creature* attacker, CombatType_t combatType, int32_t damage)
+void Creature::drainHealth(const CreatureP& attacker, CombatType_t combatType, int32_t damage)
 {
 	lastDamageSource = combatType;
 	onAttacked();
@@ -1465,7 +1465,7 @@ void Creature::drainHealth(Creature* attacker, CombatType_t combatType, int32_t 
 		attacker->onAttackedCreatureDrainHealth(this, damage);
 }
 
-void Creature::drainMana(Creature* attacker, CombatType_t combatType, int32_t damage)
+void Creature::drainMana(const CreatureP& attacker, CombatType_t combatType, int32_t damage)
 {
 	lastDamageSource = combatType;
 	onAttacked();
@@ -1475,7 +1475,7 @@ void Creature::drainMana(Creature* attacker, CombatType_t combatType, int32_t da
 		attacker->onAttackedCreatureDrainMana(this, damage);
 }
 
-BlockType_t Creature::blockHit(Creature* attacker, CombatType_t combatType, int32_t& damage,
+BlockType_t Creature::blockHit(const CreatureP& attacker, CombatType_t combatType, int32_t& damage,
 	bool checkDefense/* = false*/, bool checkArmor/* = false*/)
 {
 	BlockType_t blockType = BLOCK_NONE;
@@ -1694,7 +1694,7 @@ void Creature::onTickCondition(ConditionType_t type, int32_t interval, bool& _re
 	}
 }
 
-void Creature::onCombatRemoveCondition(const Creature* attacker, Condition* condition)
+void Creature::onCombatRemoveCondition(const CreatureP& attacker, Condition* condition)
 {
 	removeCondition(condition);
 }
@@ -1908,7 +1908,7 @@ void Creature::removeCondition(Condition* condition)
 	}
 }
 
-void Creature::removeCondition(const Creature* attacker, ConditionType_t type)
+void Creature::removeCondition(const CreatureP& attacker, ConditionType_t type)
 {
 	ConditionList tmpList = conditions;
 	for(ConditionList::iterator it = tmpList.begin(); it != tmpList.end(); ++it)

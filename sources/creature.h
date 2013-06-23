@@ -318,7 +318,7 @@ private:
 		//combat functions
 		Creature* getAttackedCreature() const {return attackedCreature;}
 		virtual bool setAttackedCreature(Creature* creature);
-		virtual BlockType_t blockHit(Creature* attacker, CombatType_t combatType, int32_t& damage,
+		virtual BlockType_t blockHit(const CreatureP& attacker, CombatType_t combatType, int32_t& damage,
 			bool checkDefense = false, bool checkArmor = false);
 
 		virtual void addSummon(const MonsterP& creature);
@@ -336,7 +336,7 @@ private:
 		void removeCondition(ConditionType_t type);
 		void removeCondition(ConditionType_t type, ConditionId_t id);
 		void removeCondition(Condition* condition);
-		void removeCondition(const Creature* attacker, ConditionType_t type);
+		void removeCondition(const CreatureP& attacker, ConditionType_t type);
 		void removeConditions(ConditionEnd_t reason, bool onlyPersistent = true);
 		Condition* getCondition(ConditionType_t type, ConditionId_t id, uint32_t subId = 0) const;
 		void executeConditions(uint32_t interval);
@@ -362,9 +362,9 @@ private:
 		inline StorageMap::const_iterator getStorageBegin() const {return storageMap.begin();}
 		inline StorageMap::const_iterator getStorageEnd() const {return storageMap.end();}
 
-		virtual void gainHealth(Creature* caster, int32_t amount);
-		virtual void drainHealth(Creature* attacker, CombatType_t combatType, int32_t damage);
-		virtual void drainMana(Creature* attacker, CombatType_t combatType, int32_t damage);
+		virtual void gainHealth(const CreatureP& caster, int32_t amount);
+		virtual void drainHealth(const CreatureP& attacker, CombatType_t combatType, int32_t damage);
+		virtual void drainMana(const CreatureP& attacker, CombatType_t combatType, int32_t damage);
 
 		virtual bool onDeath();
 		virtual double getGainedExperience(Creature* attacker) const {return getDamageRatio(attacker) * (double)getLostExperience();}
@@ -377,7 +377,7 @@ private:
 		virtual void onAddCombatCondition(ConditionType_t type, bool hadCondition) {}
 		virtual void onEndCondition(ConditionType_t type);
 		virtual void onTickCondition(ConditionType_t type, int32_t interval, bool& _remove);
-		virtual void onCombatRemoveCondition(const Creature* attacker, Condition* condition);
+		virtual void onCombatRemoveCondition(const CreatureP& attacker, Condition* condition);
 		virtual void onAttackedCreature(Creature* target) {}
 		virtual void onSummonAttackedCreature(Creature* summon, Creature* target) {}
 		virtual void onAttacked() {}

@@ -1016,7 +1016,7 @@ uint32_t CreatureEvent::executeThink(Creature* creature, uint32_t interval)
 	}
 }
 
-uint32_t CreatureEvent::executeStatsChange(Creature* creature, Creature* attacker, StatsChange_t type, CombatType_t combat, int32_t value)
+uint32_t CreatureEvent::executeStatsChange(const CreatureP& creature, const CreatureP& attacker, StatsChange_t type, CombatType_t combat, int32_t value)
 {
 	//onStatsChange(cid, attacker, type, combat, value)
 	if(m_interface->reserveEnv())
@@ -1072,7 +1072,7 @@ uint32_t CreatureEvent::executeStatsChange(Creature* creature, Creature* attacke
 	}
 }
 
-uint32_t CreatureEvent::executeCombatArea(Creature* creature, Tile* tile, bool aggressive)
+uint32_t CreatureEvent::executeCombatArea(const CreatureP& creature, Tile* tile, bool aggressive)
 {
 	//onAreaCombat(cid, ground, position, aggressive)
 	if(m_interface->reserveEnv())
@@ -1125,7 +1125,7 @@ uint32_t CreatureEvent::executeCombatArea(Creature* creature, Tile* tile, bool a
 	}
 }
 
-uint32_t CreatureEvent::executeCombat(Creature* creature, Creature* target)
+uint32_t CreatureEvent::executeCombat(const CreatureP& creature, const CreatureP& target)
 {
 	//onCombat(cid, target)
 	if(m_interface->reserveEnv())
@@ -1612,7 +1612,7 @@ uint32_t CreatureEvent::executePush(Player* player, Creature* target)
 	}
 }
 
-uint32_t CreatureEvent::executeTarget(Creature* creature, Creature* target)
+uint32_t CreatureEvent::executeTarget(const CreatureP& creature, const CreatureP& target)
 {
 	//onTarget(cid, target)
 	if(m_interface->reserveEnv())
