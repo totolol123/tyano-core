@@ -18,18 +18,18 @@
 
 #include "cylinder.h"
 #include "position.h"
-#include "thing.h"
+#include "item.h"
 
 VirtualCylinder VirtualCylinder::virtualCylinder;
 
 
-ReturnValue VirtualCylinder::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
+ReturnValue VirtualCylinder::__queryAdd(int32_t index, const Item* item, uint32_t count,
 	uint32_t flags) const {return RET_NOTPOSSIBLE;}
-ReturnValue VirtualCylinder::__queryMaxCount(int32_t index, const Thing* thing, uint32_t count,
+ReturnValue VirtualCylinder::__queryMaxCount(int32_t index, const Item* item, uint32_t count,
 	uint32_t& maxQueryCount, uint32_t flags) const {return RET_NOTPOSSIBLE;}
-ReturnValue VirtualCylinder::__queryRemove(const Thing* thing, uint32_t count,
-	uint32_t flags) const {return (thing->getParent() == this ? RET_NOERROR : RET_NOTPOSSIBLE);}
-Cylinder* VirtualCylinder::__queryDestination(int32_t& index, const Thing* thing, Item** destItem,
+ReturnValue VirtualCylinder::__queryRemove(const Item* item, uint32_t count,
+	uint32_t flags) const {return (item->getParent() == this ? RET_NOERROR : RET_NOTPOSSIBLE);}
+Cylinder* VirtualCylinder::__queryDestination(int32_t& index, const Item* item, Item** destItem,
 	uint32_t& flags) {return nullptr;}
 
 Position VirtualCylinder::getPosition() const {return Position();}

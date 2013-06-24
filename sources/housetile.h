@@ -23,20 +23,24 @@
 class House;
 
 
-class HouseTile : public DynamicTile
-{
-	public:
+class HouseTile : public DynamicTile {
+
+public:
+
+	virtual ReturnValue testAddCreature (const Creature& creature, uint32_t flags = 0) const;
+
+
+
+
 		HouseTile(int32_t x, int32_t y, int32_t z, House* _house);
 		virtual ~HouseTile() {}
 
 		//cylinder implementations
-		virtual ReturnValue __queryAdd(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryAdd(int32_t index, const Item* thing, uint32_t count,
 			uint32_t flags) const;
-		virtual Cylinder* __queryDestination(int32_t& index, const Thing* thing, Item** destItem,
-			uint32_t& flags);
 
-		virtual void __addThing(Creature* actor, int32_t index, Thing* thing);
-		virtual void __internalAddThing(uint32_t index, Thing* thing);
+		virtual void __addThing(Creature* actor, int32_t index, Item* item);
+		virtual void __internalAddThing(uint32_t index, Item* item);
 
 		House* getHouse() {return house;}
 

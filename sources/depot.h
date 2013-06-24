@@ -45,10 +45,10 @@ class Depot : public Container {
 
 		void setMaxDepotLimit(uint32_t count) {depotLimit = count;}
 
-		virtual ReturnValue __queryAdd(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryAdd(int32_t index, const Item* item, uint32_t count,
 			uint32_t flags) const;
 
-		virtual ReturnValue __queryMaxCount(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryMaxCount(int32_t index, const Item* item, uint32_t count,
 			uint32_t& maxQueryCount, uint32_t flags) const;
 
 		virtual void postAddNotification(Creature* actor, Thing* thing, const Cylinder* oldParent,

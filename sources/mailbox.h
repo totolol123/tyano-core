@@ -47,21 +47,21 @@ class Mailbox : public Item, public Cylinder
 		virtual Creature* getCreature();
 		virtual const Creature* getCreature() const;
 
-		virtual ReturnValue __queryAdd(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryAdd(int32_t index, const Item* item, uint32_t count,
 			uint32_t flags) const;
-		virtual ReturnValue __queryMaxCount(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryMaxCount(int32_t index, const Item* item, uint32_t count,
 			uint32_t& maxQueryCount, uint32_t flags) const;
-		virtual ReturnValue __queryRemove(const Thing* thing, uint32_t count, uint32_t flags) const {return RET_NOTPOSSIBLE;}
-		virtual Cylinder* __queryDestination(int32_t& index, const Thing* thing, Item** destItem,
+		virtual ReturnValue __queryRemove(const Item* item, uint32_t count, uint32_t flags) const {return RET_NOTPOSSIBLE;}
+		virtual Cylinder* __queryDestination(int32_t& index, const Item* item, Item** destItem,
 			uint32_t& flags) {return this;}
 
-		virtual void __addThing(Creature* actor, Thing* thing) {__addThing(actor, 0, thing);}
-		virtual void __addThing(Creature* actor, int32_t index, Thing* thing);
+		virtual void __addThing(Creature* actor, Item* item) {__addThing(actor, 0, item);}
+		virtual void __addThing(Creature* actor, int32_t index, Item* item);
 
-		virtual void __updateThing(Thing* thing, uint16_t itemId, uint32_t count) {}
-		virtual void __replaceThing(uint32_t index, Thing* thing) {}
+		virtual void __updateThing(Item* item, uint16_t itemId, uint32_t count) {}
+		virtual void __replaceThing(uint32_t index, Item* item) {}
 
-		virtual void __removeThing(Thing* thing, uint32_t count) {}
+		virtual void __removeThing(Item* item, uint32_t count) {}
 
 		virtual void postAddNotification(Creature* actor, Thing* thing, const Cylinder* oldParent,
 			int32_t index, cylinderlink_t link = LINK_OWNER)

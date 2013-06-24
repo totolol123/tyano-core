@@ -310,31 +310,19 @@ bool Spawn::findPlayer(const Position& pos)
 
 bool Spawn::spawnMonster(uint32_t spawnId, MonsterType* mType, const Position& pos, Direction dir, bool startup /*= false*/)
 {
-	boost::intrusive_ptr<Monster> monster = Monster::create(mType, this);
-	if(!monster)
-		return false;
+	spawnMap[spawnId].lastSpawn = OTSYS_TIME();
 
-	if(startup)
+	boost::intrusive_ptr<Monster> monster = Monster::create(mType, this);
+	if(!server.game().placeCreature(monster.get(), pos, false, true))
 	{
-		//No need to send out events to the surrounding since there is no one out there to listen!
-		if(!server.game().internalPlaceCreature(monster.get(), pos, false, true))
-		{
-			return false;
-		}
-	}
-	else
-	{
-		if(!server.game().placeCreature(monster.get(), pos, false, true))
-		{
-			return false;
-		}
+		LOGe("Cannot spawn monster '" << mType->name << "' at " << pos << ".");
+		return false;
 	}
 
 	monster->setMasterPosition(pos, radius);
 	monster->setDirection(dir);
 
 	spawnedMap.insert(SpawnedPair(spawnId, monster));
-	spawnMap[spawnId].lastSpawn = OTSYS_TIME();
 	return true;
 }
 

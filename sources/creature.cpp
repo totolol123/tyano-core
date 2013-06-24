@@ -115,7 +115,7 @@ bool Creature::canMoveTo(const Tile& tile) const {
 		return false;
 	}
 
-	if (tile.__queryAdd(0, this, 1, 0) != RET_NOERROR) {
+	if (tile.testAddCreature(*this) != RET_NOERROR) {
 		return false;
 	}
 
@@ -379,7 +379,7 @@ bool Creature::moveTo(Tile& tile) {
 
 	Tile& previousTile = *_tile;
 
-	if (server.game().internalMoveCreature(nullptr, this, &previousTile, &tile, 0) != RET_NOERROR) {
+	if (tile.addCreature(this) != RET_NOERROR) {
 		return false;
 	}
 
@@ -1188,7 +1188,7 @@ void Creature::onAttackedCreatureChangeZone(ZoneType_t zone)
 		internalCreatureDisappear(attackedCreature, false);
 }
 
-void Creature::onCreatureDisappear(const Creature* creature, bool isLogout)
+void Creature::onCreatureDisappear(const Creature* creature)
 {
 	LOGt(this << "::onCreatureDisappear(" << creature << ")");
 

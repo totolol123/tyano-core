@@ -135,6 +135,10 @@ void BedItem::sleep(Player* player)
 
 	if(!sleeper)
 	{
+		if (getTile()->addCreature(player, FLAG_IGNOREBLOCKCREATURE) != RET_NOERROR) {
+			return;
+		}
+
 		Beds::getInstance()->setBedSleeper(this, player->getGUID());
 		internalSetSleeper(player);
 
@@ -146,7 +150,6 @@ void BedItem::sleep(Player* player)
 		if(nextBedItem)
 			nextBedItem->updateAppearance(player);
 
-		player->getTile()->moveCreature(nullptr, player, getTile());
 		server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_SLEEP);
 		server.scheduler().addTask(SchedulerTask::create(Milliseconds(SCHEDULER_MINTICKS), std::bind(&Game::kickPlayer, &server.game(), player->getID(), false)));
 		return;

@@ -1469,17 +1469,14 @@ void Player::onAttackedCreatureChangeZone(ZoneType_t zone)
 	}
 }
 
-void Player::onCreatureDisappear(const Creature* creature, bool isLogout)
+void Player::onCreatureDisappear(const Creature* creature)
 {
-	Creature::onCreatureDisappear(creature, isLogout);
+	Creature::onCreatureDisappear(creature);
 	if(creature != this)
 		return;
 
-	if(isLogout)
-	{
-		loginPosition = getPosition();
-		lastLogout = time(nullptr);
-	}
+	loginPosition = getPosition();
+	lastLogout = time(nullptr);
 
 	closeShopWindow();
 	if(tradePartner)
@@ -2570,12 +2567,8 @@ bool Player::hasCapacity(const Item* item, uint32_t count) const
 	return (itemWeight < getFreeCapacity());
 }
 
-ReturnValue Player::__queryAdd(int32_t index, const Thing* thing, uint32_t count, uint32_t flags) const
+ReturnValue Player::__queryAdd(int32_t index, const Item* item, uint32_t count, uint32_t flags) const
 {
-	const Item* item = thing->getItem();
-	if(!item)
-		return RET_NOTPOSSIBLE;
-
 	bool childIsOwner = ((flags & FLAG_CHILDISOWNER) == FLAG_CHILDISOWNER), skipLimit = ((flags & FLAG_NOLIMIT) == FLAG_NOLIMIT);
 	if(childIsOwner)
 	{
@@ -2725,16 +2718,9 @@ ReturnValue Player::__queryAdd(int32_t index, const Thing* thing, uint32_t count
 	return ret;
 }
 
-ReturnValue Player::__queryMaxCount(int32_t index, const Thing* thing, uint32_t count, uint32_t& maxQueryCount,
+ReturnValue Player::__queryMaxCount(int32_t index, const Item* item, uint32_t count, uint32_t& maxQueryCount,
 	uint32_t flags) const
 {
-	const Item* item = thing->getItem();
-	if(!item)
-	{
-		maxQueryCount = 0;
-		return RET_NOTPOSSIBLE;
-	}
-
 	const Thing* destThing = __getThing(index);
 	const Item* destItem = nullptr;
 	if(destThing)
@@ -2763,14 +2749,10 @@ ReturnValue Player::__queryMaxCount(int32_t index, const Thing* thing, uint32_t 
 	return RET_NOERROR;
 }
 
-ReturnValue Player::__queryRemove(const Thing* thing, uint32_t count, uint32_t flags) const
+ReturnValue Player::__queryRemove(const Item* item, uint32_t count, uint32_t flags) const
 {
-	int32_t index = __getIndexOfThing(thing);
+	int32_t index = __getIndexOfThing(item);
 	if(index == -1)
-		return RET_NOTPOSSIBLE;
-
-	const Item* item = thing->getItem();
-	if(!item)
 		return RET_NOTPOSSIBLE;
 
 	if(count == 0 || (item->isStackable() && count > item->getItemCount()))
@@ -2782,15 +2764,12 @@ ReturnValue Player::__queryRemove(const Thing* thing, uint32_t count, uint32_t f
 	return RET_NOERROR;
 }
 
-Cylinder* Player::__queryDestination(int32_t& index, const Thing* thing, Item** destItem,
+Cylinder* Player::__queryDestination(int32_t& index, const Item* item, Item** destItem,
 	uint32_t& flags)
 {
 	if(index == 0 /*drop to capacity window*/ || index == INDEX_WHEREEVER)
 	{
 		*destItem = nullptr;
-		const Item* item = thing->getItem();
-		if(!item)
-			return this;
 
 		//find a appropiate slot
 		for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
@@ -2868,12 +2847,12 @@ Cylinder* Player::__queryDestination(int32_t& index, const Thing* thing, Item** 
 	return this;
 }
 
-void Player::__addThing(Creature* actor, Thing* thing)
+void Player::__addThing(Creature* actor, Item* item)
 {
-	__addThing(actor, 0, thing);
+	__addThing(actor, 0, item);
 }
 
-void Player::__addThing(Creature* actor, int32_t index, Thing* thing)
+void Player::__addThing(Creature* actor, int32_t index, Item* item)
 {
 	if(index < 0 || index > 11)
 	{
@@ -2883,12 +2862,6 @@ void Player::__addThing(Creature* actor, int32_t index, Thing* thing)
 	if(index == 0)
 	{
 		return /*RET_NOTENOUGHROOM*/;
-	}
-
-	Item* item = thing->getItem();
-	if(!item)
-	{
-		return /*RET_NOTPOSSIBLE*/;
 	}
 
 	item->setParent(this);
@@ -2903,16 +2876,10 @@ void Player::__addThing(Creature* actor, int32_t index, Thing* thing)
 	onAddInventoryItem((slots_t)index, item);
 }
 
-void Player::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
+void Player::__updateThing(Item* item, uint16_t itemId, uint32_t count)
 {
-	int32_t index = __getIndexOfThing(thing);
+	int32_t index = __getIndexOfThing(item);
 	if(index == -1)
-	{
-		return /*RET_NOTPOSSIBLE*/;
-	}
-
-	Item* item = thing->getItem();
-	if(item == nullptr)
 	{
 		return /*RET_NOTPOSSIBLE*/;
 	}
@@ -2933,7 +2900,7 @@ void Player::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
 	onUpdateInventoryItem((slots_t)index, item, oldKind, item, newKind);
 }
 
-void Player::__replaceThing(uint32_t index, Thing* thing)
+void Player::__replaceThing(uint32_t index, Item* item)
 {
 	if(index > 11)
 	{
@@ -2942,12 +2909,6 @@ void Player::__replaceThing(uint32_t index, Thing* thing)
 
 	Item* oldItem = getInventoryItem((slots_t)index);
 	if(!oldItem)
-	{
-		return /*RET_NOTPOSSIBLE*/;
-	}
-
-	Item* item = thing->getItem();
-	if(!item)
 	{
 		return /*RET_NOTPOSSIBLE*/;
 	}
@@ -2966,15 +2927,10 @@ void Player::__replaceThing(uint32_t index, Thing* thing)
 	inventory[index] = item;
 }
 
-void Player::__removeThing(Thing* thing, uint32_t count)
+void Player::__removeThing(Item* item, uint32_t count)
 {
-	Item* item = thing->getItem();
-	if(!item)
-	{
-		return /*RET_NOTPOSSIBLE*/;
-	}
 
-	int32_t index = __getIndexOfThing(thing);
+	int32_t index = __getIndexOfThing(item);
 	if(index == -1)
 	{
 		return /*RET_NOTPOSSIBLE*/;
@@ -3199,19 +3155,13 @@ void Player::postRemoveNotification(Creature* actor, Thing* thing, const Cylinde
 	}
 }
 
-void Player::__internalAddThing(Thing* thing)
+void Player::__internalAddThing(Item* item)
 {
-	__internalAddThing(0, thing);
+	__internalAddThing(0, item);
 }
 
-void Player::__internalAddThing(uint32_t index, Thing* thing)
+void Player::__internalAddThing(uint32_t index, Item* item)
 {
-	Item* item = thing->getItem();
-	if(!item)
-	{
-		return;
-	}
-
 	//index == 0 means we should equip this item at the most appropiate slot
 	if(index == 0)
 	{
@@ -4969,10 +4919,19 @@ void Player::sendCreatureAppear(const Creature* creature, const char* callSource
 		this, creature)), callSource);}
 void Player::sendCreatureDisappear(const Creature* creature, uint32_t stackpos, const char* callSource)
 	{if(client) client->sendRemoveCreature(creature, StackPosition(creature->getPosition(), stackpos), callSource);}
-void Player::sendCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
-	const Tile* oldTile, const Position& oldPos, uint32_t oldStackpos, bool teleport, const char* callSource)
-	{if(client) client->sendMoveCreature(creature, newTile, StackPosition(newPos, newTile->getClientIndexOfThing(
-		this, creature)), oldTile, StackPosition(oldPos, oldStackpos), teleport, callSource);}
+
+void Player::sendCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos, const Tile* oldTile, const Position& oldPos, uint32_t oldStackpos, bool teleport, const char* callSource) {
+	if (client == nullptr) {
+		return;
+	}
+
+	int32_t newIndex = newTile->getClientIndexOfThing(this, creature);
+	if (newIndex < 0) {
+		return;
+	}
+
+	client->sendMoveCreature(creature, newTile, StackPosition(newPos, newIndex), oldTile, StackPosition(oldPos, oldStackpos), teleport, callSource);
+}
 
 void Player::sendCreatureTurn(const Creature* creature)
 	{if(client) client->sendCreatureTurn(creature, StackPosition(creature->getPosition(), creature->getTile()->getClientIndexOfThing(this, creature)));}

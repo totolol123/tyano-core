@@ -28,7 +28,7 @@ class Position;
 
 using CreatureP     = boost::intrusive_ptr<Creature>;
 using PlayerP       = boost::intrusive_ptr<Player>;
-using SpectatorList = std::list<Creature*>;
+using SpectatorList = std::list<CreatureP>;
 
 
 //for luascript callback

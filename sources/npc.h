@@ -372,7 +372,7 @@ private:
 		bool loaded;
 
 		virtual void onCreatureAppear(const CreatureP& creature);
-		virtual void onCreatureDisappear(const Creature* creature, bool isLogout);
+		virtual void onCreatureDisappear(const Creature* creature);
 		virtual void onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
 		virtual void onCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos = nullptr);
 		virtual void onThink(Duration interval);

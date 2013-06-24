@@ -31,10 +31,13 @@ class Mailbox;
 class Teleporter;
 class TrashHolder;
 
+using CreatureP  = boost::intrusive_ptr<Creature>;
+using CreaturePC = boost::intrusive_ptr<const Creature>;
+
 typedef std::vector<boost::intrusive_ptr<Creature>> CreatureVector;
 typedef std::vector<boost::intrusive_ptr<Item>>     ItemVector;
 typedef std::list<Player*>                          PlayerList;
-typedef std::list<Creature*>                        SpectatorList;
+typedef std::list<CreatureP>                        SpectatorList;
 
 enum tileflags_t
 {
@@ -123,11 +126,16 @@ class TileItemVector
 		friend class Tile;
 };
 
+
 class Tile : public Cylinder {
 
 public:
 
-	std::vector<Tile*> neighbors (uint32_t distance = 1) const;
+	ReturnValue         addCreature        (const CreatureP& creature, uint32_t flags = 0, const CreatureP& actor = nullptr);
+	std::vector<Tile*>  neighbors          (uint16_t distance = 1) const;
+	ReturnValue         removeCreature     (const CreatureP& creature, const CreatureP& actor = nullptr);
+	virtual ReturnValue testAddCreature    (const Creature& creature, uint32_t flags = 0) const;
+	virtual ReturnValue testRemoveCreature (const Creature& creature) const;
 
 
 	public:
@@ -223,7 +231,6 @@ public:
 		bool isSwimmingPool(bool checkPz = true) const;
 		bool hasHeight(uint32_t n) const;
 
-		bool moveCreature(Creature* actor, Creature* creature, Cylinder* toCylinder, bool forceTeleport = false);
 		int32_t getClientIndexOfThing(const Player* player, const Thing* thing) const;
 
 		//cylinder implementations
@@ -238,21 +245,21 @@ public:
 		virtual Creature* getCreature() {return nullptr;}
 		virtual const Creature* getCreature() const {return nullptr;}
 
-		virtual ReturnValue __queryAdd(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryAdd(int32_t index, const Item* item, uint32_t count,
 			uint32_t flags) const;
-		virtual ReturnValue __queryMaxCount(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryMaxCount(int32_t index, const Item* item, uint32_t count,
 			uint32_t& maxQueryCount, uint32_t flags) const;
-		virtual ReturnValue __queryRemove(const Thing* thing, uint32_t count, uint32_t flags) const;
-		virtual Cylinder* __queryDestination(int32_t& index, const Thing* thing, Item** destItem,
+		virtual ReturnValue __queryRemove(const Item* item, uint32_t count, uint32_t flags) const;
+		virtual Cylinder* __queryDestination(int32_t& index, const Item* item, Item** destItem,
 			uint32_t& flags);
 
-		virtual void __addThing(Creature* actor, Thing* thing) {__addThing(actor, 0, thing);}
-		virtual void __addThing(Creature* actor, int32_t index, Thing* thing);
+		virtual void __addThing(Creature* actor, Item* item) {__addThing(actor, 0, item);}
+		virtual void __addThing(Creature* actor, int32_t index, Item* item);
 
-		virtual void __updateThing(Thing* thing, uint16_t itemId, uint32_t count);
-		virtual void __replaceThing(uint32_t index, Thing* thing);
+		virtual void __updateThing(Item* item, uint16_t itemId, uint32_t count);
+		virtual void __replaceThing(uint32_t index, Item* item);
 
-		virtual void __removeThing(Thing* thing, uint32_t count);
+		virtual void __removeThing(Item* item, uint32_t count);
 
 		virtual int32_t __getIndexOfThing(const Thing* thing) const;
 		virtual int32_t __getFirstIndex() const {return 0;}
@@ -265,8 +272,8 @@ public:
 		virtual void postRemoveNotification(Creature* actor, Thing* thing, const Cylinder* newParent,
 			int32_t index, bool isCompleteRemoval, cylinderlink_t link = LINK_OWNER);
 
-		virtual void __internalAddThing(Thing* thing) {__internalAddThing(0, thing);}
-		virtual void __internalAddThing(uint32_t index, Thing* thing);
+		virtual void __internalAddThing(Item* item) {__internalAddThing(0, item);}
+		virtual void __internalAddThing(uint32_t index, Item* item);
 		bool hasRoomForThing(const Thing& thing) const;
 
 	private:

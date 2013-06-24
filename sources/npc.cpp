@@ -50,7 +50,8 @@ bool Npc::canMoveTo(const Tile& tile) const {
 		return true;
 	}
 
-	if (tile.__queryAdd(0, this, 1, FLAG_PATHFINDING) != RET_NOERROR) {
+	// FIXME use class-wide flags to avoid duplicate canAddCreature
+	if (tile.testAddCreature(*this, FLAG_PATHFINDING) != RET_NOERROR) {
 		return false;
 	}
 
@@ -1162,9 +1163,9 @@ void Npc::onCreatureAppear(const CreatureP& creature)
 	}
 }
 
-void Npc::onCreatureDisappear(const Creature* creature, bool isLogout)
+void Npc::onCreatureDisappear(const Creature* creature)
 {
-	Creature::onCreatureDisappear(creature, isLogout);
+	Creature::onCreatureDisappear(creature);
 	if(creature == this) //Close all open shop window's
 		closeAllShopWindows();
 	else if(Player* player = const_cast<Player*>(creature->getPlayer()))

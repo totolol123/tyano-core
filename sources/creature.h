@@ -409,7 +409,7 @@ private:
 		virtual void onRemoveTileItem(const Tile* tile, const Position& pos, const ItemKindPC& iType, const Item* item);
 		virtual void onUpdateTile(const Tile* tile, const Position& pos) {}
 
-		virtual void onCreatureDisappear(const Creature* creature, bool isLogout);
+		virtual void onCreatureDisappear(const Creature* creature);
 
 		virtual void onAttackedCreatureDisappear(bool isLogout) {}
 

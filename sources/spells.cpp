@@ -1421,7 +1421,7 @@ bool InstantSpell::Levitate(const InstantSpell* spell, Creature* creature, const
 					&& tile->hasFlag(TILESTATE_HOUSE) == tmpTile->hasFlag(TILESTATE_HOUSE)
 					&& tile->hasFlag(TILESTATE_PROTECTIONZONE) == tmpTile->hasFlag(TILESTATE_PROTECTIONZONE)
 				)
-						ret = server.game().internalMoveCreature(nullptr, player, tile, tmpTile, FLAG_IGNOREBLOCKITEM | FLAG_IGNOREBLOCKCREATURE);
+						ret = tmpTile->addCreature(player, FLAG_IGNOREBLOCKITEM|FLAG_IGNOREBLOCKCREATURE);
 			}
 		}
 	}

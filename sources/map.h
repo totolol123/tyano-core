@@ -38,8 +38,10 @@ class FrozenPathingConditionCall;
 class Position;
 class Tile;
 
+using CreatureP = boost::intrusive_ptr<Creature>;
+
 typedef std::list<boost::intrusive_ptr<Creature>>  CreatureList;
-typedef std::list<Creature*>                       SpectatorList;
+typedef std::list<CreatureP>                       SpectatorList;
 typedef std::unordered_map<Position,SpectatorList> SpectatorCache;
 
 

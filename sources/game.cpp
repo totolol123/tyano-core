@@ -744,13 +744,16 @@ bool Game::internalPlaceCreature(Creature* creature, const Position& pos, bool e
 	if(creature->getParent())
 		return false;
 
-	if(!map->placeCreature(pos, creature, extendedPos, forced))
-		return false;
-
 	creature->setID();
 
 	autoList[creature->getID()] = creature;
 	creature->addList();
+
+	if(!map->placeCreature(pos, creature, extendedPos, forced)) {
+		creature->remove();
+		return false;
+	}
+
 	return true;
 }
 
@@ -773,34 +776,6 @@ bool Game::placeCreature(const CreatureP& creature, const Position& pos, bool ex
 
 	if(!internalPlaceCreature(creature.get(), pos, extendedPos, forced))
 		return false;
-
-	if (!creature->isAlive()) {
-		return false;
-	}
-
-	if (!creature->isAlive()) {
-		return false;
-	}
-
-	SpectatorList::iterator it;
-	SpectatorList list;
-
-	getSpectators(list, creature->getPosition(), false, true);
-	for(it = list.begin(); it != list.end(); ++it)
-	{
-		if((tmpPlayer = (*it)->getPlayer()))
-			tmpPlayer->sendCreatureAppear(creature.get(), BOOST_CURRENT_FUNCTION);
-	}
-
-	for(it = list.begin(); it != list.end(); ++it)
-		(*it)->onCreatureAppear(creature);
-
-	if (!creature->isAlive()) {
-		return false;
-	}
-
-	creature->setLastPosition(pos);
-	creature->getParent()->postAddNotification(nullptr, creature.get(), nullptr, creature->getParent()->__getIndexOfThing(creature.get()));
 
 	if (!creature->isAlive()) {
 		return false;
@@ -838,42 +813,7 @@ bool Game::removeCreature(Creature* creature, bool isLogout /*= true*/)
 
 	Tile* tile = creature->getTile();
 	if (tile != nullptr) {
-		SpectatorList list;
-
-		SpectatorList::iterator it;
-		getSpectators(list, tile->getPosition(), false, true);
-
-		Player* player = nullptr;
-		std::vector<uint32_t> oldStackPosVector;
-		for(it = list.begin(); it != list.end(); ++it)
-		{
-			if((player = (*it)->getPlayer()) && player->canSeeCreature(creature))
-				oldStackPosVector.push_back(tile->getClientIndexOfThing(player, creature));
-		}
-
-		int32_t oldIndex = tile->__getIndexOfThing(creature);
-
-		map->onCreatureMoved(creature, creature->getTile(), nullptr);
-
-		autorelease(creature);
-
-		//send to client
-		uint32_t i = 0;
-		for(it = list.begin(); it != list.end(); ++it)
-		{
-			if(!(player = (*it)->getPlayer()) || !player->canSeeCreature(creature))
-				continue;
-
-			player->sendCreatureDisappear(creature, oldStackPosVector[i], BOOST_CURRENT_FUNCTION);
-			++i;
-		}
-
-		//event method
-		for(it = list.begin(); it != list.end(); ++it)
-			(*it)->onCreatureDisappear(creature, isLogout);
-
-		tile->__removeThing(creature, 0);
-		tile->postRemoveNotification(nullptr, creature, nullptr, oldIndex, true);
+		tile->removeCreature(creature);
 
 		assert(creature->getParent() == nullptr);
 	}
@@ -1011,7 +951,7 @@ bool Game::playerMoveCreature(uint32_t playerId, uint32_t movingCreatureId,
 	if(deny)
 		return false;
 
-	ReturnValue ret = internalMoveCreature(player, movingCreature, movingCreature->getTile(), toTile);
+	ReturnValue ret = toTile->addCreature(movingCreature, 0, player);
 	if(ret != RET_NOERROR)
 	{
 		if(!player->hasCustomFlag(PlayerCustomFlag_CanMoveFromFar) || !player->hasCustomFlag(PlayerCustomFlag_CanMoveAnywhere))
@@ -1041,8 +981,7 @@ bool Game::playerMoveCreature(uint32_t playerId, uint32_t movingCreatureId,
 ReturnValue Game::internalMoveCreature(Creature* creature, Direction direction, uint32_t flags/* = 0*/)
 {
 	const Position& currentPos = creature->getPosition();
-	Cylinder* fromTile = creature->getTile();
-	Cylinder* toTile = nullptr;
+	Tile* toTile = nullptr;
 
 	Position destPos = getNextPosition(direction, currentPos);
 	if(direction < Direction::SOUTH_WEST && creature->getPlayer())
@@ -1070,7 +1009,7 @@ ReturnValue Game::internalMoveCreature(Creature* creature, Direction direction, 
 
 	ReturnValue ret = RET_NOTPOSSIBLE;
 	if((toTile = map->getTile(destPos)))
-		ret = internalMoveCreature(nullptr, creature, fromTile, toTile, flags);
+		ret = toTile->addCreature(creature, flags);
 
 	if(ret != RET_NOERROR)
 	{
@@ -1084,35 +1023,6 @@ ReturnValue Game::internalMoveCreature(Creature* creature, Direction direction, 
 	return ret;
 }
 
-ReturnValue Game::internalMoveCreature(Creature* actor, Creature* creature, Cylinder* fromCylinder, Cylinder* toCylinder, uint32_t flags/* = 0*/)
-{
-	//check if we can move the creature to the destination
-	ReturnValue ret = toCylinder->__queryAdd(0, creature, 1, flags);
-	if(ret != RET_NOERROR)
-		return ret;
-
-	fromCylinder->getTile()->moveCreature(actor, creature, toCylinder);
-	if(creature->getParent() != toCylinder)
-		return RET_NOERROR;
-
-	Item* toItem = nullptr;
-	Cylinder* subCylinder = nullptr;
-
-	int32_t n = 0, tmp = 0;
-	while((subCylinder = toCylinder->__queryDestination(tmp, creature, &toItem, flags)) != toCylinder)
-	{
-		toCylinder->getTile()->moveCreature(actor, creature, subCylinder);
-		if(creature->getParent() != subCylinder) //could happen if a script move the creature
-			 break;
-
-		toCylinder = subCylinder;
-		flags = 0;
-		if(++n >= MAP_MAX_LAYERS) //to prevent infinite loop
-			break;
-	}
-
-	return RET_NOERROR;
-}
 
 bool Game::playerMoveItem(uint32_t playerId, const ExtendedPosition& origin, const ExtendedPosition& destination, uint8_t count)
 {
@@ -1954,13 +1864,7 @@ ReturnValue Game::internalTeleport(Thing* thing, const Position& newPos, bool pu
 	{
 		if(Creature* creature = thing->getCreature())
 		{
-			bool success;
-			if(Position::areInRange<1,1,0>(creature->getPosition(), newPos) && pushMove)
-				success = creature->getTile()->moveCreature(nullptr, creature, toTile, false);
-			else
-				success = creature->getTile()->moveCreature(nullptr, creature, toTile, true);
-
-			return (success ? RET_NOERROR : RET_NOTPOSSIBLE);
+			return toTile->addCreature(creature);
 		}
 
 		if(Item* item = thing->getItem())
@@ -3454,21 +3358,7 @@ bool Game::playerTurn(uint32_t playerId, Direction dir)
 		return true;
 	}
 
-	if(player->getDirection() != dir || !player->hasCustomFlag(PlayerCustomFlag_CanTurnhop))
-		return false;
-
-	Position pos = getNextPosition(dir, player->getPosition());
-	Tile* tile = map->getTile(pos);
-	if(!tile || !tile->ground)
-		return false;
-
-	player->setIdleTime(0);
-	ReturnValue ret = tile->__queryAdd(0, player, 1, FLAG_IGNOREBLOCKITEM);
-	if(ret != RET_NOTENOUGHROOM && (ret != RET_NOTPOSSIBLE || player->hasCustomFlag(PlayerCustomFlag_CanMoveAnywhere))
-		&& (ret != RET_PLAYERISNOTINVITED || player->hasFlag(PlayerFlag_CanEditHouses)))
-		return internalTeleport(player, pos, true);
-
-	player->sendCancelMessage(ret);
+	player->sendCancelMessage(RET_NOTPOSSIBLE);
 	return false;
 }
 
@@ -5112,7 +5002,7 @@ Position Game::getClosestFreeTile(Creature* creature, Position pos, bool extende
 			if(!tile || !tile->ground)
 				continue;
 
-			ReturnValue ret = tile->__queryAdd(0, player, 1, FLAG_IGNOREBLOCKITEM);
+			ReturnValue ret = tile->testAddCreature(*player, FLAG_IGNOREBLOCKITEM);
 			if(ret == RET_NOTENOUGHROOM || (ret == RET_NOTPOSSIBLE && !player->hasCustomFlag(PlayerCustomFlag_CanMoveAnywhere))
 				|| (ret == RET_PLAYERISNOTINVITED && !ignoreHouse && !player->hasFlag(PlayerFlag_CanEditHouses)))
 				continue;
@@ -5126,7 +5016,7 @@ Position Game::getClosestFreeTile(Creature* creature, Position pos, bool extende
 		{
 			Tile* tile = nullptr;
 			if((tile = map->getTile(Position((pos.x + it->first), (pos.y + it->second), pos.z)))
-				&& tile->__queryAdd(0, creature, 1, FLAG_IGNOREBLOCKITEM) == RET_NOERROR)
+				&& tile->testAddCreature(*creature, FLAG_IGNOREBLOCKITEM) == RET_NOERROR)
 				return tile->getPosition();
 		}
 	}

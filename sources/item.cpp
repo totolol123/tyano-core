@@ -1034,6 +1034,13 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			break;
 		}
 
+		case ATTR_TELE_DEST: {
+			LOGw("Item " << kind->id << " is not a teleporter but contains related data. Ignoring that data for now.");
+			propStream.SKIP_N(5);
+
+			break;
+		}
+
 		default:
 			return ATTR_READ_ERROR;
 	}

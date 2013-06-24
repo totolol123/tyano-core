@@ -118,7 +118,8 @@ bool Monster::canMoveTo(const Tile& tile) const {
 		return false;
 	}
 
-	if (tile.__queryAdd(0, this, 1, FLAG_PATHFINDING) != RET_NOERROR) {
+	// FIXME use class-wide flags to avoid duplicate canAddCreature
+	if (tile.testAddCreature(*this, FLAG_PATHFINDING) != RET_NOERROR) {
 		return false;
 	}
 
@@ -595,7 +596,7 @@ bool Monster::targetClosestEnemy() {
 	}
 
 	uint32_t closestDistance = std::numeric_limits<uint32_t>::max();
-	Creature* closestSpectator = nullptr;
+	CreatureP closestSpectator;
 
 	for (auto spectator : spectators) {
 		if (!isEnemy(spectator)) {

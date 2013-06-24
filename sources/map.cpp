@@ -231,7 +231,7 @@ bool Map::canThrowObjectTo(const Position& origin, const Position& destination, 
 
 bool Map::canWalkTo(const Creature* creature, const Position& destination) const {
 	Tile* tile = getTile(destination);
-	if (creature->getTile() != tile && (tile == nullptr || tile->__queryAdd(0, creature, 1, FLAG_PATHFINDING | FLAG_IGNOREFIELDDAMAGE) != RET_NOERROR)) {
+	if (creature->getTile() != tile && (tile == nullptr || tile->testAddCreature(*creature, FLAG_PATHFINDING|FLAG_IGNOREFIELDDAMAGE) != RET_NOERROR)) {
 		return false;
 	}
 
@@ -768,9 +768,7 @@ void Map::getSpectators(SpectatorList& spectators, const Position& center, bool 
 				auto index = indexX + indexY + z;
 
 				const auto& creatures = _creatures[index];
-				for (auto it = creatures.begin(); it != creatures.end(); ++it) {
-					auto creature = (*it).get();
-
+				for (const auto& creature : creatures) {
 					const auto& position = creature->getPosition();
 					if (position.x < minX || position.x > maxX || position.y < minY || position.y > maxY) {
 						continue;
@@ -980,7 +978,7 @@ bool Map::placeCreature(const Position& center, Creature* creature, bool extende
 			tileIsValid = true;
 		}
 		else {
-			ReturnValue result = tile->__queryAdd(0, creature, 1, flags);
+			ReturnValue result = tile->testAddCreature(*creature, flags);
 			if (result == RET_NOERROR || result == RET_PLAYERISNOTINVITED) {
 				tileIsValid = true;
 			}
@@ -1033,7 +1031,7 @@ bool Map::placeCreature(const Position& center, Creature* creature, bool extende
 				continue;
 			}
 
-			if (tile->__queryAdd(0, creature, 1, 0) != RET_NOERROR) {
+			if (tile->testAddCreature(*creature) != RET_NOERROR) {
 				continue;
 			}
 
@@ -1049,22 +1047,7 @@ bool Map::placeCreature(const Position& center, Creature* creature, bool extende
 		}
 	}
 
-	int32_t index = 0;
-	uint32_t flags = 0;
-
-	Item* toItem = nullptr;
-
-	Cylinder* toCylinder = tile->__queryDestination(index, creature, &toItem, flags);
-	if (toCylinder != nullptr) {
-		toCylinder->__internalAddThing(creature);
-
-		Tile* toTile = toCylinder->getTile();
-		if (toTile != nullptr) {
-			onCreatureMoved(creature, nullptr, toTile);
-		}
-	}
-
-	return true;
+	return (tile->addCreature(creature) == RET_NOERROR);
 }
 
 

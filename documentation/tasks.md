@@ -5,6 +5,7 @@ Urgent
 ------
  
 - Rework teleporters and stairs.
+- Rename can(Add|Remove)Creature to test(Add|Remove)Creature
 
 
 Important
@@ -27,11 +28,13 @@ Soon
 - Reduce overall number of corpses and also make them disappear faster. Esp. if there are more than 7-8 corpses on a single tile it get's tricky and players may lose loot.
 - Refactor networking code because the current one is unstable and unsafe.  
   E.g. what if an invisible creature becomes visible? The stack *order* of creatures would vary across clients. The current code cannot handle that!
+- Swimming pools are most likely broken.
 
 
 Improvements
 ------------
 
+- Make `Game::clearSpectatorCache` obsolete by (partial?) invalidation in `Map::onCreatureMoved`.
 - Use scheduler for decaying items.
 - Corpse lifecycles without difficult decaying configuration and flexible lifetime (e.g. corpses of bosses and players should last longer and be immobile for longer).
 - Make monsters think in groups. E.g. a boss is attacked, the other monsters should support him. 

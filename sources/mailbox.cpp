@@ -44,31 +44,24 @@ const std::string& Mailbox::getClassName() {
 }
 
 
-ReturnValue Mailbox::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
+ReturnValue Mailbox::__queryAdd(int32_t index, const Item* item, uint32_t count,
 	uint32_t flags) const
 {
-	if(const Item* item = thing->getItem())
-	{
-		if(canSend(item))
-			return RET_NOERROR;
-	}
+	if(canSend(item))
+		return RET_NOERROR;
 
 	return RET_NOTPOSSIBLE;
 }
 
-ReturnValue Mailbox::__queryMaxCount(int32_t index, const Thing* thing, uint32_t count, uint32_t& maxQueryCount,
+ReturnValue Mailbox::__queryMaxCount(int32_t index, const Item* item, uint32_t count, uint32_t& maxQueryCount,
 	uint32_t flags) const
 {
 	maxQueryCount = std::max((uint32_t)1, count);
 	return RET_NOERROR;
 }
 
-void Mailbox::__addThing(Creature* actor, int32_t index, Thing* thing)
+void Mailbox::__addThing(Creature* actor, int32_t index, Item* item)
 {
-	Item* item = thing->getItem();
-	if(!item)
-		return;
-
 	if(canSend(item))
 		sendItem(actor, item);
 }

@@ -5756,7 +5756,15 @@ int32_t LuaScriptInterface::luaDoTileQueryAdd(lua_State* L)
 		return 1;
 	}
 
-	lua_pushnumber(L, (uint32_t)tile->__queryAdd(0, thing, 1, flags));
+	uint32_t result;
+	if (thing->getCreature() != nullptr) {
+		result = tile->testAddCreature(*thing->getCreature(), flags);
+	}
+	else {
+		result = tile->__queryAdd(0, thing->getItem(), 1, flags);
+	}
+
+	lua_pushnumber(L, result);
 	return 1;
 }
 

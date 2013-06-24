@@ -455,7 +455,7 @@ private:
 			const ItemKindPC& iType, const Item* item);
 
 		virtual void onCreatureAppear(const CreatureP& creature);
-		virtual void onCreatureDisappear(const Creature* creature, bool isLogout);
+		virtual void onCreatureDisappear(const Creature* creature);
 		virtual void onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
 
 		virtual void onAttackedCreatureDisappear(bool isLogout);
@@ -590,21 +590,21 @@ private:
 		virtual void dropLoot(Container* corpse);
 
 		//cylinder implementations
-		virtual ReturnValue __queryAdd(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryAdd(int32_t index, const Item* item, uint32_t count,
 			uint32_t flags) const;
-		virtual ReturnValue __queryMaxCount(int32_t index, const Thing* thing, uint32_t count, uint32_t& maxQueryCount,
+		virtual ReturnValue __queryMaxCount(int32_t index, const Item* item, uint32_t count, uint32_t& maxQueryCount,
 			uint32_t flags) const;
-		virtual ReturnValue __queryRemove(const Thing* thing, uint32_t count, uint32_t flags) const;
-		virtual Cylinder* __queryDestination(int32_t& index, const Thing* thing, Item** destItem,
+		virtual ReturnValue __queryRemove(const Item* item, uint32_t count, uint32_t flags) const;
+		virtual Cylinder* __queryDestination(int32_t& index, const Item* item, Item** destItem,
 			uint32_t& flags);
 
-		virtual void __addThing(Creature* actor, Thing* thing);
-		virtual void __addThing(Creature* actor, int32_t index, Thing* thing);
+		virtual void __addThing(Creature* actor, Item* item);
+		virtual void __addThing(Creature* actor, int32_t index, Item* item);
 
-		virtual void __updateThing(Thing* thing, uint16_t itemId, uint32_t count);
-		virtual void __replaceThing(uint32_t index, Thing* thing);
+		virtual void __updateThing(Item* item, uint16_t itemId, uint32_t count);
+		virtual void __replaceThing(uint32_t index, Item* item);
 
-		virtual void __removeThing(Thing* thing, uint32_t count);
+		virtual void __removeThing(Item* item, uint32_t count);
 
 		virtual Thing* __getThing(uint32_t index) const;
 		virtual int32_t __getIndexOfThing(const Thing* thing) const;
@@ -615,8 +615,8 @@ private:
 		virtual std::map<uint32_t, uint32_t>& __getAllItemTypeCount(std::map<uint32_t,
 			uint32_t>& countMap, bool itemCount = true) const;
 
-		virtual void __internalAddThing(Thing* thing);
-		virtual void __internalAddThing(uint32_t index, Thing* thing);
+		virtual void __internalAddThing(Item* item);
+		virtual void __internalAddThing(uint32_t index, Item* item);
 
 		uint32_t getVocAttackSpeed() const;
 		virtual int32_t getStepSpeed() const
