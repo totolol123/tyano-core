@@ -236,18 +236,24 @@ bool Weapon::configureEvent(xmlNodePtr p)
 	if(!vocWeaponMap.empty())
 		wieldInfo |= WIELDINFO_VOCREQ;
 
+	auto kind = server.items()[getID()];
+	if (kind == nullptr) {
+		LOGe("Weapon event for non-existent item " << getID() << ".");
+		return false;
+	}
+
 	if(wieldInfo)
 	{
-		ItemKindP kind = server.items().getMutableKind(id);
-		if (kind) {
-			kind->wieldInfo = wieldInfo;
-			kind->minReqLevel = getReqLevel();
-			kind->minReqMagicLevel = getReqMagLv();
-			kind->vocationString = parseVocationString(vocStringVec);
+		ItemKindP mutableKind = server.items().getMutableKind(id);
+		if (mutableKind) {
+			mutableKind->wieldInfo = wieldInfo;
+			mutableKind->minReqLevel = getReqLevel();
+			mutableKind->minReqMagicLevel = getReqMagLv();
+			mutableKind->vocationString = parseVocationString(vocStringVec);
 		}
 	}
 
-	return configureWeapon(server.items()[getID()]);
+	return configureWeapon(kind);
 }
 
 bool Weapon::loadFunction(const std::string& functionName)

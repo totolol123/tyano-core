@@ -42,6 +42,10 @@ LOGGER_DEFINITION(Tile);
 ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const CreatureP& actor) {
 	assert(creature != nullptr);
 
+	if (_lockCount > 0) {
+		return RET_LOCKED;
+	}
+
 	auto previousTile = creature->getTile();
 	if (previousTile == this) {
 		return RET_NOERROR;
@@ -57,6 +61,16 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 	auto result = testAddCreature(*creature, flags);
 	if (result != RET_NOERROR) {
 		return result;
+	}
+
+	{
+		Lock lock(this);
+		Lock lockPrevious(previousTile);
+
+		result = server.moveEvents().willAddCreature(*this, creature, actor);
+		if (result != RET_NOERROR) {
+			return result;
+		}
 	}
 
 	auto& game = server.game();
@@ -389,6 +403,11 @@ Position Tile::getForwardingDestination() const {
 }
 
 
+ItemP Tile::getGround() const {
+	return ground;
+}
+
+
 bool Tile::isForwarder() const {
 	return (isLocalForwarder() || isTeleporter());
 }
@@ -521,6 +540,10 @@ ReturnValue Tile::removeCreature(const CreatureP& creature, const CreatureP& act
 
 
 ReturnValue Tile::testAddCreature(const Creature& creature, uint32_t flags) const {
+	if (_lockCount > 0) {
+		return RET_LOCKED;
+	}
+
 	if (creature.getTile() == this) {
 		return RET_NOERROR;
 	}
@@ -685,11 +708,34 @@ ReturnValue Tile::testAddCreature(const Creature& creature, uint32_t flags) cons
 
 
 ReturnValue Tile::testRemoveCreature(const Creature& creature) const {
+	if (_lockCount > 0) {
+		return RET_LOCKED;
+	}
+
 	if (creature.getTile() != this) {
 		return RET_NOTPOSSIBLE;
 	}
 
 	return RET_NOERROR;
+}
+
+
+
+
+Tile::Lock::Lock(Tile* tile)
+	: _tile(tile)
+{
+	if (tile != nullptr) {
+		++tile->_lockCount;
+	}
+}
+
+
+Tile::Lock::~Lock() {
+	if (_tile != nullptr) {
+		assert(_tile->_lockCount > 0);
+		--_tile->_lockCount;
+	}
 }
 
 

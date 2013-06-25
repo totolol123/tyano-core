@@ -83,11 +83,13 @@ class TileItemVector
 
 		ItemVector::iterator begin() {return items.begin();}
 		ItemVector::const_iterator begin() const {return items.begin();}
+		ItemVector::const_iterator cbegin() const {return items.cbegin();}
 		ItemVector::reverse_iterator rbegin() {return items.rbegin();}
 		ItemVector::const_reverse_iterator rbegin() const {return items.rbegin();}
 
 		ItemVector::iterator end() {return items.end();}
 		ItemVector::const_iterator end() const {return items.end();}
+		ItemVector::const_iterator cend() const {return items.cend();}
 		ItemVector::reverse_iterator rend() {return items.rend();}
 		ItemVector::const_reverse_iterator rend() const {return items.rend();}
 
@@ -135,6 +137,7 @@ public:
 	Tile*               getAvailableCreatureForwardingTile (const Creature& creature) const;
 	Tile*               getAvailableItemForwardingTile     (const Item& item) const;
 	Position            getForwardingDestination           () const;
+	ItemP               getGround                          () const;
 	bool                isForwarder                        () const;
 	bool                isLocalForwarder                   () const;
 	bool                isTeleporter                       () const;
@@ -142,6 +145,26 @@ public:
 	ReturnValue         removeCreature                     (const CreatureP& creature, const CreatureP& actor = nullptr);
 	virtual ReturnValue testAddCreature                    (const Creature& creature, uint32_t flags = 0) const;
 	virtual ReturnValue testRemoveCreature                 (const Creature& creature) const;
+
+
+private:
+
+	class Lock {
+
+	public:
+
+		Lock  (Tile* tile);
+		~Lock ();
+
+
+	private:
+
+		Tile* _tile;
+
+	};
+
+
+	uint32_t _lockCount;
 
 
 	public:

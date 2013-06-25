@@ -35,6 +35,102 @@
 LOGGER_DEFINITION(MoveEvents);
 
 
+ReturnValue MoveEvents::willAddCreature(Tile& tile, const CreatureP& creature, const CreatureP& actor) const {
+	assert(creature != nullptr);
+
+	auto event = getEvent(&tile, MOVE_EVENT_WILL_ADD_CREATURE);
+	if (event != nullptr) {
+		auto result = event->willAddCreature(tile, creature, actor);
+		if (result != RET_NOERROR) {
+			return result;
+		}
+	}
+
+	auto ground = tile.getGround();
+	if (ground != nullptr) {
+		event = getEvent(*ground, MOVE_EVENT_WILL_ADD_CREATURE);
+		if (event != nullptr) {
+			auto result = event->willAddCreature(tile, creature, actor);
+			if (result != RET_NOERROR) {
+				return result;
+			}
+		}
+	}
+
+	auto items = tile.getItemList();
+	if (items != nullptr) {
+		for (auto i = items->cbegin(); i != items->cend(); ++i) {
+			event = getEvent(**i, MOVE_EVENT_WILL_ADD_CREATURE);
+			if (event != nullptr) {
+				auto result = event->willAddCreature(tile, creature, actor);
+				if (result != RET_NOERROR) {
+					return result;
+				}
+			}
+		}
+	}
+
+	return RET_NOERROR;
+}
+
+
+
+
+ReturnValue MoveEvent::willAddCreature(Tile& tile, const CreatureP& creature, const CreatureP& actor) const {
+	assert(creature != nullptr);
+
+	if (!m_interface->reserveEnv()) {
+		LOGe("[MoveEvent::executeStep] Call stack overflow.");
+		return RET_NOERROR;
+	}
+
+	ScriptEnviroment& env = *m_interface->getEnv();
+	env.setScriptId(m_scriptId, m_interface);
+	env.setRealPos(tile.getPosition());
+
+	lua_State* L = m_interface->getState();
+	lua_pushcfunction(L, &LuaScriptInterface::handleFunction);
+	m_interface->pushFunction(m_scriptId);
+	LuaScriptInterface::pushPosition(L, tile.getPosition());
+	lua_pushnumber(L, env.addThing(creature));
+	lua_pushnumber(L, env.addThing(actor));
+
+	ReturnValue result = RET_NOERROR;
+
+	if (lua_pcall(L, 3, 1, 5)) {
+		LuaScriptInterface::error(nullptr, LuaScriptInterface::popString(L));
+	}
+	else {
+		if (lua_isnil(L, -1)) {
+			// no error
+		}
+		else if (lua_isboolean(L, -1)) {
+			result = (lua_toboolean(L, -1) != 0 ? RET_NOERROR : RET_NOTPOSSIBLE);
+		}
+		else if (lua_isnumber(L, -1)) {
+			result = static_cast<ReturnValue>(lua_tointeger(L, -1));
+		}
+		else {
+			LuaScriptInterface::error(nullptr, "MoveEvent's willAddCreature is expected to return nil, a boolean or a number.");
+		}
+	}
+
+	lua_pop(L, 2);
+
+	m_interface->releaseEnv();
+
+	return result;
+}
+
+
+
+
+
+
+
+
+
+
 
 MoveEvents::MoveEvents()
 	: m_lastCacheTile(nullptr), m_interface("MoveEvents Interface")
@@ -286,11 +382,11 @@ void MoveEvents::addEvent(const MoveEventP& moveEvent, int32_t id, MoveListMap& 
 	}
 }
 
-MoveEventP MoveEvents::getEvent(const Item* item, MoveEvent_t eventType) const
+MoveEventP MoveEvents::getEvent(const Item& item, MoveEvent_t eventType) const
 {
-	if(item->getUniqueId())
+	if(item.getUniqueId())
 	{
-		auto it = m_uniqueIdMap.find(item->getUniqueId());
+		auto it = m_uniqueIdMap.find(item.getUniqueId());
 		if(it != m_uniqueIdMap.end())
 		{
 			const auto& moveEventList = it->second.moveEvent[eventType];
@@ -299,9 +395,9 @@ MoveEventP MoveEvents::getEvent(const Item* item, MoveEvent_t eventType) const
 		}
 	}
 
-	if(item->getActionId())
+	if(item.getActionId())
 	{
-		auto it = m_actionIdMap.find(item->getActionId());
+		auto it = m_actionIdMap.find(item.getActionId());
 		if(it != m_actionIdMap.end())
 		{
 			const auto& moveEventList = it->second.moveEvent[eventType];
@@ -310,7 +406,7 @@ MoveEventP MoveEvents::getEvent(const Item* item, MoveEvent_t eventType) const
 		}
 	}
 
-	auto it = m_itemIdMap.find(item->getId());
+	auto it = m_itemIdMap.find(item.getId());
 	if(it != m_itemIdMap.end())
 	{
 		const auto& moveEventList = it->second.moveEvent[eventType];
@@ -321,7 +417,7 @@ MoveEventP MoveEvents::getEvent(const Item* item, MoveEvent_t eventType) const
 	return nullptr;
 }
 
-MoveEventP MoveEvents::getEvent(const Item* item, MoveEvent_t eventType, slots_t slot) const
+MoveEventP MoveEvents::getEvent(const Item& item, MoveEvent_t eventType, slots_t slot) const
 {
 	uint32_t slotp = 0;
 	switch(slot)
@@ -360,7 +456,7 @@ MoveEventP MoveEvents::getEvent(const Item* item, MoveEvent_t eventType, slots_t
 			break;
 	}
 
-	auto it = m_itemIdMap.find(item->getId());
+	auto it = m_itemIdMap.find(item.getId());
 	if(it == m_itemIdMap.end())
 		return nullptr;
 
@@ -415,14 +511,14 @@ MoveEventP MoveEvents::getEvent(const Tile* tile, MoveEvent_t eventType) const
 	return nullptr;
 }
 
-bool MoveEvents::hasEquipEvent(const Item* item) const
+bool MoveEvents::hasEquipEvent(const Item& item) const
 {
 	return getEvent(item, MOVE_EVENT_EQUIP) && getEvent(item, MOVE_EVENT_DEEQUIP);
 }
 
-bool MoveEvents::hasTileEvent(const Item* item) const
+bool MoveEvents::hasTileEvent(const Item& item) const
 {
-	return (getEvent(item, MOVE_EVENT_STEP_IN) || getEvent(item, MOVE_EVENT_STEP_OUT) || getEvent(item,
+	return (getEvent(item, MOVE_EVENT_STEP_IN) || getEvent(item, MOVE_EVENT_STEP_OUT) || getEvent(item, MOVE_EVENT_WILL_ADD_CREATURE) || getEvent(item,
 		MOVE_EVENT_ADD_ITEM_ITEMTILE) || getEvent(item, MOVE_EVENT_REMOVE_ITEM_ITEMTILE));
 }
 
@@ -458,7 +554,7 @@ uint32_t MoveEvents::onCreatureMove(Creature* actor, Creature* creature, const T
 		//We cannot use iterators here since the scripts can invalidate the iterator
 		for(int32_t i = 0, j = m_lastCacheItemVector.size(); i < j; ++i)
 		{
-			if((tileItem = m_lastCacheItemVector[i]) && (moveEvent = getEvent(tileItem, eventType)))
+			if((tileItem = m_lastCacheItemVector[i]) && (moveEvent = getEvent(*tileItem, eventType)))
 				ret &= moveEvent->fireStepEvent(actor, creature, tileItem, tile->getPosition(), fromPos, toPos);
 		}
 
@@ -475,12 +571,12 @@ uint32_t MoveEvents::onCreatureMove(Creature* actor, Creature* creature, const T
 		if(!(thing = tile->__getThing(i)) || !(tileItem = thing->getItem()))
 			continue;
 
-		if((moveEvent = getEvent(tileItem, eventType)))
+		if((moveEvent = getEvent(*tileItem, eventType)))
 		{
 			m_lastCacheItemVector.push_back(tileItem);
 			ret &= moveEvent->fireStepEvent(actor, creature, tileItem, tile->getPosition(), fromPos, toPos);
 		}
-		else if(hasTileEvent(tileItem))
+		else if(hasTileEvent(*tileItem))
 			m_lastCacheItemVector.push_back(tileItem);
 	}
 
@@ -489,7 +585,7 @@ uint32_t MoveEvents::onCreatureMove(Creature* actor, Creature* creature, const T
 
 uint32_t MoveEvents::onPlayerEquip(Player* player, Item* item, slots_t slot, bool isCheck)
 {
-	if(MoveEventP moveEvent = getEvent(item, MOVE_EVENT_EQUIP, slot))
+	if(MoveEventP moveEvent = getEvent(*item, MOVE_EVENT_EQUIP, slot))
 		return moveEvent->fireEquip(player, item, slot, isCheck);
 
 	return 1;
@@ -497,7 +593,7 @@ uint32_t MoveEvents::onPlayerEquip(Player* player, Item* item, slots_t slot, boo
 
 uint32_t MoveEvents::onPlayerDeEquip(Player* player, Item* item, slots_t slot, bool isRemoval)
 {
-	if(MoveEventP moveEvent = getEvent(item, MOVE_EVENT_DEEQUIP, slot))
+	if(MoveEventP moveEvent = getEvent(*item, MOVE_EVENT_DEEQUIP, slot))
 		return moveEvent->fireEquip(player, item, slot, isRemoval);
 
 	return 1;
@@ -517,7 +613,7 @@ uint32_t MoveEvents::onItemMove(Creature* actor, Item* item, Tile* tile, bool is
 	if(moveEvent)
 		ret &= moveEvent->fireAddRemItem(actor, item, nullptr, tile->getPosition());
 
-	moveEvent = getEvent(item, eventType1);
+	moveEvent = getEvent(*item, eventType1);
 	if(moveEvent)
 		ret &= moveEvent->fireAddRemItem(actor, item, nullptr, tile->getPosition());
 
@@ -531,7 +627,7 @@ uint32_t MoveEvents::onItemMove(Creature* actor, Item* item, Tile* tile, bool is
 		for(int32_t i = 0, j = m_lastCacheItemVector.size(); i < j; ++i)
 		{
 			if((tileItem = m_lastCacheItemVector[i]) && tileItem != item
-				&& (moveEvent = getEvent(tileItem, eventType2)))
+				&& (moveEvent = getEvent(*tileItem, eventType2)))
 				ret &= moveEvent->fireAddRemItem(actor, item,
 					tileItem, tile->getPosition());
 		}
@@ -549,12 +645,12 @@ uint32_t MoveEvents::onItemMove(Creature* actor, Item* item, Tile* tile, bool is
 		if(!(thing = tile->__getThing(i)) || !(tileItem = thing->getItem()) || tileItem == item)
 			continue;
 
-		if((moveEvent = getEvent(tileItem, eventType2)))
+		if((moveEvent = getEvent(*tileItem, eventType2)))
 		{
 			m_lastCacheItemVector.push_back(tileItem);
 			ret &= moveEvent->fireAddRemItem(actor, item, tileItem, tile->getPosition());
 		}
-		else if(hasTileEvent(tileItem))
+		else if(hasTileEvent(*tileItem))
 			m_lastCacheItemVector.push_back(tileItem);
 	}
 
@@ -567,7 +663,7 @@ void MoveEvents::onAddTileItem(const Tile* tile, Item* item)
 		return;
 
 	std::vector<Item*>::iterator it = std::find(m_lastCacheItemVector.begin(), m_lastCacheItemVector.end(), item);
-	if(it == m_lastCacheItemVector.end() && hasTileEvent(item))
+	if(it == m_lastCacheItemVector.end() && hasTileEvent(*item))
 		m_lastCacheItemVector.push_back(item);
 }
 
@@ -631,6 +727,9 @@ std::string MoveEvent::getScriptEventName() const
 		case MOVE_EVENT_REMOVE_ITEM:
 			return "onRemoveItem";
 
+		case MOVE_EVENT_WILL_ADD_CREATURE:
+			return "willAddCreature";
+
 		default:
 			break;
 	}
@@ -682,6 +781,9 @@ bool MoveEvent::configureEvent(xmlNodePtr p)
 			m_eventType = MOVE_EVENT_ADD_ITEM;
 		else if(tmpStrValue == "removeitem")
 			m_eventType = MOVE_EVENT_REMOVE_ITEM;
+		else if(strValue == "willAddCreature") {
+			m_eventType = MOVE_EVENT_WILL_ADD_CREATURE;
+		}
 		else
 		{
 			LOGe("[MoveEvent::configureMoveEvent] Unknown event type \"" << strValue << "\"");
@@ -1202,5 +1304,17 @@ uint32_t MoveEvent::executeAddRemItem(Creature* actor, Item* item, Item* tileIte
 	{
 		LOGe("[MoveEvent::executeAddRemItem] Call stack overflow.");
 		return 0;
+	}
+}
+
+
+bool MoveEvent::validate() const {
+	if (!Event::validate()) {
+		return false;
+	}
+
+	if (m_eventType == MOVE_EVENT_WILL_ADD_CREATURE && m_scripted != EVENT_SCRIPT_TRUE) {
+		LOGe("MoveEvents of type 'willAddCreature' can only use LUA files.");
+		return false;
 	}
 }

@@ -41,6 +41,7 @@ enum MoveEvent_t
 	MOVE_EVENT_REMOVE_ITEM = 5,
 	MOVE_EVENT_ADD_ITEM_ITEMTILE = 6,
 	MOVE_EVENT_REMOVE_ITEM_ITEMTILE = 7,
+	MOVE_EVENT_WILL_ADD_CREATURE = 7,
 	MOVE_EVENT_NONE = 8,
 	MOVE_EVENT_LAST = MOVE_EVENT_REMOVE_ITEM_ITEMTILE
 };
@@ -53,8 +54,14 @@ struct MoveEventList
 	EventList moveEvent[MOVE_EVENT_NONE];
 };
 
-class MoveEvents : public BaseEvents<MoveEvent>
-{
+class MoveEvents : public BaseEvents<MoveEvent> {
+
+public:
+
+	ReturnValue willAddCreature (Tile& tile, const CreatureP& creature, const CreatureP& actor) const;
+
+
+
 	public:
 		MoveEvents();
 
@@ -63,9 +70,9 @@ class MoveEvents : public BaseEvents<MoveEvent>
 		uint32_t onPlayerDeEquip(Player* player, Item* item, slots_t slot, bool isRemoval);
 		uint32_t onItemMove(Creature* actor, Item* item, Tile* tile, bool isAdd);
 
-		std::shared_ptr<MoveEvent> getEvent(const Item* item, MoveEvent_t eventType) const;
-		bool hasEquipEvent(const Item* item) const;
-		bool hasTileEvent(const Item* item) const;
+		std::shared_ptr<MoveEvent> getEvent(const Item& item, MoveEvent_t eventType) const;
+		bool hasEquipEvent(const Item& item) const;
+		bool hasTileEvent(const Item& item) const;
 
 		void onRemoveTileItem(const Tile* tile, Item* item);
 		void onAddTileItem(const Tile* tile, Item* item);
@@ -90,7 +97,7 @@ class MoveEvents : public BaseEvents<MoveEvent>
 		void registerActionID(int32_t actionId, MoveEvent_t eventType);
 		void registerUniqueID(int32_t uniqueId, MoveEvent_t eventType);
 
-		typedef std::map<int32_t, MoveEventList> MoveListMap;
+		typedef std::unordered_map<int32_t, MoveEventList> MoveListMap;
 		MoveListMap m_itemIdMap;
 		MoveListMap m_uniqueIdMap;
 		MoveListMap m_actionIdMap;
@@ -99,25 +106,34 @@ class MoveEvents : public BaseEvents<MoveEvent>
 		MovePosListMap m_positionMap;
 
 		void addEvent(const MoveEventP& moveEvent, int32_t id, MoveListMap& map, bool override);
-		MoveEventP getEvent(const Item* item, MoveEvent_t eventType, slots_t slot) const;
+		MoveEventP getEvent(const Item& item, MoveEvent_t eventType, slots_t slot) const;
 
 		void addEvent(const MoveEventP& moveEvent, Position pos, MovePosListMap& map, bool override);
 		MoveEventP getEvent(const Tile* tile, MoveEvent_t eventType) const;
 };
 
+typedef ReturnValue (WillAddCreatureFunction)(Tile& tile, Creature& creature, Creature* actor);
 typedef uint32_t (MoveFunction)(Item* item);
 typedef uint32_t (StepFunction)(const CreatureP& creature, Item* item);
 typedef uint32_t (EquipFunction)(const MoveEventP& moveEvent, Player* player, Item* item, slots_t slot, bool boolean);
 
-class MoveEvent : public Event
-{
-	public:
+
+class MoveEvent : public Event {
+
+public:
+
+	ReturnValue willAddCreature (Tile& tile, const CreatureP& creature, const CreatureP& actor) const;
+
+
+public:
+
 		MoveEvent(LuaScriptInterface* _interface);
 		virtual ~MoveEvent();
 
 		MoveEvent_t getEventType() const;
 		void setEventType(MoveEvent_t type);
 
+		virtual bool validate() const;
 		virtual bool configureEvent(xmlNodePtr p);
 		virtual bool loadFunction(const std::string& functionName);
 

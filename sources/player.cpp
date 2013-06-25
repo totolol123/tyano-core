@@ -2092,7 +2092,7 @@ BlockType_t Player::blockHit(Creature* attacker, CombatType_t combatType, int32_
 		double blocked = 0, reflected = 0;
 		for(int32_t slot = +slots_t::FIRST; slot < +slots_t::LAST; ++slot)
 		{
-			if(!(item = getInventoryItem((slots_t)slot)) || (server.moveEvents().hasEquipEvent(item)
+			if(!(item = getInventoryItem((slots_t)slot)) || (server.moveEvents().hasEquipEvent(*item)
 				&& !isItemAbilityEnabled((slots_t)slot)))
 				continue;
 
@@ -2177,7 +2177,7 @@ bool Player::onDeath()
 		Item* item = nullptr;
 		for(int32_t i = +slots_t::FIRST; ((skillLoss || lootDrop == LOOT_DROP_FULL) && i < +slots_t::LAST); ++i)
 		{
-			if(!(item = getInventoryItem((slots_t)i)) || (server.moveEvents().hasEquipEvent(item)
+			if(!(item = getInventoryItem((slots_t)i)) || (server.moveEvents().hasEquipEvent(*item)
 				&& !isItemAbilityEnabled((slots_t)i)))
 				continue;
 
@@ -4784,7 +4784,7 @@ void Player::increaseCombatValues(int32_t& min, int32_t& max, bool useCharges, b
 	int32_t minValue = 0, maxValue = 0;
 	for(int32_t i = +slots_t::FIRST; i < +slots_t::LAST; ++i)
 	{
-		if(!(item = getInventoryItem((slots_t)i)) || (server.moveEvents().hasEquipEvent(item)
+		if(!(item = getInventoryItem((slots_t)i)) || (server.moveEvents().hasEquipEvent(*item)
 			&& !isItemAbilityEnabled((slots_t)i)))
 			continue;
 

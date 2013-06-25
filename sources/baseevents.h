@@ -140,6 +140,11 @@ class BaseEvents
 			if(!override && readXMLString(p, "override", strValue) && booleanString(strValue))
 				override = true;
 
+			if(!event->validate())
+			{
+				return false;
+			}
+
 			if(success) {
 				registerEvent(event, p, override);
 			}
@@ -192,6 +197,7 @@ class EventBase {
 
 public:
 
+	virtual bool validate() const = 0;
 	virtual bool configureEvent(xmlNodePtr p) = 0;
 	virtual bool isScripted() const = 0;
 
@@ -220,6 +226,7 @@ class Event : virtual public EventBase, public std::enable_shared_from_this<Even
 
 	public:
 
+		virtual bool validate() const;
 		virtual bool isScripted() const {return m_scripted != EVENT_SCRIPT_FALSE;}
 
 		virtual bool loadBuffer(const std::string& buffer);
