@@ -131,11 +131,17 @@ class Tile : public Cylinder {
 
 public:
 
-	ReturnValue         addCreature        (const CreatureP& creature, uint32_t flags = 0, const CreatureP& actor = nullptr);
-	std::vector<Tile*>  neighbors          (uint16_t distance = 1) const;
-	ReturnValue         removeCreature     (const CreatureP& creature, const CreatureP& actor = nullptr);
-	virtual ReturnValue testAddCreature    (const Creature& creature, uint32_t flags = 0) const;
-	virtual ReturnValue testRemoveCreature (const Creature& creature) const;
+	ReturnValue         addCreature                        (const CreatureP& creature, uint32_t flags = 0, const CreatureP& actor = nullptr);
+	Tile*               getAvailableCreatureForwardingTile (const Creature& creature) const;
+	Tile*               getAvailableItemForwardingTile     (const Item& item) const;
+	Position            getForwardingDestination           () const;
+	bool                isForwarder                        () const;
+	bool                isLocalForwarder                   () const;
+	bool                isTeleporter                       () const;
+	std::vector<Tile*>  neighbors                          (uint16_t distance = 1) const;
+	ReturnValue         removeCreature                     (const CreatureP& creature, const CreatureP& actor = nullptr);
+	virtual ReturnValue testAddCreature                    (const Creature& creature, uint32_t flags = 0) const;
+	virtual ReturnValue testRemoveCreature                 (const Creature& creature) const;
 
 
 	public:

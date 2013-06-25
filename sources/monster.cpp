@@ -118,11 +118,6 @@ bool Monster::canMoveTo(const Tile& tile) const {
 		return false;
 	}
 
-	// FIXME use class-wide flags to avoid duplicate canAddCreature
-	if (tile.testAddCreature(*this, FLAG_PATHFINDING) != RET_NOERROR) {
-		return false;
-	}
-
 	return true;
 }
 
@@ -212,6 +207,11 @@ CreaturePC Monster::getDirectOwner() const {
 
 CreatureP Monster::getMaster() const {
 	return _master;
+}
+
+
+uint32_t Monster::getMoveFlags() const {
+	return (Creature::getMoveFlags() | FLAG_PATHFINDING);
 }
 
 

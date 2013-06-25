@@ -34,14 +34,12 @@ public:
 	Teleporter          (const ItemKindPC& kind);
 	virtual ~Teleporter ();
 
-	virtual Teleporter*       asTeleporter               ();
-	virtual const Teleporter* asTeleporter               () const;
-	        Tile*             getCreatureDestinationTile (const Creature& creature) const;
-	        Tile*             getItemDestinationTile     (const Item& item) const;
-	        const Position&   getDestination             () const;
-	virtual Attr_ReadValue    readAttr                   (AttrTypes_t attribute, PropStream& stream);
-	virtual void              serializeAttr              (PropWriteStream& stream) const;
-	        void              setDestination             (const Position& destination);
+	virtual Teleporter*       asTeleporter   ();
+	virtual const Teleporter* asTeleporter   () const;
+	        const Position&   getDestination () const;
+	virtual Attr_ReadValue    readAttr       (AttrTypes_t attribute, PropStream& stream);
+	virtual void              serializeAttr  (PropWriteStream& stream) const;
+	        void              setDestination (const Position& destination);
 
 
 private:

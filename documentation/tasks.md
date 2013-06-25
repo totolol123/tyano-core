@@ -3,7 +3,7 @@ Tasks
 
 Urgent
 ------
- 
+
 - Rework teleporters and stairs.
 - Rename can(Add|Remove)Creature to test(Add|Remove)Creature
 
@@ -34,6 +34,8 @@ Soon
 Improvements
 ------------
 
+- Improve stairs movement so that the player exits a the most logical position if free.
+- Improve updating creature direction after diagonal movement.
 - Make `Game::clearSpectatorCache` obsolete by (partial?) invalidation in `Map::onCreatureMoved`.
 - Use scheduler for decaying items.
 - Corpse lifecycles without difficult decaying configuration and flexible lifetime (e.g. corpses of bosses and players should last longer and be immobile for longer).

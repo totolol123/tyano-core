@@ -61,9 +61,8 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 
 	auto& game = server.game();
 
-	auto teleporter = getTeleporter();
-	if (teleporter != nullptr) {
-		Tile* destinationTile = teleporter->getCreatureDestinationTile(*creature);
+	if (isForwarder()) {
+		auto destinationTile = getAvailableCreatureForwardingTile(*creature);
 		if (destinationTile == nullptr) {
 			return RET_DESTINATIONOUTOFREACH;
 		}
@@ -73,11 +72,15 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 			return result;
 		}
 
-		game.addMagicEffect(pos, MAGIC_EFFECT_TELEPORT, creature->isGhost());
-		game.addMagicEffect(destinationTile->pos, MAGIC_EFFECT_TELEPORT, creature->isGhost());
+		if (isTeleporter()) {
+			game.addMagicEffect(pos, MAGIC_EFFECT_TELEPORT, creature->isGhost());
+			game.addMagicEffect(destinationTile->pos, MAGIC_EFFECT_TELEPORT, creature->isGhost());
+		}
 
 		return RET_NOERROR;
 	}
+
+	bool teleported = false;
 
 	StackPosition previousPosition;
 	SpectatorList spectators;
@@ -89,6 +92,37 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 		previousPosition = StackPosition(previousTile->pos, previousIndex);
 
 		game.getSpectators(spectators, previousTile->pos, false, true);
+
+		if (previousPosition.z != pos.z || previousPosition.distanceTo(pos) > 1) {
+			teleported = true;
+		}
+		else {
+			Direction newDirection = Direction::NORTH;
+			if (previousPosition.y < pos.y) {
+				// stay north
+			}
+			else if (previousPosition.y < pos.y) {
+				newDirection = Direction::SOUTH;
+			}
+			else if (previousPosition.x < pos.x) {
+				newDirection = Direction::EAST;
+			}
+			else if (previousPosition.x > pos.x) {
+				newDirection = Direction::WEST;
+			}
+
+			if (newDirection != creature->getDirection()) {
+				creature->setDirection(newDirection);
+
+				for (auto spectator : spectators) {
+					if (auto player = spectator->getPlayer()) {
+						if (player->canSeeCreature(creature.get())) { // FIXME remove .get()
+							player->sendCreatureTurn(creature.get());
+						}
+					}
+				}
+			}
+		}
 	}
 	else {
 		spectators.push_back(creature.get()); // FIXME remove .get()
@@ -100,7 +134,7 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 
 	++thingCount;
 
-	StackPosition position(pos, __getIndexOfThing(creature.get())); // FIXME remove .get()
+	const StackPosition newPosition(pos, __getIndexOfThing(creature.get())); // FIXME remove .get()
 
 	std::vector<int32_t> previousIndexes;
 	if (previousTile != nullptr) {
@@ -122,43 +156,27 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 		--previousTile->thingCount;
 	}
 	else {
-		creature->setLastPosition(position.withoutIndex());
+		creature->setLastPosition(pos);
 	}
 
 	game.clearSpectatorCache();
 	creature->setParent(this);
 
 	if (previousTile != nullptr) {
-		LOGt(creature << " moved from " << previousPosition << " to " << position << ".");
+		LOGt(creature << " moved from " << previousPosition << " to " << newPosition << ".");
 	}
 	else {
-		LOGt(creature << " added to " << position << ".");
+		LOGt(creature << " added to " << newPosition << ".");
 	}
 
 	game.getMap()->onCreatureMoved(creature.get(), previousTile, this); // FIXME remove .get()
 
 	if (previousTile != nullptr) {
-		bool teleported = (previousPosition.distanceTo(pos) > 1);
-		if (!teleported) {
-			if (previousPosition.y < position.y) {
-				creature->setDirection(Direction::NORTH);
-			}
-			else if (previousPosition.y < position.y) {
-				creature->setDirection(Direction::SOUTH);
-			}
-			else if (previousPosition.x < position.x) {
-				creature->setDirection(Direction::EAST);
-			}
-			else if (previousPosition.x > position.x) {
-				creature->setDirection(Direction::WEST);
-			}
-		}
-
 		size_t i = 0;
 		for (auto spectator : spectators) {
 			if (auto player = spectator->getPlayer()) {
 				if (player->canSeeCreature(creature.get())) { // FIXME remove .get()
-					player->sendCreatureMove(creature.get(), this, position, previousTile, previousPosition, previousIndexes[i], teleported, "Tile::addCreature(move)");
+					player->sendCreatureMove(creature.get(), this, newPosition, previousTile, previousPosition, previousIndexes[i], teleported, "Tile::addCreature(move)");
 				}
 
 				++i;
@@ -168,7 +186,7 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 		previousTile->postRemoveNotification(actor.get(), creature.get(), this, previousPosition.index, true); // FIXME remove .get()
 
 		for (auto spectator : spectators) {
-			spectator->onCreatureMove(creature, previousPosition, previousTile, position, this, teleported);
+			spectator->onCreatureMove(creature, previousPosition, previousTile, newPosition, this, teleported);
 		}
 	}
 	else {
@@ -185,9 +203,204 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 		}
 	}
 
-	postAddNotification(actor.get(), creature.get(), this, position.index); // FIXME remove .get()
+	postAddNotification(actor.get(), creature.get(), this, newPosition.index); // FIXME remove .get()
 
 	return RET_NOERROR;
+}
+
+
+Tile* Tile::getAvailableCreatureForwardingTile(const Creature& creature) const {
+	static const uint32_t MAXIMUM_DISTANCE = 10;
+
+	if (!isForwarder()) {
+		return nullptr;
+	}
+
+	auto destination = getForwardingDestination();
+	if (!destination.isValid()) {
+		LOGe("Forwarder at position " << getPosition() << " leads to invalid position.");
+		return nullptr;
+	}
+
+	if (destination == getPosition()) {
+		LOGe("Forwarder at position " << getPosition() << " leads to itself.");
+		return nullptr;
+	}
+
+	auto& game = server.game();
+
+	auto tile = game.getTile(destination);
+	if (tile == nullptr) {
+		LOGe("Forwarder at position " << getPosition() << " leads to unreachable destination " << destination << ".");
+		return nullptr;
+	}
+
+	auto directFlags = creature.getMoveFlags();
+	auto indirectFlags = directFlags | FLAG_IGNOREFIELDDAMAGE;
+
+	// try finding a tile two times: first pass without ignoring blocking creatures and second pass with ignoring blocking creatures
+	for (bool ignoresBlockingCreatures = false; !ignoresBlockingCreatures; ignoresBlockingCreatures = true) {
+		if (ignoresBlockingCreatures) {
+			directFlags |= FLAG_IGNOREBLOCKCREATURE;
+			indirectFlags |= FLAG_IGNOREBLOCKCREATURE;
+		}
+
+		// try destination tile first
+		if (!tile->isForwarder() && tile->testAddCreature(creature, directFlags) == RET_NOERROR) {
+			return tile;
+		}
+
+		// try neighbor tiles in random order
+		for (uint32_t distance = 1; distance <= MAXIMUM_DISTANCE; ++distance) {
+			auto alternativeTiles = tile->neighbors(distance);
+			if (!alternativeTiles.empty()) {
+				std::random_shuffle(alternativeTiles.begin(), alternativeTiles.end());
+
+				for (auto alternativeTile : alternativeTiles) {
+					if (alternativeTile->isForwarder()) {
+						continue;
+					}
+					if (alternativeTile->testAddCreature(creature, indirectFlags) != RET_NOERROR) {
+						continue;
+					}
+
+					return alternativeTile;
+				}
+			}
+		}
+	}
+
+	// give up!
+	return nullptr;
+}
+
+
+Tile* Tile::getAvailableItemForwardingTile(const Item& item) const {
+	static const uint32_t MAXIMUM_DISTANCE = 10;
+
+	if (!isForwarder()) {
+		return nullptr;
+	}
+
+	auto destination = getForwardingDestination();
+	if (!destination.isValid()) {
+		LOGe("Forwarder at position " << getPosition() << " leads to invalid position.");
+		return nullptr;
+	}
+
+	if (destination == getPosition()) {
+		LOGe("Forwarder at position " << getPosition() << " leads to itself.");
+		return nullptr;
+	}
+
+	auto& game = server.game();
+
+	auto tile = game.getTile(destination);
+	if (tile == nullptr) {
+		LOGe("Forwarder at position " << getPosition() << " leads to unreachable destination " << destination << ".");
+		return nullptr;
+	}
+
+	// try destination tile first
+	if (!tile->isForwarder() && tile->__queryAdd(INDEX_WHEREEVER, &item, 1, 0) == RET_NOERROR) {
+		return tile;
+	}
+
+	// try neighbor tiles in random order
+	for (uint32_t distance = 1; distance <= MAXIMUM_DISTANCE; ++distance) {
+		auto alternativeTiles = tile->neighbors(distance);
+		if (!alternativeTiles.empty()) {
+			std::random_shuffle(alternativeTiles.begin(), alternativeTiles.end());
+
+			for (auto alternativeTile : alternativeTiles) {
+				if (alternativeTile->isForwarder()) {
+					continue;
+				}
+				if (alternativeTile->__queryAdd(INDEX_WHEREEVER, &item, 1, 0) != RET_NOERROR) {
+					continue;
+				}
+
+				return alternativeTile;
+			}
+		}
+	}
+
+	// give up!
+	return nullptr;
+}
+
+
+Position Tile::getForwardingDestination() const {
+	if (isLocalForwarder()) {
+		int8_t offsetX = 0;
+		int8_t offsetY = 0;
+		int8_t offsetZ = 0;
+
+		if (hasFlag(TILESTATE_FLOORCHANGE_DOWN)) {
+			offsetZ = 1;
+		}
+		else {
+			offsetZ = -1;
+
+			if (hasFlag(TILESTATE_FLOORCHANGE_NORTH)) {
+				offsetY = -1;
+			}
+			else if (hasFlag(TILESTATE_FLOORCHANGE_SOUTH)) {
+				offsetY = 1;
+			}
+			else if (hasFlag(TILESTATE_FLOORCHANGE_EAST)) {
+				offsetX = 1;
+			}
+			else if (hasFlag(TILESTATE_FLOORCHANGE_WEST)) {
+				offsetX = -1;
+			}
+			else if (hasFlag(TILESTATE_FLOORCHANGE_NORTH_EX)) {
+				offsetY = -2;
+			}
+			else if (hasFlag(TILESTATE_FLOORCHANGE_SOUTH_EX)) {
+				offsetY = 2;
+			}
+			else if (hasFlag(TILESTATE_FLOORCHANGE_EAST_EX)) {
+				offsetX = 2;
+			}
+			else if (hasFlag(TILESTATE_FLOORCHANGE_WEST_EX)) {
+				offsetX = -2;
+			}
+		}
+
+		auto position = pos;
+		auto destinationX = position.x + offsetX;
+		auto destinationY = position.y + offsetY;
+		auto destinationZ = position.z + offsetZ;
+
+		if (!Position::isValid(destinationX, destinationY, destinationZ)) {
+			return Position::INVALID;
+		}
+
+		return Position(static_cast<uint16_t>(destinationX), static_cast<uint16_t>(destinationY), static_cast<uint8_t>(destinationZ));
+	}
+
+	auto teleporter = getTeleporter();
+	if (teleporter != nullptr) {
+		return teleporter->getDestination();
+	}
+
+	return Position::INVALID;
+}
+
+
+bool Tile::isForwarder() const {
+	return (isLocalForwarder() || isTeleporter());
+}
+
+
+bool Tile::isLocalForwarder() const {
+	return hasFlag(TILESTATE_FLOORCHANGE);
+}
+
+
+bool Tile::isTeleporter() const {
+	return (getTeleporter() != nullptr);
 }
 
 
@@ -312,15 +525,12 @@ ReturnValue Tile::testAddCreature(const Creature& creature, uint32_t flags) cons
 		return RET_NOERROR;
 	}
 
-	if (hasBitSet(FLAG_PATHFINDING, flags) && !hasBitSet(FLAG_NOLIMIT, flags)) {
-		if (floorChange() || positionChange()) {
+	if (isForwarder()) {
+		if (hasBitSet(FLAG_PATHFINDING, flags) && !hasBitSet(FLAG_NOLIMIT, flags)) {
 			return RET_NOTPOSSIBLE;
 		}
-	}
 
-	auto teleporter = getTeleporter();
-	if (teleporter != nullptr) {
-		if (teleporter->getCreatureDestinationTile(creature) == nullptr) {
+		if (getAvailableCreatureForwardingTile(creature) == nullptr) {
 			return RET_DESTINATIONOUTOFREACH;
 		}
 
@@ -910,9 +1120,8 @@ void Tile::onUpdateTile()
 
 
 ReturnValue Tile::__queryAdd(int32_t index, const Item* item, uint32_t count, uint32_t flags) const {
-	Teleporter* teleporter = getTeleporter();
-	if (teleporter != nullptr) {
-		if (teleporter->getItemDestinationTile(*item) == nullptr) {
+	if (isForwarder()) {
+		if (getAvailableItemForwardingTile(*item) == nullptr) {
 			return RET_DESTINATIONOUTOFREACH;
 		}
 
@@ -1131,14 +1340,18 @@ void Tile::__addThing(Creature* actor, int32_t index, Item* item)
 {
 	assert(item->getParent() == nullptr || item->getParent() == &VirtualCylinder::virtualCylinder);
 
-	Teleporter* teleporter = getTeleporter();
-	if (teleporter != nullptr) {
-		Tile* destinationTile = teleporter->getItemDestinationTile(*item);
-		if (destinationTile != nullptr) {
-			destinationTile->__addThing(actor, item);
+	if (isForwarder()) {
+		auto destinationTile = getAvailableItemForwardingTile(*item);
+		if (destinationTile == nullptr) {
+			return;
+		}
 
-			server.game().addMagicEffect(pos, MAGIC_EFFECT_TELEPORT);
-			server.game().addMagicEffect(destinationTile->pos, MAGIC_EFFECT_TELEPORT);
+		destinationTile->__addThing(actor, item);
+
+		if (isTeleporter()) {
+			bool ghost = (actor == nullptr || actor->isGhost());
+			server.game().addMagicEffect(pos, MAGIC_EFFECT_TELEPORT, ghost);
+			server.game().addMagicEffect(destinationTile->pos, MAGIC_EFFECT_TELEPORT, ghost);
 		}
 
 		return;

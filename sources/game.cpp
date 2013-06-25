@@ -1905,6 +1905,7 @@ bool Game::playerMove(uint32_t playerId, Direction dir)
 		return true;
 	}
 
+	internalCreatureTurn(player, dir);
 	return internalMoveCreature(player, dir) == RET_NOERROR;
 }
 
@@ -3663,6 +3664,10 @@ bool Game::isSightClear(const Position& fromPos, const Position& toPos, bool flo
 
 bool Game::internalCreatureTurn(Creature* creature, Direction dir)
 {
+	if (creature->getDirection() == dir) {
+		return true;
+	}
+
 	bool deny = false;
 	CreatureEventList directionEvents = creature->getCreatureEvents(CREATURE_EVENT_DIRECTION);
 	for(CreatureEventList::iterator it = directionEvents.begin(); it != directionEvents.end(); ++it)
@@ -3671,7 +3676,7 @@ bool Game::internalCreatureTurn(Creature* creature, Direction dir)
 			deny = true;
 	}
 
-	if(deny || creature->getDirection() == dir)
+	if(deny)
 		return false;
 
 	creature->setDirection(dir);

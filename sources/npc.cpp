@@ -46,13 +46,8 @@ bool Npc::canMoveTo(const Tile& tile) const {
 		return false;
 	}
 
-	if (floorChange && (tile.floorChange() || tile.positionChange())) {
+	if (floorChange && tile.isForwarder()) {
 		return true;
-	}
-
-	// FIXME use class-wide flags to avoid duplicate canAddCreature
-	if (tile.testAddCreature(*this, FLAG_PATHFINDING) != RET_NOERROR) {
-		return false;
 	}
 
 	return true;
@@ -66,6 +61,11 @@ CreatureP Npc::getDirectOwner() {
 
 CreaturePC Npc::getDirectOwner() const {
 	return nullptr;
+}
+
+
+uint32_t Npc::getMoveFlags() const {
+	return (Creature::getMoveFlags() | FLAG_PATHFINDING);
 }
 
 

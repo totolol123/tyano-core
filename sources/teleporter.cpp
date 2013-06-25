@@ -46,104 +46,6 @@ const Teleporter* Teleporter::asTeleporter() const {
 }
 
 
-Tile* Teleporter::getCreatureDestinationTile(const Creature& creature) const {
-	static const uint32_t DIRECT_FLAGS = 0;
-	static const uint32_t INDIRECT_FLAGS = FLAG_PATHFINDING|FLAG_IGNOREFIELDDAMAGE;
-	static const uint32_t MAXIMUM_DISTANCE = 10;
-
-	auto& game = server.game();
-
-	if (_destination == getPosition()) {
-		LOGe("Teleporter at position " << getPosition() << " leads to itself.");
-		return nullptr;
-	}
-
-	auto tile = game.getTile(_destination);
-	if (tile == nullptr) {
-		LOGe("Teleporter at position " << getPosition() << " leads to unreachable destination " << _destination << ".");
-		return nullptr;
-	}
-
-	auto directFlags = DIRECT_FLAGS;
-	auto indirectFlags = INDIRECT_FLAGS;
-
-	// try finding a tile two times: first pass without ignoring blocking creatures and second pass with ignoring blocking creatures
-	for (bool ignoresBlockingCreatures = false; !ignoresBlockingCreatures; ignoresBlockingCreatures = true) {
-		if (ignoresBlockingCreatures) {
-			directFlags |= FLAG_IGNOREBLOCKCREATURE;
-			indirectFlags |= FLAG_IGNOREBLOCKCREATURE;
-		}
-
-		// try destination tile first
-		if (tile->testAddCreature(creature, directFlags) == RET_NOERROR) {
-			return tile;
-		}
-
-		// try neighbor tiles in random order
-		for (uint32_t distance = 1; distance <= MAXIMUM_DISTANCE; ++distance) {
-			auto alternativeTiles = tile->neighbors(distance);
-			if (!alternativeTiles.empty()) {
-				std::random_shuffle(alternativeTiles.begin(), alternativeTiles.end());
-
-				for (auto alternativeTile : alternativeTiles) {
-					if (tile->testAddCreature(creature, indirectFlags) != RET_NOERROR) {
-						continue;
-					}
-
-					return alternativeTile;
-				}
-			}
-		}
-	}
-
-	// give up!
-	return nullptr;
-}
-
-
-
-Tile* Teleporter::getItemDestinationTile(const Item& item) const {
-	static const uint32_t MAXIMUM_DISTANCE = 10;
-
-	auto& game = server.game();
-
-	if (_destination == getPosition()) {
-		LOGe("Teleporter at position " << getPosition() << " leads to itself.");
-		return nullptr;
-	}
-
-	auto tile = game.getTile(_destination);
-	if (tile == nullptr) {
-		LOGe("Teleporter at position " << getPosition() << " leads to unreachable destination " << _destination << ".");
-		return nullptr;
-	}
-
-	// try destination tile first
-	if (tile->__queryAdd(INDEX_WHEREEVER, &item, 1, 0) == RET_NOERROR) {
-		return tile;
-	}
-
-	// try neighbor tiles in random order
-	for (uint32_t distance = 1; distance <= MAXIMUM_DISTANCE; ++distance) {
-		auto alternativeTiles = tile->neighbors(distance);
-		if (!alternativeTiles.empty()) {
-			std::random_shuffle(alternativeTiles.begin(), alternativeTiles.end());
-
-			for (auto alternativeTile : alternativeTiles) {
-				if (tile->__queryAdd(INDEX_WHEREEVER, &item, 1, 0) != RET_NOERROR) {
-					continue;
-				}
-
-				return alternativeTile;
-			}
-		}
-	}
-
-	// give up!
-	return nullptr;
-}
-
-
 auto Teleporter::getClassAttributes() -> ClassAttributesP {
 	return Item::getClassAttributes();
 }
@@ -152,6 +54,11 @@ auto Teleporter::getClassAttributes() -> ClassAttributesP {
 const std::string& Teleporter::getClassName() {
 	static const std::string name("Teleporter");
 	return name;
+}
+
+
+const Position& Teleporter::getDestination() const {
+	return _destination;
 }
 
 

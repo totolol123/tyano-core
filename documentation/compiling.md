@@ -1,4 +1,4 @@
-COMPILING
+Compiling
 =========
 
 The steps listed below are necessary to compile the server.  
@@ -20,11 +20,12 @@ You also need [Cygwin Ports](http://sourceware.org/cygwinports/) because the req
     - libxml2-dev
     - libz-dev
     - make
+    - pkg-config
     
     e.g.
     ```bash
     apt-get install autoconf automake bash-completion g++ libboost1.50-all-dev libgmp-dev liblog4cxx10-dev
-            liblua5.1-dev libmysqlclient-dev libxml2-dev libz-dev make
+            liblua5.1-dev libmysqlclient-dev libxml2-dev libz-dev make pkg-config
     ```
     
     If you use Windows then you have to use Cygwin's `setup.exe` to install these packages.

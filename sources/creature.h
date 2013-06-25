@@ -132,6 +132,7 @@ public:
 	        CreatureP    getFinalOwner           ();
 	        CreaturePC   getFinalOwner           () const;
 	        CreatureP    getFollowedCreature     () const;
+	virtual uint32_t     getMoveFlags            () const;
 	        Time         getNextMoveTime         () const;
 	        Direction    getRandomStepDirection  (bool includesNone = true) const;
 	        const Route& getRoute                () const;

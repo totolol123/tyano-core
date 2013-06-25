@@ -78,7 +78,7 @@ bool Creature::canMoveTo(Direction direction) const {
 		return false;
 	}
 
-	Tile* tile = server.game().getNextTile(*_tile, direction);
+	auto tile = server.game().getNextTile(*_tile, direction);
 	if (tile == nullptr) {
 		return false;
 	}
@@ -88,7 +88,7 @@ bool Creature::canMoveTo(Direction direction) const {
 
 
 bool Creature::canMoveTo(const Position& position) const {
-	Tile* tile = server.game().getTile(position);
+	auto tile = server.game().getTile(position);
 	if (tile == nullptr) {
 		return false;
 	}
@@ -110,12 +110,7 @@ bool Creature::canMoveTo(const Tile& tile) const {
 		return false;
 	}
 
-	if (tile.getTopVisibleCreature(this) != nullptr) {
-		// blocked by other creature
-		return false;
-	}
-
-	if (tile.testAddCreature(*this) != RET_NOERROR) {
+	if (tile.testAddCreature(*this, getMoveFlags()) != RET_NOERROR) {
 		return false;
 	}
 
@@ -194,6 +189,11 @@ CreaturePC Creature::getFinalOwner() const {
 
 CreatureP Creature::getFollowedCreature() const {
 	return _followedCreature;
+}
+
+
+uint32_t Creature::getMoveFlags() const {
+	return 0;
 }
 
 
@@ -379,7 +379,7 @@ bool Creature::moveTo(Tile& tile) {
 
 	Tile& previousTile = *_tile;
 
-	if (tile.addCreature(this) != RET_NOERROR) {
+	if (tile.addCreature(this, getMoveFlags()) != RET_NOERROR) {
 		return false;
 	}
 
@@ -951,6 +951,8 @@ Direction Creature::wander() {
 
 	Direction direction = getWanderingDirection();
 	if (!stepInDirection(direction)) {
+		_nextWanderingTime = Clock::now() + Seconds(1);
+
 		return Direction::NONE;
 	}
 

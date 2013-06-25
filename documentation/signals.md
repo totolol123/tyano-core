@@ -1,4 +1,4 @@
-SIGNALS
+Signals
 =======
 
 The server can be controlled using the following signals:

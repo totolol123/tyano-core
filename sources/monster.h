@@ -60,6 +60,7 @@ public:
 	virtual CreaturePC getDirectOwner     () const;
 	        CreatureP  getMaster          () const;
 	        bool       hasMaster          () const;
+	virtual uint32_t   getMoveFlags       () const;
 	        bool       hasRaid            () const;
 	        bool       hasSpawn           () const;
 	virtual bool       isEnemy            (const CreaturePC& creature) const;
