@@ -573,10 +573,13 @@ float Player::getDefenseFactor() const
 	return 1.0f;
 }
 
-void Player::sendIcons() const
-{
+void Player::sendIcons() const {
 	if(!client)
 		return;
+
+	if (!isAlive()) {
+		return;
+	}
 
 	uint32_t icons = 0;
 	for(ConditionList::const_iterator it = conditions.begin(); it != conditions.end(); ++it)

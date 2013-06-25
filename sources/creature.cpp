@@ -2075,6 +2075,10 @@ CreatureEventList Creature::getCreatureEvents(CreatureEventType_t type) const
 
 
 ZoneType_t Creature::getZone() const {
+	if (_tile == nullptr) {
+		return ZONE_NORMAL;
+	}
+
 	return _tile->getZone();
 }
 
