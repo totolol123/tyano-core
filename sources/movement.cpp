@@ -1317,4 +1317,6 @@ bool MoveEvent::validate() const {
 		LOGe("MoveEvents of type 'willAddCreature' can only use LUA files.");
 		return false;
 	}
+
+	return true;
 }

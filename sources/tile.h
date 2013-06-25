@@ -366,7 +366,7 @@ class StaticTile : public Tile
 		CreatureVector* makeCreatures() {return (creatures) ? (creatures) : (creatures = new CreatureVector);}
 };
 
-inline Tile::Tile(uint16_t x, uint16_t y, uint16_t z): ground(nullptr), pos(x, y, z), m_flags(0), thingCount(0) {}
+inline Tile::Tile(uint16_t x, uint16_t y, uint16_t z): _lockCount(0), ground(nullptr), pos(x, y, z), m_flags(0), thingCount(0) {}
 
 inline CreatureVector* Tile::getCreatures()
 {
