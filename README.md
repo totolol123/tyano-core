@@ -1,9 +1,6 @@
 Tyano Core
 ==========
 
-What's this?
-------------
-
 This is a game server built for [Tibia](http://www.tibia.com/)®, a massively multiplayer online role-playing game developed and
 maintained by [CipSoft](http://www.cipsoft.com/).
 
@@ -80,12 +77,14 @@ Also a few features of The Forgotten Server are (at least parially) broken for n
   I'll remove the Account Manager in the future. You should always provide a website with your server and allow the complete
   account management there.
 
-- Login server (did anyone actually need that yet?)
+- Standalone login server (did anyone actually need that yet?)
 
 - Maps with large dimensions (no matter if there are a lot of holes or not) take more memory than they should.
 
 - There aren't more than 9 items or 10 items+creatures per tile allowed. That currently leads to some problems e.g. if a creature dies on a tile
   with 9 items on it. There will be no corpse and thus the loot is lost.
+  
+- Swimming pools might be broken.
 
 
 Support
@@ -110,11 +109,16 @@ Resources
 
 Branches
 --------
+Branches not listed below are for working on a single new feature or bigger change (e.g. refactoring something) and will be merged into `cutting-edge` once completed.
 
-- `master` is the primary branch with the latest set of completed features and fixes.
-- `stable` is the latest version known to be as stable as possible.
-- `cutting-edge` has the most-recent changes and new features which are still in development. Once completed and tested, changes here will be merged into `master`.
-- All other branches are for working on a single new feature or bigger change (e.g. refactoring something) and will be merged into `cutting-edge` once completed.
+### master [![Build Status](https://travis-ci.org/fluidsonic/tyano-core.png?branch=master)](https://travis-ci.org/fluidsonic/tyano-core)
+Primary branch with the latest set of completed features and fixes.
+
+### stable [![Build Status](https://travis-ci.org/fluidsonic/tyano-core.png?branch=stable)](https://travis-ci.org/fluidsonic/tyano-core)
+Latest version known to be as stable as possible.
+
+### cutting-edge [![Build Status](https://travis-ci.org/fluidsonic/tyano-core.png?branch=stable)](https://travis-ci.org/fluidsonic/tyano-core)
+Most-recent changes and new features which are still in development. Once completed and tested, changes here will be merged into `master`.
 
 
 Notes
