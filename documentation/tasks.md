@@ -17,8 +17,9 @@ Important
 Soon
 ----
 
+- Add path test to stairs and teleporters so that they don't move players to places where they aren't supposed to be.
 - Add popup window which informs players about new server updates when connecting.
-- Create new efficient scheduler/dispatcher system based on C++11 STL (and refactor `Item::ReleaseInfo::release` after that).
+- Create new efficient scheduler/dispatcher system based on C++11 STL (and refactor `Item::ReleaseInfo::release` after that) (crit bits?).
 - Broadcast message with pop-up because a server-wide red chat message will actually not be read by most players.
 - Refactor talkaction system to unify commands & help system.
 - Fix that one boost network socket leaks every time a new connection is accepted.
