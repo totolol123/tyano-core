@@ -458,9 +458,6 @@ void Tile::onUpdateTile()
 bool Tile::moveCreature(Creature* actor, Creature* creature, Cylinder* toCylinder, bool forceTeleport/* = false*/)
 {
 	Tile* newTile = toCylinder->getTile();
-	if (newTile->__queryAdd(INDEX_WHEREEVER, creature, 1, 0) != RET_NOERROR) {
-		return false;
-	}
 
 	SpectatorList list;
 	SpectatorList::iterator it;
@@ -535,13 +532,6 @@ ReturnValue Tile::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
 {
 	if (!hasRoomForThing(*thing)) {
 		return RET_TILEISFULL;
-	}
-
-	if (hasFlag(TILESTATE_TELEPORT)) {
-		Teleport* teleport = getTeleportItem();
-		if (teleport != nullptr && !teleport->canTeleport(thing)) {
-			return RET_DESTINATIONOUTOFREACH;
-		}
 	}
 
 	const CreatureVector* creatures = getCreatures();
