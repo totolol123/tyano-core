@@ -5,7 +5,6 @@ Urgent
 ------
 
 - Rework teleporters and stairs.
-- Rename can(Add|Remove)Creature to test(Add|Remove)Creature
 
 
 Important
@@ -17,7 +16,7 @@ Important
 Soon
 ----
 
-- Add path test to stairs and teleporters so that they don't move players to places where they aren't supposed to be.
+- Add pathfinding test to stairs and teleporters so that they don't move players to places where they aren't supposed to be.
 - Add popup window which informs players about new server updates when connecting.
 - Create new efficient scheduler/dispatcher system based on C++11 STL (and refactor `Item::ReleaseInfo::release` after that) (crit bits?).
 - Broadcast message with pop-up because a server-wide red chat message will actually not be read by most players.

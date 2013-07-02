@@ -355,31 +355,35 @@ Position Tile::getForwardingDestination() const {
 		}
 		else {
 			offsetZ = -1;
+		}
 
-			if (hasFlag(TILESTATE_FLOORCHANGE_NORTH)) {
-				offsetY = -1;
-			}
-			else if (hasFlag(TILESTATE_FLOORCHANGE_SOUTH)) {
-				offsetY = 1;
-			}
-			else if (hasFlag(TILESTATE_FLOORCHANGE_EAST)) {
-				offsetX = 1;
-			}
-			else if (hasFlag(TILESTATE_FLOORCHANGE_WEST)) {
-				offsetX = -1;
-			}
-			else if (hasFlag(TILESTATE_FLOORCHANGE_NORTH_EX)) {
-				offsetY = -2;
-			}
-			else if (hasFlag(TILESTATE_FLOORCHANGE_SOUTH_EX)) {
-				offsetY = 2;
-			}
-			else if (hasFlag(TILESTATE_FLOORCHANGE_EAST_EX)) {
-				offsetX = 2;
-			}
-			else if (hasFlag(TILESTATE_FLOORCHANGE_WEST_EX)) {
-				offsetX = -2;
-			}
+		bool resolved = true;
+		if (hasFlag(TILESTATE_FLOORCHANGE_NORTH)) {
+			offsetY = -1;
+		}
+		else if (hasFlag(TILESTATE_FLOORCHANGE_SOUTH)) {
+			offsetY = 1;
+		}
+		else if (hasFlag(TILESTATE_FLOORCHANGE_EAST)) {
+			offsetX = 1;
+		}
+		else if (hasFlag(TILESTATE_FLOORCHANGE_WEST)) {
+			offsetX = -1;
+		}
+		else if (hasFlag(TILESTATE_FLOORCHANGE_NORTH_EX)) {
+			offsetY = -2;
+		}
+		else if (hasFlag(TILESTATE_FLOORCHANGE_SOUTH_EX)) {
+			offsetY = 2;
+		}
+		else if (hasFlag(TILESTATE_FLOORCHANGE_EAST_EX)) {
+			offsetX = 2;
+		}
+		else if (hasFlag(TILESTATE_FLOORCHANGE_WEST_EX)) {
+			offsetX = -2;
+		}
+		else if (!hasFlag(TILESTATE_FLOORCHANGE_RESOLVED)) {
+			resolved = false;
 		}
 
 		auto position = pos;
@@ -391,7 +395,45 @@ Position Tile::getForwardingDestination() const {
 			return Position::INVALID;
 		}
 
-		return Position(static_cast<uint16_t>(destinationX), static_cast<uint16_t>(destinationY), static_cast<uint8_t>(destinationZ));
+		Position destination(static_cast<uint16_t>(destinationX), static_cast<uint16_t>(destinationY), static_cast<uint8_t>(destinationZ));
+		if (!resolved) {
+			// FIXME this floorchange tile state is nonsense and the way of resolving directions too!
+			auto newThis = const_cast<Tile*>(this);
+
+			newThis->setFlag(TILESTATE_FLOORCHANGE_RESOLVED);
+
+			auto destinationTile = server.game().getTile(destination);
+			if (destinationTile != nullptr && destinationTile->isLocalForwarder()) {
+				if (destinationTile->hasFlag(TILESTATE_FLOORCHANGE_NORTH)) {
+					newThis->setFlag(TILESTATE_FLOORCHANGE_SOUTH);
+				}
+				else if (destinationTile->hasFlag(TILESTATE_FLOORCHANGE_SOUTH)) {
+					newThis->setFlag(TILESTATE_FLOORCHANGE_NORTH);
+				}
+				else if (destinationTile->hasFlag(TILESTATE_FLOORCHANGE_EAST)) {
+					newThis->setFlag(TILESTATE_FLOORCHANGE_WEST);
+				}
+				else if (destinationTile->hasFlag(TILESTATE_FLOORCHANGE_WEST)) {
+					newThis->setFlag(TILESTATE_FLOORCHANGE_EAST);
+				}
+				else if (destinationTile->hasFlag(TILESTATE_FLOORCHANGE_NORTH_EX)) {
+					newThis->setFlag(TILESTATE_FLOORCHANGE_SOUTH_EX);
+				}
+				else if (destinationTile->hasFlag(TILESTATE_FLOORCHANGE_SOUTH_EX)) {
+					newThis->setFlag(TILESTATE_FLOORCHANGE_NORTH_EX);
+				}
+				else if (destinationTile->hasFlag(TILESTATE_FLOORCHANGE_EAST_EX)) {
+					newThis->setFlag(TILESTATE_FLOORCHANGE_WEST_EX);
+				}
+				else if (destinationTile->hasFlag(TILESTATE_FLOORCHANGE_WEST_EX)) {
+					newThis->setFlag(TILESTATE_FLOORCHANGE_EAST_EX);
+				}
+
+				return getForwardingDestination();
+			}
+		}
+
+		return destination;
 	}
 
 	auto teleporter = getTeleporter();
