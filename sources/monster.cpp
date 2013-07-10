@@ -324,6 +324,10 @@ bool Monster::isEnemy(const CreaturePC& creature) const {
 		return _master->isEnemy(creature);
 	}
 
+	if (!isHostile()) {
+		return false;
+	}
+
 	// TODO name "isAttackable" is too broad
 	if (!creature->isAttackable()) {
 		return false;
