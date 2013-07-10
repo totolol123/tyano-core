@@ -1125,8 +1125,6 @@ void Creature::onAttacking(uint32_t interval)
 	if(!attackedCreature)
 		return;
 
-	onAttacked();
-	attackedCreature->onAttacked();
 	if(server.game().isSightClear(getPosition(), attackedCreature->getPosition(), true))
 		doAttacking(interval);
 }
@@ -1562,7 +1560,6 @@ bool Creature::setAttackedCreature(Creature* creature) {
 	if(attackedCreature)
 	{
 		onAttackedCreature(attackedCreature);
-		attackedCreature->onAttacked();
 
 		startThinking(true);
 
