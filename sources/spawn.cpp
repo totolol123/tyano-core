@@ -37,6 +37,131 @@
 LOGGER_DEFINITION(Spawns);
 
 
+Direction Spawns::getDirectionForPosition(const Position& position) const {
+	auto i = _directions.find(position);
+	if (i == _directions.end()) {
+		return Direction::NONE;
+	}
+
+	return i->second;
+}
+
+
+void Spawns::loadDirections() {
+	_directions.clear();
+
+	auto state = std::unique_ptr<lua_State>(luaL_newstate());
+
+	auto L = state.get();
+	assert(L != nullptr);
+
+	luaL_openlibs(L);
+
+	auto path = getFilePath(FileType::OTHER, "world/spawnDirections.lua");
+	if (!boost::filesystem::exists(path)) {
+		LOGd("Won't load non-existent spawn direction file '" << path << "'.");
+		return;
+	}
+
+	LOGi("Loading spawn directions...");
+
+	auto result = luaL_loadfile(L, path.c_str());
+	if (result != 0) {
+		LOGe("Cannot parse spawn direction file: " << lua_tostring(L, -1));
+		return;
+	}
+
+	lua_register(L, "spawn", luaAddSpawnDirection);
+
+	lua_pushinteger(L, +Direction::EAST);
+	lua_setglobal(L, "EAST");
+	lua_pushinteger(L, +Direction::NORTH);
+	lua_setglobal(L, "NORTH");
+	lua_pushinteger(L, +Direction::SOUTH);
+	lua_setglobal(L, "SOUTH");
+	lua_pushinteger(L, +Direction::WEST);
+	lua_setglobal(L, "WEST");
+
+	result = lua_pcall(L, 0, 0, 0);
+	if (result != 0) {
+		_directions.clear();
+		LOGe("Cannot run spawn direction file " << lua_tostring(L, -1));
+	}
+}
+
+
+int Spawns::luaAddSpawnDirection(lua_State* L) {
+	luaL_checktype(L, 1, LUA_TTABLE);
+
+	lua_pushstring(L, "x");
+	lua_gettable(L, -2);
+	if (!lua_isnumber(L, -1)) {
+		luaL_error(L, "'x' must be set to a number.");
+	}
+	lua_pop(L, 1);
+	auto x = static_cast<int_fast32_t>(lua_tonumber(L, 0));
+
+	lua_pushstring(L, "y");
+	lua_gettable(L, -2);
+	if (!lua_isnumber(L, -1)) {
+		luaL_error(L, "'y' must be set to a number.");
+	}
+	lua_pop(L, 1);
+	auto y = static_cast<int_fast32_t>(lua_tonumber(L, 0));
+
+	lua_pushstring(L, "z");
+	lua_gettable(L, -2);
+	if (!lua_isnumber(L, -1)) {
+		luaL_error(L, "'z' must be set to a number.");
+	}
+	lua_pop(L, 1);
+	auto z = static_cast<int_fast32_t>(lua_tonumber(L, 0));
+
+	lua_pushstring(L, "direction");
+	lua_gettable(L, -2);
+
+	auto direction = Direction::NONE;
+	if (lua_isnumber(L, -1)) {
+		lua_pop(L, 1);
+		direction = static_cast<Direction>(lua_tonumber(L, 0));
+	}
+
+	switch (direction) {
+	case Direction::EAST:
+	case Direction::NORTH:
+	case Direction::SOUTH:
+	case Direction::WEST:
+		break;
+
+	default:
+		luaL_error(L, "'direction' must be set to either EAST, NORTH, SOUTH or WEST.");
+	}
+
+	if (!Position::isValid(x, y, z)) {
+		luaL_error(L, "Position %d/%d/%d is not valid.", x, y, z);
+	}
+
+	Position position(x, y, z);
+
+	auto& instance = *getInstance();
+	if (instance._directions.find(position) != instance._directions.end()) {
+		LOGw("Multiple spawn directions defined for position " << position << ".");
+	}
+
+	instance._directions[position] = direction;
+
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
 Spawns::Spawns()
 {
 	filename = "";
@@ -53,6 +178,8 @@ bool Spawns::loadFromXml(const std::string& _filename)
 {
 	if(isLoaded())
 		return true;
+
+	loadDirections();
 
 	filename = _filename;
 	xmlDocPtr doc = xmlParseFile(filename.c_str());
@@ -79,6 +206,7 @@ bool Spawns::loadFromXml(const std::string& _filename)
 
 	xmlFreeDoc(doc);
 	loaded = true;
+
 	return true;
 }
 
@@ -208,6 +336,15 @@ bool Spawns::parseSpawnNode(xmlNodePtr p, bool checkDuplicate)
 
 			npc->setMasterPosition(placePos, radius);
 			npc->setDirection(direction);
+
+			auto overriddenDirection = getDirectionForPosition(placePos);
+			if (overriddenDirection != Direction::NONE) {
+				npc->setDirection(overriddenDirection);
+			}
+			else {
+				npc->setDirection(direction);
+			}
+
 			npcList.push_back(npc);
 		}
 
@@ -320,7 +457,14 @@ bool Spawn::spawnMonster(uint32_t spawnId, MonsterType* mType, const Position& p
 	}
 
 	monster->setMasterPosition(pos, radius);
-	monster->setDirection(dir);
+
+	auto direction = Spawns::getInstance()->getDirectionForPosition(pos);
+	if (direction != Direction::NONE) {
+		monster->setDirection(direction);
+	}
+	else {
+		monster->setDirection(dir);
+	}
 
 	spawnedMap.insert(SpawnedPair(spawnId, monster));
 	return true;

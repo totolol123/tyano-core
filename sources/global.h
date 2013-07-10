@@ -77,6 +77,14 @@ namespace std {
 	};
 
 
+	template<>
+	struct default_delete<lua_State> {
+		void operator()(lua_State* state) const {
+			lua_close(state);
+		}
+	};
+
+
 	template<typename T>
 	struct equal_to<reference_wrapper<const T>> : public function<bool(const reference_wrapper<const T>&, const reference_wrapper<const T>&)> {
 		bool operator()(const reference_wrapper<const T>& a, const reference_wrapper<const T>& b) const {
