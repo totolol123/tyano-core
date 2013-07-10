@@ -2065,8 +2065,8 @@ bool Player::hasShield() const
 	return result;
 }
 
-BlockType_t Player::blockHit(Creature* attacker, CombatType_t combatType, int32_t& damage,
-	bool checkDefense/* = false*/, bool checkArmor/* = false*/)
+BlockType_t Player::blockHit(const CreatureP& attacker, CombatType_t combatType, int32_t& damage,
+		bool checkDefense/* = false*/, bool checkArmor/* = false*/)
 {
 	BlockType_t blockType = Creature::blockHit(attacker, combatType, damage, checkDefense, checkArmor);
 	if(attacker)
@@ -2075,7 +2075,7 @@ BlockType_t Player::blockHit(Creature* attacker, CombatType_t combatType, int32_
 		if(color < 0)
 			color = random_range(0, 255);
 
-		sendCreatureSquare(attacker, (SquareColor_t)color);
+		sendCreatureSquare(attacker.get(), (SquareColor_t)color);
 	}
 
 	if(blockType != BLOCK_NONE)
