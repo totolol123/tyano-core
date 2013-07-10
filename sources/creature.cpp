@@ -810,7 +810,7 @@ void Creature::stopThinking() {
 
 
 void Creature::stopWandering() {
-	if (_wandering) {
+	if (!_wandering) {
 		return;
 	}
 
