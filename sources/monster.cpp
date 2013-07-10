@@ -1392,7 +1392,7 @@ void Monster::setNormalCreatureLight()
 	internalLight.color = _type->lightColor;
 }
 
-void Monster::drainHealth(Creature* attacker, CombatType_t combatType, int32_t damage)
+void Monster::drainHealth(const CreatureP& attacker, CombatType_t combatType, int32_t damage)
 {
 	Creature::drainHealth(attacker, combatType, damage);
 	if(isInvisible())

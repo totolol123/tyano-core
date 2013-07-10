@@ -156,7 +156,7 @@ private:
 		virtual void onAttackedCreatureDisappear(bool isLogout);
 		virtual void onAttackedCreatureDrain(Creature* target, int32_t points);
 
-		virtual void drainHealth(Creature* attacker, CombatType_t combatType, int32_t damage);
+		virtual void drainHealth(const CreatureP& attacker, CombatType_t combatType, int32_t damage);
 		virtual void changeHealth(int32_t healthChange);
 
 		virtual void setNormalCreatureLight();
