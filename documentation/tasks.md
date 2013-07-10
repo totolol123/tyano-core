@@ -34,6 +34,7 @@ Soon
 Improvements
 ------------
 
+- Rework decaying tuse Scheduler. Decaying is also buggy if it's toggeled due to item transformation (not properly removed from Game's decaying list).
 - Improve stairs movement so that the player exits a the most logical position if free.
 - Improve updating creature direction after diagonal movement.
 - Make `Game::clearSpectatorCache` obsolete by (partial?) invalidation in `Map::onCreatureMoved`.
