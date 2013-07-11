@@ -37,6 +37,7 @@ complete this list over time :)
   scripting errors earlier.
 - Added an admin protocol command to execute LUA scripts and get the result.
 - Monsters and NPCs also wander diagonal.
+- Support for much more than 2,147,483,647 money.
 - Fixed plenty of memory leaks. Constantly trying to reduce the server's memory footprint.
 - Added a cheap 'firewall' to the networking code which watches outgoing creature movement events and checks if everything works as expected.
 - Limited number of items per tile to 9 and items + creatures per tile to 10. The Tibia® client doesn't support more than 10.
