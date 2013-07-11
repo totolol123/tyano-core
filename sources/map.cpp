@@ -958,98 +958,51 @@ void Map::onCreatureMoved(Creature* creature, const Tile* fromTile, const Tile* 
 
 
 bool Map::placeCreature(const Position& center, Creature* creature, bool extendedRangeInSight /*= false*/, bool ignoreObstacles /*= false*/) {
-	// TODO refactor
-	typedef std::pair<int32_t, int32_t> PositionPair;
-	typedef std::vector<PositionPair> PairVector;
-
-	bool placeInProtectionZone = false;
-	bool tileIsValid = false;
+	Tile* tile = getTile(center);
+	if (tile == nullptr) {
+		return false;
+	}
 
 	uint32_t flags = 0;
+	if (creature->isAccountManager()) {
+		flags |= FLAG_IGNOREBLOCKCREATURE;
+	}
+	if (tile->hasFlag(TILESTATE_PROTECTIONZONE)) {
+		flags |= FLAG_IGNORE_PROTECTION_ZONE;
+	}
+	if (ignoreObstacles) {
+		flags |= FLAG_IGNOREFIELDDAMAGE;
+	}
 
-	Tile* tile = getTile(center);
-	if (tile != nullptr) {
-		placeInProtectionZone = tile->hasFlag(TILESTATE_PROTECTIONZONE);
+	if (tile->addCreature(creature, flags) == RET_NOERROR) {
+		return true;
+	}
 
-		if (creature->isAccountManager()) {
-			flags |= FLAG_IGNOREBLOCKCREATURE;
+	auto directNeighbors = tile->neighbors(1);
+	std::random_shuffle(directNeighbors.begin(), directNeighbors.end());
+
+	for (auto neighbor : directNeighbors) {
+		if (neighbor->addCreature(creature, flags) == RET_NOERROR) {
+			return true;
 		}
+	}
 
-		if (ignoreObstacles) {
-			flags |= FLAG_IGNOREFIELDDAMAGE;
-			tileIsValid = true;
-		}
-		else {
-			ReturnValue result = tile->testAddCreature(*creature, flags);
-			if (result == RET_NOERROR || result == RET_PLAYERISNOTINVITED) {
-				tileIsValid = true;
+	if (extendedRangeInSight) {
+		auto extendedNeighbors = tile->neighbors(2);
+		std::random_shuffle(extendedNeighbors.begin(), extendedNeighbors.end());
+
+		for (auto neighbor : extendedNeighbors) {
+			if (!isSightClear(center, neighbor->getPosition(), false)) {
+				continue;
+			}
+
+			if (neighbor->addCreature(creature, flags) == RET_NOERROR) {
+				return true;
 			}
 		}
 	}
 
-	if (!tileIsValid) {
-		PairVector possibleOffsets;
-		if (extendedRangeInSight) {
-			possibleOffsets.push_back(PositionPair(-2, 0));
-			possibleOffsets.push_back(PositionPair(0, -2));
-			possibleOffsets.push_back(PositionPair(0, 2));
-			possibleOffsets.push_back(PositionPair(2, 0));
-			std::random_shuffle(possibleOffsets.begin(), possibleOffsets.end());
-		}
-
-		possibleOffsets.push_back(PositionPair(-1, -1));
-		possibleOffsets.push_back(PositionPair(-1, 0));
-		possibleOffsets.push_back(PositionPair(-1, 1));
-		possibleOffsets.push_back(PositionPair(0, -1));
-		possibleOffsets.push_back(PositionPair(0, 1));
-		possibleOffsets.push_back(PositionPair(1, -1));
-		possibleOffsets.push_back(PositionPair(1, 0));
-		possibleOffsets.push_back(PositionPair(1, 1));
-		std::random_shuffle(possibleOffsets.end() - 8, possibleOffsets.end());
-
-		Position position;
-		position.z = center.z;
-
-		for (PairVector::iterator it = possibleOffsets.begin(); it != possibleOffsets.end() && !tileIsValid; ++it) {
-			int32_t x = center.x + it->first;
-			if (x < 0 || x > Map::maxX) {
-				continue;
-			}
-
-			int32_t y = center.y + it->second;
-			if (y < 0 || y > Map::maxY) {
-				continue;
-			}
-
-			position.x = static_cast<uint16_t>(x);
-			position.y = static_cast<uint16_t>(y);
-
-			tile = getTile(position);
-			if (tile == nullptr) {
-				continue;
-			}
-
-			if (placeInProtectionZone && !tile->hasFlag(TILESTATE_PROTECTIONZONE)) {
-				continue;
-			}
-
-			if (tile->testAddCreature(*creature, flags) != RET_NOERROR) {
-				continue;
-			}
-
-			if (extendedRangeInSight && !isSightClear(center, position, false)) {
-				continue;
-			}
-
-			tileIsValid = true;
-		}
-
-		if (!tileIsValid) {
-			return false;
-		}
-	}
-
-	return (tile->addCreature(creature, flags) == RET_NOERROR);
+	return false;
 }
 
 

@@ -37,7 +37,8 @@ enum cylinderflags_t
 	FLAG_CHILDISOWNER = 8,			//Used by containers to query capacity of the carrier (player)
 	FLAG_PATHFINDING = 16,			//An additional check is done for floor changing/teleport items
 	FLAG_IGNOREFIELDDAMAGE = 32,	//Bypass field damage checks
-	FLAG_IGNORENOTMOVEABLE = 64		//Bypass check for movability
+	FLAG_IGNORENOTMOVEABLE = 64,	//Bypass check for movability
+	FLAG_IGNORE_PROTECTION_ZONE = 128, //Bypass check for protection zone
 };
 
 enum cylinderlink_t
