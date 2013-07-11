@@ -975,6 +975,7 @@ bool Map::placeCreature(const Position& center, Creature* creature, bool extende
 		}
 
 		if (ignoreObstacles) {
+			flags |= FLAG_IGNOREFIELDDAMAGE;
 			tileIsValid = true;
 		}
 		else {
