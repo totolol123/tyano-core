@@ -112,7 +112,7 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 		}
 		else {
 			Direction newDirection = Direction::NORTH;
-			if (previousPosition.y < pos.y) {
+			if (previousPosition.y > pos.y) {
 				// stay north
 			}
 			else if (previousPosition.y < pos.y) {
