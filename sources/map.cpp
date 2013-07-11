@@ -965,11 +965,12 @@ bool Map::placeCreature(const Position& center, Creature* creature, bool extende
 	bool placeInProtectionZone = false;
 	bool tileIsValid = false;
 
+	uint32_t flags = 0;
+
 	Tile* tile = getTile(center);
 	if (tile != nullptr) {
 		placeInProtectionZone = tile->hasFlag(TILESTATE_PROTECTIONZONE);
 
-		uint32_t flags = FLAG_IGNOREBLOCKITEM;
 		if (creature->isAccountManager()) {
 			flags |= FLAG_IGNOREBLOCKCREATURE;
 		}
@@ -1032,7 +1033,7 @@ bool Map::placeCreature(const Position& center, Creature* creature, bool extende
 				continue;
 			}
 
-			if (tile->testAddCreature(*creature) != RET_NOERROR) {
+			if (tile->testAddCreature(*creature, flags) != RET_NOERROR) {
 				continue;
 			}
 
@@ -1048,7 +1049,7 @@ bool Map::placeCreature(const Position& center, Creature* creature, bool extende
 		}
 	}
 
-	return (tile->addCreature(creature) == RET_NOERROR);
+	return (tile->addCreature(creature, flags) == RET_NOERROR);
 }
 
 
