@@ -2205,7 +2205,7 @@ bool Game::playerUseItemEx(uint32_t playerId, const ExtendedPosition& origin, co
 			}
 
 			std::deque<Direction> route;
-			if(getPathToEx(player, destination.getPosition(true), route, 0, 1, true, true, 10))
+			if(getPathToEx(player, origin.getPosition(true), route, 0, 1, true, true, 10))
 			{
 				server.dispatcher().addTask(Task::create(std::bind(&Game::playerAutoWalk,
 					this, player->getID(), route)));
