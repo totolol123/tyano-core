@@ -245,7 +245,12 @@ CreatureP Monster::getMaster() const {
 
 
 uint32_t Monster::getMoveFlags() const {
-	return (Creature::getMoveFlags() | FLAG_PATHFINDING);
+	auto flags = (Creature::getMoveFlags() | FLAG_PATHFINDING);
+	if (isFollowing()) {
+		flags |= FLAG_IGNOREFIELDDAMAGE;
+	}
+
+	return flags;
 }
 
 
