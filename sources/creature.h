@@ -120,6 +120,7 @@ public:
 	typedef std::deque<Position>   Route;
 
 
+	virtual bool         canAttack               (const Creature& creature) const = 0;
 	virtual bool         canFollow               (const CreatureP& target) const;
 	        bool         canMoveTo               (Direction direction) const;
 	        bool         canMoveTo               (const Position& position) const;
@@ -140,7 +141,7 @@ public:
 	        bool         hasDirectOwner          () const;
 	        bool         isAlive                 () const;
 	        bool         isDrunk                 () const;
-	virtual bool         isEnemy                 (const CreaturePC& creature) const = 0;
+	virtual bool         isEnemy                 (const Creature& creature) const = 0;
 	        bool         isFollowing             () const;
 	        bool         isMonster               () const;
 	        bool         isNpc                   () const;

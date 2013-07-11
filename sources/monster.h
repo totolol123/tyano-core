@@ -50,6 +50,7 @@ public:
 
 	virtual ~Monster();
 
+	virtual bool       canAttack          (const Creature& creature) const;
 	        bool       canBeChallengedBy  (const CreatureP& convincer) const;
 	        bool       canBeConvincedBy   (const CreatureP& convincer, bool forced = false) const;
 	virtual bool       canMoveTo          (const Tile& tile) const;
@@ -63,7 +64,7 @@ public:
 	virtual uint32_t   getMoveFlags       () const;
 	        bool       hasRaid            () const;
 	        bool       hasSpawn           () const;
-	virtual bool       isEnemy            (const CreaturePC& creature) const;
+	virtual bool       isEnemy            (const Creature& creature) const;
 	virtual void       onCreatureAppear   (const CreatureP& creature);
 	        void       release            ();
 	        void       removeFromRaid     ();

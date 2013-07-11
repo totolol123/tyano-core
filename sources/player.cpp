@@ -54,6 +54,11 @@
 LOGGER_DEFINITION(Player);
 
 
+bool Player::canAttack(const Creature& creature) const {
+	return creature.canAttack(*this);
+}
+
+
 AccountP Player::getAccount() const {
 	return _account;
 }
@@ -69,13 +74,8 @@ CreaturePC Player::getDirectOwner() const {
 }
 
 
-bool Player::isEnemy(const CreaturePC& creature) const {
-	if (creature == nullptr) {
-		assert(creature != nullptr);
-		return false;
-	}
-
-	return creature->isEnemy(this);
+bool Player::isEnemy(const Creature& creature) const {
+	return creature.isEnemy(*this);
 }
 
 

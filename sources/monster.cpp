@@ -61,6 +61,40 @@ void Monster::babble() {
 }
 
 
+bool Monster::canAttack(const Creature& creature) const {
+	if (creature.isRemoved()) {
+		return false;
+	}
+
+	if (hasMaster()) {
+		return _master->canAttack(creature);
+	}
+
+	// TODO name "isAttackable" is too broad
+	if (!creature.isAttackable()) {
+		return false;
+	}
+
+	// TODO merge with isAttackable?
+	if (creature.getZone() == ZONE_PROTECTION) {
+		return false;
+	}
+
+	if (creature.isInvisible() && !canSeeInvisibility()) {
+		return false;
+	}
+
+	PlayerPC controller = creature.getController();
+	if (controller != nullptr) {
+		if (controller->isGhost()) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+
 bool Monster::canBeChallengedBy(const CreatureP& challenger) const {
 	if (challenger == nullptr) {
 		assert(challenger != nullptr);
@@ -75,7 +109,7 @@ bool Monster::canBeChallengedBy(const CreatureP& challenger) const {
 		return false;
 	}
 
-	if (!isEnemy(challenger)) {
+	if (!canAttack(*challenger)) {
 		return false;
 	}
 
@@ -310,16 +344,7 @@ bool Monster::hasToThinkAboutCreature(const CreaturePC& creature) const {
 }
 
 
-bool Monster::isEnemy(const CreaturePC& creature) const {
-	if (creature == nullptr) {
-		assert(creature != nullptr);
-		return false;
-	}
-
-	if (creature->isRemoved()) {
-		return false;
-	}
-
+bool Monster::isEnemy(const Creature& creature) const {
 	if (hasMaster()) {
 		return _master->isEnemy(creature);
 	}
@@ -328,26 +353,12 @@ bool Monster::isEnemy(const CreaturePC& creature) const {
 		return false;
 	}
 
-	// TODO name "isAttackable" is too broad
-	if (!creature->isAttackable()) {
-		return false;
-	}
-
-	// TODO merge with isAttackable?
-	if (creature->getZone() == ZONE_PROTECTION) {
-		return false;
-	}
-
-	PlayerPC controller = creature->getController();
+	PlayerPC controller = creature.getController();
 	if (controller == nullptr) {
 		return false;
 	}
 
 	if (controller->hasFlag(PlayerFlag_IgnoredByMonsters)) {
-		return false;
-	}
-
-	if (controller->isGhost()) {
 		return false;
 	}
 
@@ -589,25 +600,35 @@ bool Monster::target(const CreatureP& creature) {
 
 
 bool Monster::targetClosestEnemy() {
-	Position position = getPosition();
+	auto& game = server.game();
+	auto position = getPosition();
 
 	SpectatorList spectators;
-	server.game().getSpectators(spectators, position);
+	game.getSpectators(spectators, position);
 
 	if (spectators.empty()) {
 		target(nullptr);
 		return false;
 	}
 
-	uint32_t closestDistance = std::numeric_limits<uint32_t>::max();
+	auto closestDistance = std::numeric_limits<uint32_t>::max();
 	CreatureP closestSpectator;
 
 	for (auto spectator : spectators) {
-		if (!isEnemy(spectator)) {
+		if (!isEnemy(*spectator)) {
 			continue;
 		}
 
-		auto distance = position.distanceTo(spectator->getPosition());
+		if (!canAttack(*spectator)) {
+			continue;
+		}
+
+		auto spectatorPosition = spectator->getPosition();
+		if (!game.isSightClear(position, spectatorPosition, true)) {
+			continue;
+		}
+
+		auto distance = position.distanceTo(spectatorPosition);
 		if (distance < closestDistance) {
 			closestSpectator = spectator;
 			if (distance == 1) {
@@ -628,10 +649,11 @@ bool Monster::targetClosestEnemy() {
 
 
 bool Monster::targetRandomEnemy() {
-	Position position = getPosition();
+	auto& game = server.game();
+	auto position = getPosition();
 
 	SpectatorList spectators;
-	server.game().getSpectators(spectators, position);
+	game.getSpectators(spectators, position);
 
 	if (spectators.empty()) {
 		target(nullptr);
@@ -639,7 +661,19 @@ bool Monster::targetRandomEnemy() {
 	}
 
 	for (auto i = spectators.begin(); i != spectators.end(); ) {
-		if (!isEnemy(*i)) {
+		auto& spectator = *i;
+
+		if (!isEnemy(*spectator)) {
+			i = spectators.erase(i);
+			continue;
+		}
+
+		if (!canAttack(*spectator)) {
+			i = spectators.erase(i);
+			continue;
+		}
+
+		if (!game.isSightClear(position, spectator->getPosition(), true)) {
 			i = spectators.erase(i);
 			continue;
 		}
@@ -752,7 +786,7 @@ void Monster::updateTarget() {
 	if (hasMaster()) {
 		target(_master->getAttackedCreature());
 	}
-	else if (attackedCreature == nullptr || (!attackedCreature->isAlive() || !isEnemy(attackedCreature))) {
+	else if (attackedCreature == nullptr || !canAttack(*attackedCreature)) {
 		retarget();
 	}
 }

@@ -56,7 +56,11 @@ class Player : public Creature, public Cylinder {
 
 public:
 
-	AccountP getAccount () const;
+	virtual bool       canAttack      (const Creature& creature) const;
+	        AccountP   getAccount     () const;
+	virtual CreatureP  getDirectOwner ();
+	virtual CreaturePC getDirectOwner () const;
+	virtual bool       isEnemy        (const Creature& creature) const;
 
 
 protected:
@@ -750,15 +754,6 @@ private:
 		PartyList invitePartyList;
 		OutfitMap outfits;
 		LearnedInstantSpellList learnedInstantSpellList;
-
-
-
-	public:
-
-		virtual CreatureP  getDirectOwner ();
-		virtual CreaturePC getDirectOwner () const;
-		virtual bool       isEnemy        (const CreaturePC& creature) const;
-
 
 	private:
 

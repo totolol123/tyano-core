@@ -37,6 +37,11 @@ LOGGER_DEFINITION(Npcs);
 
 
 
+bool Npc::canAttack(const Creature& creature) const {
+	return false;
+}
+
+
 bool Npc::canMoveTo(const Tile& tile) const {
 	if (!Creature::canMoveTo(tile)) {
 		return false;
@@ -89,7 +94,7 @@ bool Npc::hasToThinkAboutCreature(const CreaturePC& creature) const {
 }
 
 
-bool Npc::isEnemy(const CreaturePC& creature) const {
+bool Npc::isEnemy(const Creature& creature) const {
 	return false;
 }
 

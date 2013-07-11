@@ -301,11 +301,12 @@ class Npc : public Creature {
 
 public:
 
+	virtual bool       canAttack      (const Creature& creature) const;
 	virtual bool       canMoveTo      (const Tile& tile) const;
 	virtual CreatureP  getDirectOwner ();
 	virtual CreaturePC getDirectOwner () const;
 	virtual uint32_t   getMoveFlags   () const;
-	virtual bool       isEnemy        (const CreaturePC& creature) const;
+	virtual bool       isEnemy        (const Creature& creature) const;
 
 
 protected:
