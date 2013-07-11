@@ -247,7 +247,12 @@ void Item::testReleaseExpiration() {
 		return;
 	}
 
-	assert(_releaseInfo->isExpired());
+	if (!_releaseInfo->isExpired()) {
+		auto now = Clock::now();
+
+		LOGf("Item #" << getId() << " '" << getName() << "' at " << getPosition() << " was expected to be expired. But it will expire on " << _releaseInfo->getExpirationTime().time_since_epoch().count() << " - now is " << now.time_since_epoch().count() << ".");
+		assert(_releaseInfo->isExpired());
+	}
 
 	auto parent = getParent();
 	if (parent != nullptr) {
