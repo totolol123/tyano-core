@@ -5003,7 +5003,7 @@ Position Game::getClosestFreeTile(Creature* creature, Position pos, bool extende
 	{
 		for(PairVector::iterator it = relList.begin(); it != relList.end(); ++it)
 		{
-			Tile* tile = map->getTile(Position((pos.x + it->first), (pos.y + it->second), pos.z));
+			Tile* tile = map->getTile(pos.x + it->first, pos.y + it->second, pos.z);
 			if(!tile || !tile->ground)
 				continue;
 
