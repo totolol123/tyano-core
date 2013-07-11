@@ -5129,7 +5129,7 @@ int32_t LuaScriptInterface::luaDoCreateMonster(lua_State* L)
 		return 1;
 	}
 
-	if(!server.game().placeCreature(monster.get(), pos))
+	if(!server.game().placeCreature(monster.get(), pos, true, true))
 	{
 		if(displayError)
 			errorEx("Cannot create monster: " + name);
