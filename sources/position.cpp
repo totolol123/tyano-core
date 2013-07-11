@@ -420,7 +420,7 @@ std::ostream& operator << (std::ostream& stream, Direction direction) {
 			return stream << "south-east";
 
 		case Direction::NORTH_WEST:
-			return stream << "north-eest";
+			return stream << "north-west";
 
 		case Direction::NORTH_EAST:
 			return stream << "north-east";
