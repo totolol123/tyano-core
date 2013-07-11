@@ -1427,7 +1427,7 @@ bool MagicField::isBlocking(const Creature* creature) const
 	return !creature || !creature->getPlayer();
 }
 
-void MagicField::onStepInField(const CreatureP& creature, bool purposeful/* = true*/)
+void MagicField::onStepInField(const CreatureP& creature)
 {
 	if(getId() == ITEM_MAGICWALL_SAFE || getId() == ITEM_WILDGROWTH_SAFE || isBlocking(creature.get()))
 	{
@@ -1436,9 +1436,6 @@ void MagicField::onStepInField(const CreatureP& creature, bool purposeful/* = tr
 
 		return;
 	}
-
-	if(!purposeful)
-		return;
 
 	if(!getKind()->condition)
 		return;

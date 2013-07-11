@@ -907,7 +907,7 @@ uint32_t MoveEvent::StepInField(const CreatureP& creature, Item* item)
 {
 	if(MagicField* field = item->getMagicField())
 	{
-		field->onStepInField(creature, creature->getPlayer());
+		field->onStepInField(creature);
 		return 1;
 	}
 

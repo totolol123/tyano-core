@@ -387,7 +387,7 @@ class MagicField : public Item
 		bool isReplaceable() const;
 		CombatType_t getCombatType() const;
 
-		void onStepInField(const CreatureP& creature, bool purposeful = true);
+		void onStepInField(const CreatureP& creature);
 
 	private:
 		uint64_t createTime;

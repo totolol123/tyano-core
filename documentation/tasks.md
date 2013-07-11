@@ -35,6 +35,7 @@ Soon
 Improvements
 ------------
 
+- Refine monster logic regarding magic fields - the higher the damage to the monster, the less likely it should run over it.
 - Monsters should not spawn in damage fields unless they are immune.
 - Rework decaying tuse Scheduler. Decaying is also buggy if it's toggeled due to item transformation (not properly removed from Game's decaying list).
 - Improve stairs movement so that the player exits a the most logical position if free.
