@@ -106,10 +106,10 @@ void Player::onRoutingStopped(bool preliminary) {
 		sendCancelWalk();
 	}
 	else {
-		if(!walkTask)
-			return;
-
-		walkTaskEvent = server.scheduler().addTask(std::move(walkTask));
+		if (walkTask != nullptr) {
+			walkTaskEvent = server.scheduler().addTask(walkTask);
+			walkTask = nullptr;
+		}
 	}
 }
 
