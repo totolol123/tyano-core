@@ -242,6 +242,11 @@ bool Creature::isAlive() const {
 }
 
 
+bool Creature::isDead() const {
+	return (health <= 0);
+}
+
+
 bool Creature::isDrunk() const {
 	return hasCondition(CONDITION_DRUNK);
 }

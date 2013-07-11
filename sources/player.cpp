@@ -1478,7 +1478,13 @@ void Player::onCreatureDisappear(const Creature* creature)
 	if(creature != this)
 		return;
 
-	loginPosition = getPosition();
+	if (isDead()) {
+		loginPosition = masterPosition;
+	}
+	else {
+		loginPosition = getPosition();
+	}
+
 	lastLogout = time(nullptr);
 
 	closeShopWindow();
@@ -2278,7 +2284,6 @@ bool Player::onDeath()
 		}
 
 		blessings = 0;
-		loginPosition = masterPosition;
 		if(!inventory[+slots_t::BACKPACK]) {
 			boost::intrusive_ptr<Item> container = Item::CreateItem(server.configManager().getNumber(ConfigManager::DEATH_CONTAINER));
 			__internalAddThing(+slots_t::BACKPACK, container.get());
@@ -2296,7 +2301,6 @@ bool Player::onDeath()
 		setLossSkill(true);
 		if(preventLoss)
 		{
-			loginPosition = masterPosition;
 			sendReLoginWindow();
 			server.game().removeCreature(this, false);
 		}

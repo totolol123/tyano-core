@@ -140,6 +140,7 @@ public:
 	        bool         hasController           () const;
 	        bool         hasDirectOwner          () const;
 	        bool         isAlive                 () const;
+	        bool         isDead                  () const;
 	        bool         isDrunk                 () const;
 	virtual bool         isEnemy                 (const Creature& creature) const = 0;
 	        bool         isFollowing             () const;
