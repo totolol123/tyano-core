@@ -16,6 +16,7 @@ Important
 Soon
 ----
 
+- Monsters should spawn in alternative locations if the destination is occupied.
 - Add pathfinding test to stairs and teleporters so that they don't move players to places where they aren't supposed to be.
 - Add popup window which informs players about new server updates when connecting.
 - Create new efficient scheduler/dispatcher system based on C++11 STL (and refactor `Item::ReleaseInfo::release` after that) (crit bits?).
@@ -34,6 +35,7 @@ Soon
 Improvements
 ------------
 
+- Monsters should not spawn in damage fields unless they are immune.
 - Rework decaying tuse Scheduler. Decaying is also buggy if it's toggeled due to item transformation (not properly removed from Game's decaying list).
 - Improve stairs movement so that the player exits a the most logical position if free.
 - Improve updating creature direction after diagonal movement.
