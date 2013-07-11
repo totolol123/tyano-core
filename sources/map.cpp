@@ -963,7 +963,7 @@ bool Map::placeCreature(const Position& center, Creature* creature, bool extende
 		return false;
 	}
 
-	uint32_t flags = 0;
+	uint32_t flags = FLAG_PATHFINDING;
 	if (creature->isAccountManager()) {
 		flags |= FLAG_IGNOREBLOCKCREATURE;
 	}
