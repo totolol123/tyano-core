@@ -1325,7 +1325,7 @@ boost::intrusive_ptr<Item> Monster::createCorpse(DeathList deathList)
 		return corpse;
 	}
 
-	auto owner = attackerWithMostDamage->getDirectOwner();
+	auto owner = attackerWithMostDamage->getController();
 	if (owner == nullptr) {
 		return corpse;
 	}
