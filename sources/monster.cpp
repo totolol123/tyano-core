@@ -1308,22 +1308,29 @@ boost::intrusive_ptr<Item> Monster::createCorpse(DeathList deathList)
 	if(_type->corpseAction)
 		corpse->setActionId(_type->corpseAction);
 
-	DeathEntry ownerEntry = deathList[0];
-	if(ownerEntry.isNameKill())
+	uint32_t attackerIdWithMostDamage = 0;
+	uint32_t maximumDamage = 0;
+
+	for (const auto& i : damageMap) {
+		const auto& count = i.second;
+
+		if (count.total > maximumDamage) {
+			attackerIdWithMostDamage = i.first;
+			maximumDamage = count.total;
+		}
+	}
+
+	auto attackerWithMostDamage = server.game().getCreatureByID(attackerIdWithMostDamage);
+	if (attackerWithMostDamage == nullptr) {
 		return corpse;
+	}
 
-	Creature* owner = ownerEntry.getKillerCreature();
-	if(!owner)
+	auto owner = attackerWithMostDamage->getDirectOwner();
+	if (owner == nullptr) {
 		return corpse;
+	}
 
-	uint32_t ownerId = 0;
-	if(owner->getPlayer())
-		ownerId = owner->getID();
-	else if(owner->hasController())
-		ownerId = owner->getController()->getID();
-
-	if(ownerId)
-		corpse->setCorpseOwner(ownerId);
+	corpse->setCorpseOwner(owner->getID());
 
 	return corpse;
 }
