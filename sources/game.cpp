@@ -4039,7 +4039,6 @@ bool Game::combatChangeHealth(CombatType_t combatType, const CreatureP& attacker
 					return false;
 
 				target->drainHealth(attacker, combatType, damage);
-				addCreatureHealth(list, target);
 
 				TextColor_t textColor = TEXTCOLOR_NONE;
 				MagicEffect_t magicEffect = MAGIC_EFFECT_NONE;
