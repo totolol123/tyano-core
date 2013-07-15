@@ -353,7 +353,7 @@ private:
 		virtual bool isAttackable() const {return true;}
 		virtual bool isAccountManager() const {return false;}
 
-		virtual void changeHealth(int32_t healthChange);
+		virtual void changeHealth(int32_t healthChange, const CreatureP& actor);
 		void changeMaxHealth(uint32_t healthChange) {healthMax = healthChange;}
 		virtual void changeMana(int32_t manaChange);
 		void changeMaxMana(uint32_t manaChange) {manaMax = manaChange;}

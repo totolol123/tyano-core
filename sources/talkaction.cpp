@@ -816,7 +816,7 @@ bool TalkAction::thingProporties(Creature* creature, const std::string& cmd, con
 		else if(Creature* _creature = thing->getCreature())
 		{
 			if(action == "health")
-				_creature->changeHealth(atoi(parseParams(it, tokens.end()).c_str()));
+				_creature->changeHealth(atoi(parseParams(it, tokens.end()).c_str()), nullptr);
 			else if(action == "maxhealth")
 				_creature->changeMaxHealth(atoi(parseParams(it, tokens.end()).c_str()));
 			else if(action == "mana")

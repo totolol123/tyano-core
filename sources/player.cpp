@@ -730,7 +730,7 @@ void Player::setVarStats(stats_t stat, int32_t modifier)
 		case STAT_MAXHEALTH:
 		{
 			if(getHealth() > getMaxHealth())
-				Creature::changeHealth(getMaxHealth() - getHealth());
+				Creature::changeHealth(getMaxHealth() - getHealth(), nullptr);
 			else
 				server.game().addCreatureHealth(this);
 
@@ -3676,11 +3676,10 @@ bool Player::isAttackable() const
 	return (!hasFlag(PlayerFlag_CannotBeAttacked) && !isAccountManager());
 }
 
-void Player::changeHealth(int32_t healthChange)
-{
-	int32_t previousHealth = health;
+void Player::changeHealth(int32_t healthChange, const CreatureP& actor) {
+	auto previousHealth = health;
 
-	Creature::changeHealth(healthChange);
+	Creature::changeHealth(healthChange, actor);
 
 	if (health != previousHealth) {
 		sendStats();

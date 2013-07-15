@@ -300,7 +300,7 @@ bool Creature::isWandering() const {
 void Creature::killSummons() {
 	auto summons = std::move(this->summons);
 	for (const auto& summon : summons) {
-		summon->changeHealth(-summon->getHealth());
+		summon->changeHealth(-summon->getHealth(), nullptr); // FIXME: make a kill method
 		summon->release();
 	}
 }
@@ -1393,25 +1393,36 @@ boost::intrusive_ptr<Item> Creature::createCorpse(DeathList deathList)
 	return Item::CreateItem(getLookCorpse());
 }
 
-void Creature::changeHealth (int32_t healthChange) {
+void Creature::changeHealth (int32_t healthChange, const CreatureP& actor) {
 	if (!isAlive()) {
 		return;
 	}
 
+	auto previousHealth = health;
 	int32_t newHealth;
 
 	if(healthChange > 0)
-		newHealth = health + std::min(healthChange, getMaxHealth() - health);
+		newHealth = previousHealth + std::min(healthChange, getMaxHealth() - previousHealth);
 	else
-		newHealth = std::max((int32_t)0, health + healthChange);
+		newHealth = std::max((int32_t)0, previousHealth + healthChange);
 
-	if (newHealth == health) {
+	if (newHealth == previousHealth) {
 		return;
 	}
 
 	health = newHealth;
 
 	server.game().addCreatureHealth(this);
+
+	if (actor != nullptr) {
+		auto healthChange = newHealth - previousHealth;
+		if (healthChange > 0) {
+			actor->onTargetCreatureGainHealth(this, healthChange);
+		}
+		else {
+			actor->onAttackedCreatureDrainHealth(this, -healthChange);
+		}
+	}
 
 	if (health == 0) {
 		onDeath();
@@ -1445,30 +1456,42 @@ bool Creature::setStorage(const uint32_t key, const std::string& value)
 	return true;
 }
 
-void Creature::gainHealth(const CreatureP& caster, int32_t healthGain)
-{
-	if(healthGain > 0)
-	{
-		int32_t prevHealth = getHealth();
-		changeHealth(healthGain);
-
-		int32_t effectiveGain = getHealth() - prevHealth;
-		if(caster)
-			caster->onTargetCreatureGainHealth(this, effectiveGain);
+void Creature::gainHealth(const CreatureP& caster, int32_t healthGain) {
+	if (healthGain == 0) {
+		return;
 	}
-	else
-		changeHealth(healthGain);
+	if (!isAlive()) {
+		return;
+	}
+
+	if (healthGain < 0) {
+		drainHealth(caster, COMBAT_LIFEDRAIN, -healthGain);
+		return;
+	}
+
+	changeHealth(healthGain, caster);
 }
 
-void Creature::drainHealth(const CreatureP& attacker, CombatType_t combatType, int32_t damage)
-{
+
+void Creature::drainHealth(const CreatureP& attacker, CombatType_t combatType, int32_t damage) {
+	if (damage == 0) {
+		return;
+	}
+	if (!isAlive()) {
+		return;
+	}
+
+	if (damage < 0) {
+		gainHealth(attacker, -damage);
+		return;
+	}
+
 	lastDamageSource = combatType;
 	onAttacked();
 
-	changeHealth(-damage);
-	if(attacker)
-		attacker->onAttackedCreatureDrainHealth(this, damage);
+	changeHealth(-damage, attacker);
 }
+
 
 void Creature::drainMana(const CreatureP& attacker, CombatType_t combatType, int32_t damage)
 {

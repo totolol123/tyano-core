@@ -1202,7 +1202,7 @@ void Monster::pushCreatures(Tile* tile) {
 		}
 
 		monster->setDropLoot(LOOT_DROP_NONE);
-		monster->changeHealth(-monster->getHealth());
+		monster->drainHealth(this, COMBAT_DEATHDAMAGE, -monster->getHealth());
 
 		killedCreatures = true;
 	}
@@ -1450,12 +1450,6 @@ void Monster::drainHealth(const CreatureP& attacker, CombatType_t combatType, in
 	if(isInvisible())
 		removeCondition(CONDITION_INVISIBLE);
 }
-
-void Monster::changeHealth(int32_t healthChange)
-{
-	Creature::changeHealth(healthChange);
-}
-
 
 
 void Monster::getPathSearchParams(const Creature* creature, FindPathParams& fpp) const

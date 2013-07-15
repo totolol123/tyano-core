@@ -158,7 +158,6 @@ private:
 		virtual void onAttackedCreatureDrain(Creature* target, int32_t points);
 
 		virtual void drainHealth(const CreatureP& attacker, CombatType_t combatType, int32_t damage);
-		virtual void changeHealth(int32_t healthChange);
 
 		virtual void setNormalCreatureLight();
 		virtual bool getCombatValues(int32_t& min, int32_t& max);

@@ -213,7 +213,7 @@ void BedItem::regeneratePlayer(Player* player) const
 				condition->setTicks(tmp);
 		}
 
-		player->changeHealth(amount);
+		player->changeHealth(amount, nullptr);
 		player->changeMana(amount);
 	}
 

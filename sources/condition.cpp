@@ -732,7 +732,7 @@ bool ConditionRegeneration::executeCondition(Creature* creature, int32_t interva
 		if(internalHealthTicks >= healthTicks)
 		{
 			internalHealthTicks = 0;
-			creature->changeHealth(healthGain);
+			creature->changeHealth(healthGain, nullptr);
 		}
 
 		if(internalManaTicks >= manaTicks)

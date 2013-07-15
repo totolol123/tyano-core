@@ -341,7 +341,7 @@ private:
 		bool hasShield() const;
 		virtual bool isAttackable() const;
 
-		virtual void changeHealth(int32_t healthChange);
+		virtual void changeHealth(int32_t healthChange, const CreatureP& actor);
 		virtual void changeMana(int32_t manaChange);
 		void changeSoul(int32_t soulChange);
 
