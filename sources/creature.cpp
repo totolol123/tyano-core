@@ -1325,7 +1325,32 @@ void Creature::dropCorpse(DeathList deathList)
 		server.game().startDecay(splash.get());
 	}
 
-	server.game().internalAddItem(nullptr, tile, corpse.get(), INDEX_WHEREEVER, FLAG_NOLIMIT);
+	if (server.game().internalAddItem(nullptr, tile, corpse.get(), INDEX_WHEREEVER, FLAG_NOLIMIT) == RET_TILEISFULL) {
+		auto items = tile->getItemList();
+		if (items != nullptr) {
+			ItemP itemWithShortestDuration;
+			int32_t minimumDuration = std::numeric_limits<int32_t>::max();
+
+			for (auto item : *items) {
+				if (item->getDecaying() != DECAYING_TRUE) {
+					continue;
+				}
+
+				auto duration = item->getDuration();
+				if (duration > 0 && duration < minimumDuration) {
+					itemWithShortestDuration = item;
+					minimumDuration = duration;
+				}
+			}
+
+			if (itemWithShortestDuration != nullptr) {
+				if (server.game().internalRemoveItem(nullptr, itemWithShortestDuration.get(), 1) == RET_NOERROR) {
+					server.game().internalAddItem(nullptr, tile, corpse.get(), INDEX_WHEREEVER, FLAG_NOLIMIT);
+				}
+			}
+		}
+	}
+
 	dropLoot(corpse->getContainer());
 	server.game().startDecay(corpse.get());
 }
