@@ -85,8 +85,14 @@ void HouseTile::updateHouse(Item* item)
 		return;
 
 	Door* door = item->getDoor();
-	if(door && door->getDoorId())
-		house->addDoor(door);
+	if(door) {
+		if (door->getDoorId()) {
+			house->addDoor(door);
+		}
+		else {
+			LOGe("House entrance at " << door->getPosition() << " has no door ID and won't work.");
+		}
+	}
 	else if(BedItem* bed = item->getBed())
 		house->addBed(bed);
 }
