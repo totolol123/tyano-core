@@ -624,7 +624,7 @@ int32_t Item::getMaxWriteLength() const {return kind->maxTextLen;}
 uint64_t Item::getWorth() const {return static_cast<uint64_t>(getItemCount()) * kind->worth;}
 int32_t Item::getThrowRange() const {return (isPickupable() ? 15 : 2);}
 
-bool Item::forceSerialize() const {return kind->forceSerialize || canWriteText() || isContainer() || isBed() || isDoor();}
+bool Item::forceSerialize() const {return kind->forceSerialize || canWriteText() || isContainer() || isBed();}
 
 bool Item::hasSubType() const {return kind->hasSubType();}
 bool Item::hasCharges() const {return kind->charges;}
