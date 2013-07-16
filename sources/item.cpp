@@ -1302,7 +1302,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 		int32_t show = kind->abilities.getAbsorb(COMBAT_PHYSICALDAMAGE);
 		for(uint32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.getAbsorb((CombatType_t)i) == show)
+			auto combatType = static_cast<CombatType_t>(i);
+			if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+				continue;
+			}
+
+			if(kind->abilities.getAbsorb(combatType) == show)
 				continue;
 
 			show = 0;
@@ -1314,7 +1319,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			bool tmp = true;
 			for(uint32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				int16_t absorb = kind->abilities.getAbsorb((CombatType_t)i);
+				auto combatType = static_cast<CombatType_t>(i);
+				if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+					continue;
+				}
+
+				int16_t absorb = kind->abilities.getAbsorb(combatType);
 				if(absorb <= 0)
 					continue;
 
@@ -1334,7 +1344,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 				else
 					s << ", ";
 
-				s << getCombatName((CombatType_t)i) << " " << absorb << "%";
+				s << getCombatName(combatType) << " " << absorb << "%";
 			}
 		}
 		else
@@ -1411,7 +1421,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 		int32_t show = kind->abilities.getAbsorb(COMBAT_PHYSICALDAMAGE);
 		for(int32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.getAbsorb((CombatType_t)i) == show)
+			auto combatType = static_cast<CombatType_t>(i);
+			if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+				continue;
+			}
+
+			if(kind->abilities.getAbsorb(combatType) == show)
 				continue;
 
 			show = 0;
@@ -1423,7 +1438,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			bool tmp = true;
 			for(int32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				int16_t absorb = kind->abilities.getAbsorb((CombatType_t)i);
+				auto combatType = static_cast<CombatType_t>(i);
+				if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+					continue;
+				}
+
+				int16_t absorb = kind->abilities.getAbsorb(combatType);
 				if(absorb <= 0)
 					continue;
 
@@ -1443,7 +1463,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 				else
 					s << ", ";
 
-				s << getCombatName((CombatType_t)i) << " " << absorb << "%";
+				s << getCombatName(combatType) << " " << absorb << "%";
 			}
 		}
 		else
@@ -1462,7 +1482,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 		show = kind->abilities.getReflect(COMBAT_PHYSICALDAMAGE, REFLECT_CHANCE);
 		for(int32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.getReflect((CombatType_t)i, REFLECT_CHANCE) == show)
+			auto combatType = static_cast<CombatType_t>(i);
+			if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+				continue;
+			}
+
+			if(kind->abilities.getReflect(combatType, REFLECT_CHANCE) == show)
 				continue;
 
 			show = 0;
@@ -1474,7 +1499,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			bool tmp = true;
 			for(int32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				int16_t chance = kind->abilities.getReflect((CombatType_t)i, REFLECT_CHANCE);
+				auto combatType = static_cast<CombatType_t>(i);
+				if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+					continue;
+				}
+
+				int16_t chance = kind->abilities.getReflect(combatType, REFLECT_CHANCE);
 				if(chance <= 0)
 					continue;
 
@@ -1496,7 +1526,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 
 				std::string ss = "no";
 
-				int16_t percent = kind->abilities.getReflect((CombatType_t)i, REFLECT_PERCENT);
+				int16_t percent = kind->abilities.getReflect(combatType, REFLECT_PERCENT);
 				if(percent > 99)
 					ss = "all";
 				else if(percent >= 75)
@@ -1508,7 +1538,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 				else if(percent > 0)
 					ss = "tiny";
 
-				s << getCombatName((CombatType_t)i) << " " << chance << "% for " << ss;
+				s << getCombatName(combatType) << " " << chance << "% for " << ss;
 			}
 
 			if(!tmp)
