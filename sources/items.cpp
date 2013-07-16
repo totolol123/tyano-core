@@ -1939,13 +1939,17 @@ bool Items::loadRandomizationFromXml() {
 		else if (xmlStrcmp(node->name, reinterpret_cast<const xmlChar*>("palette")) == 0) {
 			if (readXMLString(node, "randomize", strValue)) {
 				std::vector<int32_t> itemList = vectorAtoi(explodeString(strValue, ";"));
-				if (itemList.size() == 2 && itemList[0] < itemList[1]) {
-					fromId = itemList[0];
-					toId = itemList[1];
-				}
-				else {
-					LOGw("<palette> node randomize value '" << strValue << "' must be in format 'fromId;toId' where fromId is less than toId in " << filePath << ".");
+				if (itemList.size() != 2) {
+					LOGe("<palette> node randomize value '" << strValue << "' must be in format 'fromId;toId' where fromId is less than toId in " << filePath << ".");
 					continue;
+				}
+
+				fromId = itemList[0];
+				toId = itemList[1];
+
+				if (fromId >= toId) {
+					LOGw("<palette> node randomize value '" << strValue << "' should have a fromId less than toId in " << filePath << ".");
+					std::swap(fromId, toId);
 				}
 
 				int32_t chance = _defaultRandomizationChance;
