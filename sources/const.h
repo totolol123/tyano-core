@@ -104,8 +104,9 @@ enum AccountManager_t
 enum GamemasterCondition_t
 {
 	GAMEMASTER_INVISIBLE = 0,
-	GAMEMASTER_IGNORE = 1,
-	GAMEMASTER_TELEPORT = 2
+	GAMEMASTER_IGNORE    = 1,
+	GAMEMASTER_TELEPORT  = 2,
+	GAMEMASTER_SNEAKY    = 3,
 };
 
 enum Exhaust_t

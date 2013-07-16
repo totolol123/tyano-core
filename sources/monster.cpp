@@ -341,7 +341,12 @@ bool Monster::hasToThinkAboutCreature(const CreaturePC& creature) const {
 		return true;
 	}
 
-	if (creature->hasController()) {
+	auto controller = creature->getController();
+	if (controller != nullptr) {
+		if (controller->hasCondition(CONDITION_GAMEMASTER, GAMEMASTER_SNEAKY, false)) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -364,6 +369,10 @@ bool Monster::isEnemy(const Creature& creature) const {
 	}
 
 	if (controller->hasFlag(PlayerFlag_IgnoredByMonsters)) {
+		return false;
+	}
+
+	if (controller->hasCondition(CONDITION_GAMEMASTER, GAMEMASTER_SNEAKY, false)) {
 		return false;
 	}
 
