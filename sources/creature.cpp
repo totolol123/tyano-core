@@ -1043,6 +1043,7 @@ Creature::Creature()
 	scriptEventsBitField = 0;
 }
 
+
 Creature::~Creature() {
 	if (_thinkTaskId != 0) {
 		server.scheduler().cancelTask(_thinkTaskId);
@@ -1059,6 +1060,24 @@ Creature::~Creature() {
 		delete *it;
 	}
 }
+
+
+void Creature::setDirection(Direction direction) {
+	switch(direction) {
+	case Direction::EAST:
+	case Direction::NORTH:
+	case Direction::SOUTH:
+	case Direction::WEST:
+		break;
+
+	default:
+		LOGe("Server tried to set the direction of " << this << " to '" << direction << "' which is not supported and will crash the client. I prevented that.");
+		return;
+	}
+
+	this->direction = direction;
+}
+
 
 bool Creature::canSee(const Position& myPos, const Position& pos, uint32_t viewRangeX, uint32_t viewRangeY)
 {

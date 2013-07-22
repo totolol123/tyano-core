@@ -3664,6 +3664,9 @@ bool Game::isSightClear(const Position& fromPos, const Position& toPos, bool flo
 
 bool Game::internalCreatureTurn(Creature* creature, Direction dir)
 {
+	if (dir == Direction::NONE) {
+		return true;
+	}
 	if (creature->getDirection() == dir) {
 		return true;
 	}
@@ -3679,7 +3682,28 @@ bool Game::internalCreatureTurn(Creature* creature, Direction dir)
 	if(deny)
 		return false;
 
-	creature->setDirection(dir);
+	Direction finalDirection = Direction::EAST;
+	switch (dir) {
+	case Direction::EAST:
+	case Direction::NORTH:
+	case Direction::SOUTH:
+	case Direction::WEST:
+		finalDirection = dir;
+		break;
+
+	case Direction::NORTH_EAST:
+	case Direction::SOUTH_EAST:
+	case Direction::NONE: // impossible
+		finalDirection = Direction::EAST;
+		break;
+
+	case Direction::NORTH_WEST:
+	case Direction::SOUTH_WEST:
+		finalDirection = Direction::WEST;
+		break;
+	}
+
+	creature->setDirection(finalDirection);
 	const SpectatorList& list = getSpectators(creature->getPosition());
 	SpectatorList::const_iterator it;
 

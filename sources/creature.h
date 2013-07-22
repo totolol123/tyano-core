@@ -267,7 +267,7 @@ private:
 		virtual bool canWalkthrough(const Creature* creature) const {return creature->isWalkable() || creature->isGhost();}
 
 		Direction getDirection() const {return direction;}
-		void setDirection(Direction dir) {direction = dir;}
+		void setDirection(Direction dir);
 
 		bool getHideName() const {return hideName;}
 		void setHideName(bool v) {hideName = v;}

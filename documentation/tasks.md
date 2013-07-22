@@ -16,6 +16,8 @@ Important
 Soon
 ----
 
+- Chat channels are not joined automatically when connecting while the character is already in the game.
+- Add check to not serialize unsupported character directions in `ProtocolGame`.
 - Monsters should spawn in alternative locations if the destination is occupied.
 - Add pathfinding test to stairs and teleporters so that they don't move players to places where they aren't supposed to be.
 - Add popup window which informs players about new server updates when connecting.

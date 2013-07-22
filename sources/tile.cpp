@@ -111,18 +111,18 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 			teleported = true;
 		}
 		else {
-			Direction newDirection = Direction::NORTH;
-			if (previousPosition.y > pos.y) {
-				// stay north
-			}
-			else if (previousPosition.y < pos.y) {
-				newDirection = Direction::SOUTH;
-			}
-			else if (previousPosition.x < pos.x) {
-				newDirection = Direction::EAST;
+			Direction newDirection = Direction::EAST;
+			if (previousPosition.x < pos.x) {
+				// stay east
 			}
 			else if (previousPosition.x > pos.x) {
 				newDirection = Direction::WEST;
+			}
+			else if (previousPosition.y > pos.y) {
+				newDirection = Direction::NORTH;
+			}
+			else if (previousPosition.y < pos.y) {
+				newDirection = Direction::SOUTH;
 			}
 
 			if (newDirection != creature->getDirection()) {
