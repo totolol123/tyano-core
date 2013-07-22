@@ -28,9 +28,32 @@ class Spawn;
 typedef std::list<Spawn*> SpawnList;
 
 
-class Spawns
-{
-	public:
+class Spawns {
+
+public:
+
+	Direction getDirectionForPosition (const Position& position) const;
+
+
+private:
+
+	using DirectionMap = std::unordered_map<Position,Direction>;
+
+
+	static int luaAddSpawnDirection (lua_State* L);
+
+	void loadDirections ();
+
+
+	DirectionMap _directions;
+
+
+
+
+
+
+public:
+
 		~Spawns();
 		static Spawns* getInstance()
 		{

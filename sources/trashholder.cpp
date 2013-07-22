@@ -35,40 +35,26 @@ const std::string& TrashHolder::getClassName() {
 }
 
 
-void TrashHolder::__addThing(Creature* actor, int32_t index, Thing* thing)
+void TrashHolder::__addThing(Creature* actor, int32_t index, Item* item)
 {
-	if(Item* item = thing->getItem())
+	if(item == this || !item->isMoveable())
+		return;
+
+	if(getTile()->isSwimmingPool())
 	{
-		if(item == this || !item->isMoveable())
+		if(item->getId() == ITEM_WATERBALL_SPLASH)
 			return;
 
-		if(getTile()->isSwimmingPool())
+		if(item->getId() == ITEM_WATERBALL)
 		{
-			if(item->getId() == ITEM_WATERBALL_SPLASH)
-				return;
-
-			if(item->getId() == ITEM_WATERBALL)
-			{
-				server.game().transformItem(item, ITEM_WATERBALL_SPLASH);
-				return;
-			}
-		}
-
-		server.game().internalRemoveItem(actor, item);
-		if(effect != MAGIC_EFFECT_NONE)
-			server.game().addMagicEffect(getPosition(), effect);
-	}
-	else if(getTile()->isSwimmingPool(false) && thing->getCreature())
-	{
-		Player* player = thing->getCreature()->getPlayer();
-		if(player && player->getPosition() == player->getLastPosition())
-		{
-			//player has just logged in a swimming pool
-			static Outfit_t outfit;
-			outfit.lookType = 267;
-			Spell::CreateIllusion(player, outfit, -1);
+			server.game().transformItem(item, ITEM_WATERBALL_SPLASH);
+			return;
 		}
 	}
+
+	server.game().internalRemoveItem(actor, item);
+	if(effect != MAGIC_EFFECT_NONE)
+		server.game().addMagicEffect(getPosition(), effect);
 }
 
 void TrashHolder::postAddNotification(Creature* actor, Thing* thing, const Cylinder* oldParent,

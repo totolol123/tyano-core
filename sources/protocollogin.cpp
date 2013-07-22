@@ -173,9 +173,6 @@ bool ProtocolLogin::parseFirstPacket(NetworkMessage& msg)
 		return false;
 	}
 
-	//Remove premium days
-	IOLoginData::getInstance()->removePremium(*account);
-
 	const Account::Characters& characters = account->getCharacters();
 	if(!server.configManager().getBool(ConfigManager::ACCOUNT_MANAGER) && characters.empty())
 	{
@@ -236,11 +233,13 @@ bool ProtocolLogin::parseFirstPacket(NetworkMessage& msg)
 #endif
 		}
 
-		//Add premium days
-		if(server.configManager().getBool(ConfigManager::FREE_PREMIUM))
-			output->AddU16(std::numeric_limits<uint16_t>::max()); //client displays free premium
-		else
-			output->AddU16(account->getPremiumDays());
+		Days premiumDays = account->getPremiumDays();
+		if (premiumDays.count() >= std::numeric_limits<uint16_t>::max()) {
+			output->AddU16(std::numeric_limits<uint16_t>::max());
+		}
+		else {
+			output->AddU16(static_cast<uint16_t>(premiumDays.count()));
+		}
 
 		OutputMessagePool::getInstance()->send(output);
 	}

@@ -110,21 +110,21 @@ class Container : public Item, public Cylinder
 		virtual Creature* getCreature();
 		virtual const Creature* getCreature() const;
 
-		virtual ReturnValue __queryAdd(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryAdd(int32_t index, const Item* item, uint32_t count,
 			uint32_t flags) const;
-		virtual ReturnValue __queryMaxCount(int32_t index, const Thing* thing, uint32_t count, uint32_t& maxQueryCount,
+		virtual ReturnValue __queryMaxCount(int32_t index, const Item* item, uint32_t count, uint32_t& maxQueryCount,
 			uint32_t flags) const;
-		virtual ReturnValue __queryRemove(const Thing* thing, uint32_t count, uint32_t flags) const;
-		virtual Cylinder* __queryDestination(int32_t& index, const Thing* thing, Item** destItem,
+		virtual ReturnValue __queryRemove(const Item* item, uint32_t count, uint32_t flags) const;
+		virtual Cylinder* __queryDestination(int32_t& index, const Item* item, Item** destItem,
 			uint32_t& flags);
 
-		virtual void __addThing(Creature* actor, Thing* thing);
-		virtual void __addThing(Creature* actor, int32_t index, Thing* thing);
+		virtual void __addThing(Creature* actor, Item* item);
+		virtual void __addThing(Creature* actor, int32_t index, Item* item);
 
-		virtual void __updateThing(Thing* thing, uint16_t itemId, uint32_t count);
-		virtual void __replaceThing(uint32_t index, Thing* thing);
+		virtual void __updateThing(Item* item, uint16_t itemId, uint32_t count);
+		virtual void __replaceThing(uint32_t index, Item* item);
 
-		virtual void __removeThing(Thing* thing, uint32_t count);
+		virtual void __removeThing(Item* item, uint32_t count);
 
 		virtual int32_t __getIndexOfThing(const Thing* thing) const;
 		virtual Thing* __getThing(uint32_t index) const;
@@ -142,8 +142,8 @@ class Container : public Item, public Cylinder
 		virtual void postRemoveNotification(Creature* actor, Thing* thing, const Cylinder* newParent,
 			int32_t index, bool isCompleteRemoval, cylinderlink_t link = LINK_OWNER);
 
-		virtual void __internalAddThing(Thing* thing);
-		virtual void __internalAddThing(uint32_t index, Thing* thing);
+		virtual void __internalAddThing(Item* item);
+		virtual void __internalAddThing(uint32_t index, Item* item);
 		virtual void __startDecaying();
 
 	protected:

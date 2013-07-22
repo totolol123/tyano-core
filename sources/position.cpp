@@ -71,9 +71,11 @@ bool Position::areInRange(const Position& range, const Position& a, const Positi
 
 
 uint32_t Position::distanceTo(const Position& position) const {
-	return std::abs(static_cast<int32_t>(position.x) - static_cast<int32_t>(x))
-	     + std::abs(static_cast<int32_t>(position.y) - static_cast<int32_t>(y))
-	     + std::abs(static_cast<int32_t>(position.z) - static_cast<int32_t>(z));
+	auto dx = std::abs(position.x - x);
+	auto dy = std::abs(position.y - y);
+	auto dz = std::abs(position.z - z);
+
+	return std::max(dx, std::max(dy, dz));
 }
 
 
@@ -396,6 +398,9 @@ std::ostream& operator << (std::ostream& stream, const Position& position) {
 
 std::ostream& operator << (std::ostream& stream, Direction direction) {
 	switch (direction) {
+		case Direction::NONE:
+			return stream << "none";
+
 		case Direction::NORTH:
 			return stream << "north";
 
@@ -415,7 +420,7 @@ std::ostream& operator << (std::ostream& stream, Direction direction) {
 			return stream << "south-east";
 
 		case Direction::NORTH_WEST:
-			return stream << "north-eest";
+			return stream << "north-west";
 
 		case Direction::NORTH_EAST:
 			return stream << "north-east";

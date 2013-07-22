@@ -53,7 +53,7 @@ class Spells : public BaseEvents<Spell> {
 		uint32_t getInstantSpellCount(const Player* player);
 		ReturnValue onPlayerSay(Player* player, const std::string& words);
 		virtual std::string getScriptBaseName() const {return "spells";}
-		static Position getCasterPosition(Creature* creature, Direction dir);
+		static Position getCasterPosition(const Creature* creature, Direction dir);
 
 	private:
 		virtual void clear();
@@ -138,7 +138,6 @@ class Spell : public BaseSpell, virtual public EventBase
 		int32_t getManaPercent() const {return manaPercent;}
 		uint32_t getExhaustion() const {return exhaustion;}
 		bool isEnabled() const {return enabled;}
-		bool isPremium() const {return premium;}
 
 		virtual bool isInstant() const = 0;
 		bool isLearnable() const {return learnable;}
@@ -155,7 +154,6 @@ class Spell : public BaseSpell, virtual public EventBase
 
 		int32_t level;
 		int32_t magLevel;
-		bool premium;
 		bool learnable;
 		bool enabled;
 

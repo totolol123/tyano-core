@@ -25,7 +25,7 @@
 
 #include "player.h"
 #include "item.h"
-#include "teleport.h"
+#include "teleporter.h"
 
 #include "account.h"
 #include "town.h"
@@ -64,6 +64,242 @@
 #include "server.h"
 #include "task.h"
 
+LOGGER_DEFINITION(ScriptEnviroment);
+
+
+int LuaScriptInterface::luaAddPlayerPremiumDays(lua_State* L) {
+	auto player = readPlayer(L, 1);
+	auto days = readUnsigned32(L, 2);
+
+	AccountP account = player->getAccount();
+	if (account->hasUnlimitedPremium()) {
+		push(L, false);
+		push(L, "Player has unlimited premium.");
+		return 2;
+	}
+
+	if (!IOLoginData::getInstance()->addPremiumDaysToAccount(*account, days)) {
+		return luaL_error(L, "Internal error.");
+	}
+
+	push(L, account->getPremiumDays().count());
+	return 1;
+}
+
+
+int LuaScriptInterface::luaGetPlayerPremiumDays(lua_State* L) {
+	auto player = readPlayer(L, 1);
+
+	AccountP account = player->getAccount();
+	if (account->hasUnlimitedPremium()) {
+		push(L, false);
+		push(L, "Player has unlimited premium.");
+		return 2;
+	}
+
+	push(L, account->getPremiumDays().count());
+	return 1;
+}
+
+
+int LuaScriptInterface::luaGetPlayerPremiumExpirationText(lua_State* L) {
+	auto player = readPlayer(L, 1);
+
+	AccountP account = player->getAccount();
+	if (account->hasUnlimitedPremium()) {
+		push(L, "unlimited");
+		return 1;
+	}
+	else if (!account->hasPremium()) {
+		push(L, "none");
+		return 1;
+	}
+
+	auto time = Clock::to_time_t(account->getPremiumExpiration());
+	auto timeComponents = std::gmtime(&time);
+
+	char buffer[512];
+	std::strftime(buffer, sizeof(buffer) / sizeof(char), "%A, %B %e %Y %I:%M%p %Z", timeComponents);
+
+	push(L, buffer);
+	return 1;
+}
+
+
+int LuaScriptInterface::luaPlayerHasPremium(lua_State* L) {
+	auto player = readPlayer(L, 1);
+
+	push(L, player->getAccount()->hasPremium());
+	return 1;
+}
+
+
+int LuaScriptInterface::luaPlayerHasUnlimitedPremium(lua_State* L) {
+	auto player = readPlayer(L, 1);
+
+	push(L, player->getAccount()->hasUnlimitedPremium());
+	return 1;
+}
+
+
+int LuaScriptInterface::luaRemovePlayerPremiumDays(lua_State* L) {
+	auto player = readPlayer(L, 1);
+	auto days = readUnsigned32(L, 2);
+
+	AccountP account = player->getAccount();
+	if (account->hasUnlimitedPremium()) {
+		push(L, false);
+		push(L, "Player has unlimited premium.");
+		return 2;
+	}
+
+	if (!IOLoginData::getInstance()->removePremiumDaysFromAccount(*account, days)) {
+		return luaL_error(L, "Internal error.");
+	}
+
+	push(L, account->getPremiumDays().count());
+	return 1;
+}
+
+
+int LuaScriptInterface::luaSetPlayerPremiumDays(lua_State* L) {
+	auto player = readPlayer(L, 1);
+	auto days = readUnsigned32(L, 2);
+
+	AccountP account = player->getAccount();
+	if (!IOLoginData::getInstance()->setPremiumDaysForAccount(*account, days)) {
+		return luaL_error(L, "Internal error.");
+	}
+
+	push(L, account->getPremiumDays().count());
+	return 1;
+}
+
+
+int LuaScriptInterface::luaSetPlayerUnlimitedPremium(lua_State* L) {
+	auto player = readPlayer(L, 1);
+
+	AccountP account = player->getAccount();
+	if (!IOLoginData::getInstance()->setUnlimitedPremiumForAccount(*account)) {
+		return luaL_error(L, "Internal error.");
+	}
+
+	push(L, true);
+	return 1;
+}
+
+
+void LuaScriptInterface::push(lua_State* L, bool value) {
+	lua_pushboolean(L, value ? 1 : 0);
+}
+
+
+void LuaScriptInterface::push(lua_State* L, int32_t value) {
+	lua_pushnumber(L, value);
+}
+
+
+void LuaScriptInterface::push(lua_State* L, uint32_t value) {
+	lua_pushnumber(L, value);
+}
+
+
+void LuaScriptInterface::push(lua_State* L, int64_t value) {
+	lua_pushnumber(L, value);
+}
+
+
+void LuaScriptInterface::push(lua_State* L, uint64_t value) {
+	lua_pushnumber(L, value);
+}
+
+
+void LuaScriptInterface::push(lua_State* L, double value) {
+	lua_pushnumber(L, value);
+}
+
+
+void LuaScriptInterface::push(lua_State* L, const char* string) {
+	lua_pushstring(L, string);
+}
+
+
+void LuaScriptInterface::push(lua_State* L, const std::string& string) {
+	lua_pushlstring(L, string.c_str(), string.length());
+}
+
+
+Creature* LuaScriptInterface::readCreature(lua_State* L, uint32_t argumentIndex) {
+	auto creatureId = readUnsigned32(L, argumentIndex);
+
+	auto creature = getEnv()->getCreatureByUID(creatureId);
+	if (creature == nullptr) {
+		luaL_error(L, "There is no creature with id %d passed to argument %d.", creatureId, argumentIndex);
+	}
+
+	return creature;
+}
+
+
+double LuaScriptInterface::readDouble(lua_State* L, uint32_t argumentIndex) {
+	return luaL_checknumber(L, argumentIndex);
+}
+
+
+int32_t LuaScriptInterface::readSigned32(lua_State* L, uint32_t argumentIndex) {
+	double value = std::round(readDouble(L, argumentIndex));
+	if (value < std::numeric_limits<int32_t>::min() || value > std::numeric_limits<int32_t>::max()) {
+		luaL_error(L, "Argument %d must a 32-bit integer.", argumentIndex);
+	}
+
+	return static_cast<int32_t>(value);
+}
+
+
+uint32_t LuaScriptInterface::readUnsigned32(lua_State* L, uint32_t argumentIndex) {
+	double value = std::round(readDouble(L, argumentIndex));
+	if (value < std::numeric_limits<uint32_t>::min() || value > std::numeric_limits<uint32_t>::max()) {
+		luaL_error(L, "Argument %d must a 32-bit unsigned integer.", argumentIndex);
+	}
+
+	return static_cast<uint32_t>(value);
+}
+
+
+Player* LuaScriptInterface::readPlayer(lua_State* L, uint32_t argumentIndex) {
+	auto creature = readCreature(L, argumentIndex);
+	if (creature == nullptr) {
+		return nullptr;
+	}
+
+	auto player = creature->getPlayer();
+	if (player == nullptr) {
+		luaL_error(L, "Creature id %d passed to argument %d is not a player.", creature->getID(), argumentIndex);
+	}
+
+	return player;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 enum
 {
@@ -82,8 +318,6 @@ uint32_t ScriptEnviroment::m_lastConditionId = 0;
 ScriptEnviroment::ThingMap ScriptEnviroment::m_globalMap;
 ScriptEnviroment::StorageMap ScriptEnviroment::m_storageMap;
 ScriptEnviroment::TempItemListMap ScriptEnviroment::m_tempItems;
-
-LOGGER_DEFINITION(ScriptEnviroment);
 
 
 ScriptEnviroment::ScriptEnviroment()
@@ -1622,6 +1856,15 @@ void LuaScriptInterface::registerFunctions()
 	//example(...)
 	//lua_register(L, "name", C_function);
 
+	lua_register(m_luaState, "addPlayerPremiumDays",           LuaScriptInterface::luaAddPlayerPremiumDays);
+	lua_register(m_luaState, "getPlayerPremiumDays",           LuaScriptInterface::luaGetPlayerPremiumDays);
+	lua_register(m_luaState, "getPlayerPremiumExpirationText", LuaScriptInterface::luaGetPlayerPremiumExpirationText);
+	lua_register(m_luaState, "playerHasPremium",               LuaScriptInterface::luaPlayerHasPremium);
+	lua_register(m_luaState, "playerHasUnlimitedPremium",      LuaScriptInterface::luaPlayerHasUnlimitedPremium);
+	lua_register(m_luaState, "removePlayerPremiumDays",        LuaScriptInterface::luaRemovePlayerPremiumDays);
+	lua_register(m_luaState, "setPlayerPremiumDays",           LuaScriptInterface::luaSetPlayerPremiumDays);
+	lua_register(m_luaState, "setPlayerUnlimitedPremium",      LuaScriptInterface::luaSetPlayerUnlimitedPremium);
+
 	//getCreatureHealth(cid)
 	lua_register(m_luaState, "getCreatureHealth", LuaScriptInterface::luaGetCreatureHealth);
 
@@ -2088,6 +2331,9 @@ void LuaScriptInterface::registerFunctions()
 	//getPlayerByGUIDEx(guid)
 	lua_register(m_luaState, "getPlayerByGUIDEx", LuaScriptInterface::luaGetPlayerByGUIDEx);
 
+	//getPlayerByName(name)
+	lua_register(m_luaState, "getPlayerByName", LuaScriptInterface::luaGetPlayerByName);
+
 	//getPlayerByNameWildcard(name~[, ret = false])
 	lua_register(m_luaState, "getPlayerByNameWildcard", LuaScriptInterface::luaGetPlayerByNameWildcard);
 
@@ -2325,12 +2571,6 @@ void LuaScriptInterface::registerFunctions()
 
 	//doPlayerAddMapMark(cid, pos, type[, description])
 	lua_register(m_luaState, "doPlayerAddMapMark", LuaScriptInterface::luaDoPlayerAddMapMark);
-
-	//doPlayerAddPremiumDays(cid, days)
-	lua_register(m_luaState, "doPlayerAddPremiumDays", LuaScriptInterface::luaDoPlayerAddPremiumDays);
-
-	//getPlayerPremiumDays(cid)
-	lua_register(m_luaState, "getPlayerPremiumDays", LuaScriptInterface::luaGetPlayerPremiumDays);
 
 	//doCreatureSetLookDirection(cid, dir)
 	lua_register(m_luaState, "doCreatureSetLookDirection", LuaScriptInterface::luaDoCreatureSetLookDir);
@@ -2575,9 +2815,6 @@ void LuaScriptInterface::registerFunctions()
 	//doCleanHouse(houseId)
 	lua_register(m_luaState, "doCleanHouse", LuaScriptInterface::luaDoCleanHouse);
 
-	//doCleanMap()
-	lua_register(m_luaState, "doCleanMap", LuaScriptInterface::luaDoCleanMap);
-
 	//doRefreshMap()
 	lua_register(m_luaState, "doRefreshMap", LuaScriptInterface::luaDoRefreshMap);
 
@@ -2737,14 +2974,11 @@ int32_t LuaScriptInterface::internalGetPlayerInfo(lua_State* L, PlayerInfo_t inf
 			value = player->getGUID();
 			break;
 		case PlayerInfoAccountId:
-			value = player->getAccount();
+			value = player->getAccount()->getId();
 			break;
 		case PlayerInfoAccount:
-			lua_pushstring(L, player->getAccountName().c_str());
+			lua_pushstring(L, player->getAccount()->getName().c_str());
 			return 1;
-		case PlayerInfoPremiumDays:
-			value = player->getPremiumDays();
-			break;
 		case PlayerInfoFood:
 		{
 			if(Condition* condition = player->getCondition(CONDITION_REGENERATION, CONDITIONID_DEFAULT))
@@ -2949,11 +3183,6 @@ int32_t LuaScriptInterface::luaGetPlayerAccountId(lua_State* L)
 int32_t LuaScriptInterface::luaGetPlayerAccount(lua_State* L)
 {
 	return internalGetPlayerInfo(L, PlayerInfoAccount);
-}
-
-int32_t LuaScriptInterface::luaGetPlayerPremiumDays(lua_State* L)
-{
-	return internalGetPlayerInfo(L, PlayerInfoPremiumDays);
 }
 
 int32_t LuaScriptInterface::luaGetPlayerBalance(lua_State* L)
@@ -4467,9 +4696,9 @@ int32_t LuaScriptInterface::luaGetTileItemByType(lua_State* L)
 
 	bool found = true;
 	switch(static_cast<ItemType>(rType)) {
-		case ItemType::TELEPORT:
+		case ItemType::TELEPORTER:
 		{
-			if(!tile->hasFlag(TILESTATE_TELEPORT))
+			if(!tile->hasFlag(TILESTATE_TELEPORTER))
 				found = false;
 
 			break;
@@ -4727,7 +4956,7 @@ int32_t LuaScriptInterface::luaDoCreateTeleport(lua_State* L)
 	}
 
 	boost::intrusive_ptr<Item> newItem = Item::CreateItem(itemId);
-	Teleport* newTeleport = newItem->getTeleport();
+	auto newTeleport = newItem->asTeleporter();
 	if(!newTeleport)
 	{
 		lua_pushboolean(L, false);
@@ -4828,7 +5057,6 @@ int32_t LuaScriptInterface::luaGetTileInfo(lua_State* L)
 		setFieldBool(L, "nologout", tile->hasFlag(TILESTATE_NOLOGOUT));
 		setFieldBool(L, "pvp", tile->hasFlag(TILESTATE_PVPZONE));
 		setFieldBool(L, "refresh", tile->hasFlag(TILESTATE_REFRESH));
-		setFieldBool(L, "trashed", tile->hasFlag(TILESTATE_TRASHED));
 		setFieldBool(L, "house", tile->hasFlag(TILESTATE_HOUSE));
 		setFieldBool(L, "bed", tile->hasFlag(TILESTATE_BED));
 		setFieldBool(L, "depot", tile->hasFlag(TILESTATE_DEPOT));
@@ -4901,7 +5129,7 @@ int32_t LuaScriptInterface::luaDoCreateMonster(lua_State* L)
 		return 1;
 	}
 
-	if(!server.game().placeCreature(monster.get(), pos))
+	if(!server.game().placeCreature(monster.get(), pos, true, true))
 	{
 		if(displayError)
 			errorEx("Cannot create monster: " + name);
@@ -5528,7 +5756,15 @@ int32_t LuaScriptInterface::luaDoTileQueryAdd(lua_State* L)
 		return 1;
 	}
 
-	lua_pushnumber(L, (uint32_t)tile->__queryAdd(0, thing, 1, flags));
+	uint32_t result;
+	if (thing->getCreature() != nullptr) {
+		result = tile->testAddCreature(*thing->getCreature(), flags);
+	}
+	else {
+		result = tile->__queryAdd(0, thing->getItem(), 1, flags);
+	}
+
+	lua_pushnumber(L, result);
 	return 1;
 }
 
@@ -7167,6 +7403,7 @@ int32_t LuaScriptInterface::luaDoMoveCreature(lua_State* L)
 
 	bool validDirection = false;
 	switch (static_cast<Direction>(direction)) {
+	case Direction::NONE:
 	case Direction::EAST:
 	case Direction::NORTH:
 	case Direction::NORTH_EAST:
@@ -7254,6 +7491,18 @@ int32_t LuaScriptInterface::luaGetPlayerByGUIDEx(lua_State* L)
 	//getPlayerByGUIDEx(guid)
 	ScriptEnviroment* env = getEnv();
 	if(PlayerP player = server.game().getPlayerByGuidEx(popNumber(L)))
+		lua_pushnumber(L, env->addThing(player));
+	else
+		lua_pushnil(L);
+
+	return 1;
+}
+
+int32_t LuaScriptInterface::luaGetPlayerByName(lua_State* L)
+{
+	ScriptEnviroment* env = getEnv();
+	PlayerP player = server.game().getPlayerByName(popString(L));
+	if(player != nullptr)
 		lua_pushnumber(L, env->addThing(player));
 	else
 		lua_pushnil(L);
@@ -7388,7 +7637,7 @@ int32_t LuaScriptInterface::luaGetAccountIdByName(lua_State* L)
 	std::string name = popString(L);
 
 	if(PlayerP player = server.game().getPlayerByName(name))
-		lua_pushnumber(L, player->getAccount());
+		lua_pushnumber(L, player->getAccount()->getId());
 	else
 		lua_pushnumber(L, IOLoginData::getInstance()->getAccountIdByName(name));
 
@@ -7401,7 +7650,7 @@ int32_t LuaScriptInterface::luaGetAccountByName(lua_State* L)
 	std::string name = popString(L);
 
 	if(PlayerP player = server.game().getPlayerByName(name))
-		lua_pushstring(L, player->getAccountName().c_str());
+		lua_pushstring(L, player->getAccount()->getName().c_str());
 	else
 	{
 		std::string tmp;
@@ -7895,45 +8144,6 @@ int32_t LuaScriptInterface::luaDoPlayerAddMapMark(lua_State* L)
 	return 1;
 }
 
-int32_t LuaScriptInterface::luaDoPlayerAddPremiumDays(lua_State* L)
-{
-	//doPlayerAddPremiumDays(cid, days)
-	int32_t days = popNumber(L);
-
-	ScriptEnviroment* env = getEnv();
-	if(Player* player = env->getPlayerByUID(popNumber(L)))
-	{
-		if(player->premiumDays < 65535)
-		{
-			AccountP account = IOLoginData::getInstance()->loadAccount(player->getAccount());
-			if (account == nullptr) {
-				errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
-				lua_pushboolean(L, false);
-				return 1;
-			}
-
-			if(days < 0)
-			{
-				account->setPremiumDays(std::max((uint32_t)0, uint32_t(account->getPremiumDays() + (int32_t)days)));
-				player->premiumDays = std::max((uint32_t)0, uint32_t(player->premiumDays + (int32_t)days));
-			}
-			else
-			{
-				account->setPremiumDays(std::min((uint32_t)65534, uint32_t(account->getPremiumDays() + (uint32_t)days)));
-				player->premiumDays = std::min((uint32_t)65534, uint32_t(player->premiumDays + (uint32_t)days));
-			}
-			IOLoginData::getInstance()->saveAccount(*account);
-		}
-		lua_pushboolean(L, true);
-	}
-	else
-	{
-		errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
-		lua_pushboolean(L, false);
-	}
-	return 1;
-}
-
 int32_t LuaScriptInterface::luaGetCreatureLastPosition(lua_State* L)
 {
 	//getCreatureLastPosition(cid)
@@ -8271,7 +8481,7 @@ int32_t LuaScriptInterface::luaAddEvent(lua_State* L)
 	eventDesc.scriptId = env->getScriptId();
 
 	interface->m_timerEvents[++interface->m_lastEventTimerId] = eventDesc;
-	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(delay), std::bind(
+	server.scheduler().addTask(SchedulerTask::create(Milliseconds(delay), std::bind(
 		&LuaScriptInterface::executeTimer, interface, interface->m_lastEventTimerId)));
 
 	lua_pushnumber(L, interface->m_lastEventTimerId);
@@ -8661,17 +8871,13 @@ int32_t LuaScriptInterface::luaGetVocationInfo(lua_State* L)
 	setField(L, "soulTicks", voc->getGainTicks(GAIN_SOUL));
 	setField(L, "capacity", voc->getGainCap());
 	setFieldBool(L, "attackable", voc->isAttackable());
-	setFieldBool(L, "needPremium", voc->isPremiumNeeded());
 	setFieldFloat(L, "experienceMultiplier", voc->getExperienceMultiplier());
 	return 1;
 }
 
 int32_t LuaScriptInterface::luaGetGroupInfo(lua_State* L)
 {
-	//getGroupInfo(id[, premium])
-	bool premium = false;
-	if(lua_gettop(L) > 1)
-		premium = popNumber(L);
+	//getGroupInfo(id)
 
 	Group* group = Groups::getInstance()->getGroup(popNumber(L));
 	if(!group)
@@ -8690,8 +8896,8 @@ int32_t LuaScriptInterface::luaGetGroupInfo(lua_State* L)
 	setField(L, "nameViolationFlags", group->getNameViolationFlags());
 	setField(L, "flags", group->getFlags());
 	setField(L, "customFlags", group->getCustomFlags());
-	setField(L, "depotLimit", group->getDepotLimit(premium));
-	setField(L, "maxVips", group->getMaxVips(premium));
+	setField(L, "depotLimit", group->getDepotLimit());
+	setField(L, "maxVips", group->getMaxVips());
 	setField(L, "outfit", group->getOutfit());
 	return 1;
 }
@@ -8731,7 +8937,7 @@ int32_t LuaScriptInterface::luaGetPlayersOnline(lua_State* L)
 	for(int32_t i = 1; it != Player::autoList.end(); ++it, ++i)
 	{
 		lua_pushnumber(L, i);
-		lua_pushnumber(L, env->addThing(it->second.get()));
+		lua_pushnumber(L, env->addThing(it->second));
 		pushTable(L);
 	}
 	return 1;
@@ -9188,7 +9394,7 @@ int32_t LuaScriptInterface::luaDoReloadInfo(lua_State* L)
 	uint32_t id = popNumber(L);
 	if(id >= RELOAD_FIRST && id <= RELOAD_LAST)
 	{
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(SCHEDULER_MINTICKS),
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(SCHEDULER_MINTICKS),
 			std::bind(&Game::reloadInfo, &server.game(), (ReloadInfo_t)id, cid)));
 		lua_pushboolean(L, true);
 	}
@@ -9221,15 +9427,6 @@ int32_t LuaScriptInterface::luaDoCleanHouse(lua_State* L)
 	else
 		lua_pushboolean(L, false);
 
-	return 1;
-}
-
-int32_t LuaScriptInterface::luaDoCleanMap(lua_State* L)
-{
-	//doCleanMap()
-	uint32_t count = 0;
-	server.game().cleanMap(count);
-	lua_pushnumber(L, count);
 	return 1;
 }
 

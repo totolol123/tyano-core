@@ -294,8 +294,36 @@ struct Voice
 };
 
 #define MAX_RAND_RANGE 10000000
-class Npc : public Creature
-{
+
+
+
+class Npc : public Creature {
+
+public:
+
+	virtual bool       canAttack      (const Creature& creature) const;
+	virtual bool       canMoveTo      (const Tile& tile) const;
+	virtual CreatureP  getDirectOwner ();
+	virtual CreaturePC getDirectOwner () const;
+	virtual uint32_t   getMoveFlags   () const;
+	virtual bool       isEnemy        (const Creature& creature) const;
+
+
+protected:
+
+	virtual Duration  getWanderingInterval    () const;
+	virtual bool      hasToThinkAboutCreature (const CreaturePC& creature) const;
+	virtual void      onThinkingStarted       ();
+
+
+private:
+
+	friend class Npcs;
+	friend class NpcScriptInterface;
+
+
+
+
 	public:
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 		static uint32_t npcCount;
@@ -346,7 +374,7 @@ class Npc : public Creature
 		bool loaded;
 
 		virtual void onCreatureAppear(const CreatureP& creature);
-		virtual void onCreatureDisappear(const Creature* creature, bool isLogout);
+		virtual void onCreatureDisappear(const Creature* creature);
 		virtual void onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
 		virtual void onCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos = nullptr);
 		virtual void onThink(Duration interval);
@@ -355,8 +383,6 @@ class Npc : public Creature
 		bool isImmune(ConditionType_t type) const {return true;}
 
 		virtual std::string getDescription(int32_t lookDistance) const {return nameDescription + ".";}
-		virtual bool getNextStep(Direction& dir, uint32_t& flags);
-		bool getRandomStep(Direction& dir);
 
 		void reset();
 		bool loadFromXml(const std::string& name);
@@ -420,18 +446,6 @@ class Npc : public Creature
 		NpcEventsHandler* m_npcEventHandler;
 		static NpcScriptInterface* m_interface;
 
-
-	public:
-
-		virtual CreatureP  getDirectOwner ();
-		virtual CreaturePC getDirectOwner () const;
-		virtual bool       isEnemy        (const CreaturePC& creature) const;
-
-
-	private:
-
-		friend class Npcs;
-		friend class NpcScriptInterface;
 };
 
 #endif // _NPC_H

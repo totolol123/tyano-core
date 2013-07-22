@@ -146,18 +146,18 @@ int32_t Groups::getGroupId(const std::string& name)
 	return -1;
 }
 
-uint32_t Group::getDepotLimit(bool premium) const
+uint32_t Group::getDepotLimit() const
 {
 	if(m_depotLimit > 0)
 		return m_depotLimit;
 
-	return (premium ? 2000 : 1000);
+	return 2000;
 }
 
-uint32_t Group::getMaxVips(bool premium) const
+uint32_t Group::getMaxVips() const
 {
 	if(m_maxVips > 0)
 		return m_maxVips;
 
-	return (premium ? 100 : 20);
+	return 100;
 }

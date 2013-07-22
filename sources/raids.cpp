@@ -168,7 +168,7 @@ bool Raids::startup()
 
 	setLastRaidEnd(OTSYS_TIME());
 	checkRaidsEvent = server.scheduler().addTask(SchedulerTask::create(
-		std::chrono::milliseconds(CHECK_RAIDS_INTERVAL * 1000), std::bind(&Raids::checkRaids, this)));
+		Milliseconds(CHECK_RAIDS_INTERVAL * 1000), std::bind(&Raids::checkRaids, this)));
 
 	started = true;
 	return true;
@@ -177,7 +177,7 @@ bool Raids::startup()
 void Raids::checkRaids()
 {
 	checkRaidsEvent = server.scheduler().addTask(SchedulerTask::create(
-			std::chrono::milliseconds(CHECK_RAIDS_INTERVAL * 1000), std::bind(&Raids::checkRaids, this)));
+			Milliseconds(CHECK_RAIDS_INTERVAL * 1000), std::bind(&Raids::checkRaids, this)));
 	if(getRunning())
 		return;
 
@@ -324,7 +324,7 @@ bool Raid::startRaid()
 		return false;
 
 	nextEvent = server.scheduler().addTask(SchedulerTask::create(
-			std::chrono::milliseconds(raidEvent->getDelay()), std::bind(&Raid::executeRaidEvent, this, raidEvent)));
+			Milliseconds(raidEvent->getDelay()), std::bind(&Raid::executeRaidEvent, this, raidEvent)));
 	Raids::getInstance()->setRunning(this);
 	return true;
 }
@@ -339,7 +339,7 @@ bool Raid::executeRaidEvent(RaidEvent* raidEvent)
 		return !resetRaid(false);
 
 	nextEvent = server.scheduler().addTask(SchedulerTask::create(
-			std::chrono::milliseconds(std::max(RAID_MINTICKS, (int32_t)(newRaidEvent->getDelay() - raidEvent->getDelay()))),
+			Milliseconds(std::max(RAID_MINTICKS, (int32_t)(newRaidEvent->getDelay() - raidEvent->getDelay()))),
 		std::bind(&Raid::executeRaidEvent, this, newRaidEvent)));
 	return true;
 }

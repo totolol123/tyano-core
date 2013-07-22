@@ -61,15 +61,14 @@ Attr_ReadValue Depot::readAttr(AttrTypes_t attr, PropStream& propStream)
 	return ATTR_READ_CONTINUE;
 }
 
-ReturnValue Depot::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
+ReturnValue Depot::__queryAdd(int32_t index, const Item* item, uint32_t count,
 	uint32_t flags) const
 {
-	const Item* item = thing->getItem();
 	if(!item)
 		return RET_NOTPOSSIBLE;
 
 	if((flags & FLAG_NOLIMIT) == FLAG_NOLIMIT)
-		return Container::__queryAdd(index, thing, count, flags);
+		return Container::__queryAdd(index, item, count, flags);
 
 	int32_t addCount = 0;
 	if((item->isStackable() && item->getItemCount() != count))
@@ -86,13 +85,13 @@ ReturnValue Depot::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
 	if(getItemHoldingCount() + addCount > depotLimit)
 		return RET_DEPOTISFULL;
 
-	return Container::__queryAdd(index, thing, count, flags);
+	return Container::__queryAdd(index, item, count, flags);
 }
 
-ReturnValue Depot::__queryMaxCount(int32_t index, const Thing* thing, uint32_t count,
+ReturnValue Depot::__queryMaxCount(int32_t index, const Item* item, uint32_t count,
 	uint32_t& maxQueryCount, uint32_t flags) const
 {
-	return Container::__queryMaxCount(index, thing, count, maxQueryCount, flags);
+	return Container::__queryMaxCount(index, item, count, maxQueryCount, flags);
 }
 
 void Depot::postAddNotification(Creature* actor, Thing* thing, const Cylinder* oldParent,

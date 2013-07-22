@@ -29,7 +29,7 @@
 #include "mailbox.h"
 #include "server.h"
 #include "spells.h"
-#include "teleport.h"
+#include "teleporter.h"
 #include "trashholder.h"
 #include "weapons.h"
 
@@ -87,6 +87,7 @@ ItemKind::ItemKind() :
 		slotPosition(SLOTP_HAND | SLOTP_AMMO),
 		wieldPosition(slots_t::HAND),
 		type(ItemType::GENERIC),
+		expirationDelay(Minutes(10)),
 		charges(0),
 		transformUseTo {0, 0},
 		transformToFree(0),
@@ -357,7 +358,9 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 					else if(tmpStrValue == "trashholder")
 						kind->type = ItemType::TRASHHOLDER;
 					else if(tmpStrValue == "teleport")
-						kind->type = ItemType::TELEPORT;
+						kind->type = ItemType::TELEPORTER;
+					else if(tmpStrValue == "teleporter")
+						kind->type = ItemType::TELEPORTER;
 					else if(tmpStrValue == "door")
 						kind->type = ItemType::DOOR;
 					else if(tmpStrValue == "bed")
@@ -385,6 +388,12 @@ void Items::loadKindFromXmlNode(xmlNodePtr root, uint16_t kindId, const std::str
 			{
 				if(readXMLString(node, "value", strValue))
 					kind->article = strValue;
+			}
+			else if(tmpStrValue == "expirationDelay")
+			{
+				if(readXMLInteger(node, "value", intValue)) {
+					kind->expirationDelay = Seconds(std::max(0, intValue));
+				}
 			}
 			else if(tmpStrValue == "plural")
 			{
@@ -1647,8 +1656,8 @@ bool Items::loadKindsFromOtb() {
 				kind->type = ItemType::MAGICFIELD;
 				break;
 
-			case ITEM_GROUP_TELEPORT: // unused
-				kind->type = ItemType::TELEPORT;
+			case ITEM_GROUP_TELEPORTER: // unused
+				kind->type = ItemType::TELEPORTER;
 				break;
 
 			case ITEM_GROUP_NONE:
@@ -1930,13 +1939,17 @@ bool Items::loadRandomizationFromXml() {
 		else if (xmlStrcmp(node->name, reinterpret_cast<const xmlChar*>("palette")) == 0) {
 			if (readXMLString(node, "randomize", strValue)) {
 				std::vector<int32_t> itemList = vectorAtoi(explodeString(strValue, ";"));
-				if (itemList.size() == 2 && itemList[0] < itemList[1]) {
-					fromId = itemList[0];
-					toId = itemList[1];
-				}
-				else {
-					LOGw("<palette> node randomize value '" << strValue << "' must be in format 'fromId;toId' where fromId is less than toId in " << filePath << ".");
+				if (itemList.size() != 2) {
+					LOGe("<palette> node randomize value '" << strValue << "' must be in format 'fromId;toId' where fromId is less than toId in " << filePath << ".");
 					continue;
+				}
+
+				fromId = itemList[0];
+				toId = itemList[1];
+
+				if (fromId >= toId) {
+					LOGw("<palette> node randomize value '" << strValue << "' should have a fromId less than toId in " << filePath << ".");
+					std::swap(fromId, toId);
 				}
 
 				int32_t chance = _defaultRandomizationChance;
@@ -2003,7 +2016,7 @@ void Items::setupClasses() {
 	_classes[ItemType::MAGICFIELD] = makeClass<MagicField>();
 	_classes[ItemType::MAILBOX] = makeClass<Mailbox>();
 	_classes[ItemType::GENERIC] = makeClass<Item>();
-	_classes[ItemType::TELEPORT] = makeClass<Teleport>();
+	_classes[ItemType::TELEPORTER] = makeClass<Teleporter>();
 	_classes[ItemType::TRASHHOLDER] = makeClass<TrashHolder>();
 	_classes[ItemType::KEY] = makeClass<Key>();
 }

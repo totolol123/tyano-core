@@ -81,9 +81,9 @@ void GlobalEvents::startup()
 	now = std::max(1, (int32_t)(60 - ts->tm_sec)) * 1000;
 
 	execute(GLOBAL_EVENT_STARTUP);
-	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(now),
+	server.scheduler().addTask(SchedulerTask::create(Milliseconds(now),
 		std::bind(&GlobalEvents::timer, this)));
-	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(GLOBAL_THINK_INTERVAL),
+	server.scheduler().addTask(SchedulerTask::create(Milliseconds(GLOBAL_THINK_INTERVAL),
 		std::bind(&GlobalEvents::think, this, GLOBAL_THINK_INTERVAL)));
 }
 
@@ -104,7 +104,7 @@ void GlobalEvents::timer()
 	}
 
 	now = std::max(1, (int32_t)(60 - ts->tm_sec)) * 1000;
-	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(now),
+	server.scheduler().addTask(SchedulerTask::create(Milliseconds(now),
 		std::bind(&GlobalEvents::timer, this)));
 }
 
@@ -122,7 +122,7 @@ void GlobalEvents::think(uint32_t interval)
 				<< it->second->getName());
 	}
 
-	server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(interval),
+	server.scheduler().addTask(SchedulerTask::create(Milliseconds(interval),
 		std::bind(&GlobalEvents::think, this, interval)));
 }
 

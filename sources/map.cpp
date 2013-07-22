@@ -231,7 +231,7 @@ bool Map::canThrowObjectTo(const Position& origin, const Position& destination, 
 
 bool Map::canWalkTo(const Creature* creature, const Position& destination) const {
 	Tile* tile = getTile(destination);
-	if (creature->getTile() != tile && (tile == nullptr || tile->__queryAdd(0, creature, 1, FLAG_PATHFINDING | FLAG_IGNOREFIELDDAMAGE) != RET_NOERROR)) {
+	if (creature->getTile() != tile && (tile == nullptr || tile->testAddCreature(*creature, FLAG_PATHFINDING|FLAG_IGNOREFIELDDAMAGE) != RET_NOERROR)) {
 		return false;
 	}
 
@@ -380,8 +380,8 @@ uint16_t Map::getHeight() const {
 }
 
 
-bool Map::getPathMatching(const Creature* creature, std::list<Direction>& directions, const FrozenPathingConditionCall& pathCondition, const FindPathParams& findParameters) const {
-	directions.clear();
+bool Map::getPathMatching(const Creature* creature, Route& route, const FrozenPathingConditionCall& pathCondition, const FindPathParams& findParameters) const {
+	route.clear();
 
 	Position startPos = creature->getPosition();
 	Position endPos;
@@ -425,7 +425,7 @@ bool Map::getPathMatching(const Creature* creature, std::list<Direction>& direct
 			}
 
 			// no path found
-			directions.clear();
+			route.clear();
 			return false;
 		}
 
@@ -489,7 +489,7 @@ bool Map::getPathMatching(const Creature* creature, std::list<Direction>& direct
 						}
 
 						// seems we ran out of nodes
-						directions.clear();
+						route.clear();
 						return false;
 					}
 				}
@@ -527,28 +527,28 @@ bool Map::getPathMatching(const Creature* creature, std::list<Direction>& direct
 
 		found = found->parent;
 		if (dx == 1 && dy == 1) {
-			directions.push_front(Direction::NORTH_WEST);
+			route.push_front(Direction::NORTH_WEST);
 		}
 		else if (dx == -1 && dy == 1) {
-			directions.push_front(Direction::NORTH_EAST);
+			route.push_front(Direction::NORTH_EAST);
 		}
 		else if (dx == 1 && dy == -1) {
-			directions.push_front(Direction::SOUTH_WEST);
+			route.push_front(Direction::SOUTH_WEST);
 		}
 		else if (dx == -1 && dy == -1) {
-			directions.push_front(Direction::SOUTH_EAST);
+			route.push_front(Direction::SOUTH_EAST);
 		}
 		else if (dx == 1) {
-			directions.push_front(Direction::WEST);
+			route.push_front(Direction::WEST);
 		}
 		else if (dx == -1) {
-			directions.push_front(Direction::EAST);
+			route.push_front(Direction::EAST);
 		}
 		else if (dy == 1) {
-			directions.push_front(Direction::NORTH);
+			route.push_front(Direction::NORTH);
 		}
 		else if (dy == -1) {
-			directions.push_front(Direction::SOUTH);
+			route.push_front(Direction::SOUTH);
 		}
 	}
 
@@ -556,8 +556,8 @@ bool Map::getPathMatching(const Creature* creature, std::list<Direction>& direct
 }
 
 
-bool Map::getPathTo(const Creature* creature, const Position& destination, std::list<Direction>& directions, int32_t maxDistance /*= -1*/) const {
-	directions.clear();
+bool Map::getPathTo(const Creature* creature, const Position& destination, Route& route, int32_t maxDistance /*= -1*/) const {
+	route.clear();
 
 	if (!canWalkTo(creature, destination)) {
 		return false;
@@ -605,7 +605,7 @@ bool Map::getPathTo(const Creature* creature, const Position& destination, std::
 		n = nodes.getBestNode();
 		if (n == nullptr) {
 			// no path found
-			directions.clear();
+			route.clear();
 			return false;
 		}
 
@@ -655,7 +655,7 @@ bool Map::getPathTo(const Creature* creature, const Position& destination, std::
 					neighbourNode = nodes.createOpenNode();
 					if (neighbourNode == nullptr) {
 						// seems we ran out of nodes
-						directions.clear();
+						route.clear();
 						return false;
 					}
 				}
@@ -691,32 +691,32 @@ bool Map::getPathTo(const Creature* creature, const Position& destination, std::
 
 		found = found->parent;
 		if (dx == -1 && dy == -1) {
-			directions.push_back(Direction::NORTH_WEST);
+			route.push_back(Direction::NORTH_WEST);
 		}
 		else if (dx == 1 && dy == -1) {
-			directions.push_back(Direction::NORTH_EAST);
+			route.push_back(Direction::NORTH_EAST);
 		}
 		else if (dx == -1 && dy == 1) {
-			directions.push_back(Direction::SOUTH_WEST);
+			route.push_back(Direction::SOUTH_WEST);
 		}
 		else if (dx == 1 && dy == 1) {
-			directions.push_back(Direction::SOUTH_EAST);
+			route.push_back(Direction::SOUTH_EAST);
 		}
 		else if (dx == -1) {
-			directions.push_back(Direction::WEST);
+			route.push_back(Direction::WEST);
 		}
 		else if (dx == 1) {
-			directions.push_back(Direction::EAST);
+			route.push_back(Direction::EAST);
 		}
 		else if (dy == -1) {
-			directions.push_back(Direction::NORTH);
+			route.push_back(Direction::NORTH);
 		}
 		else if (dy == 1) {
-			directions.push_back(Direction::SOUTH);
+			route.push_back(Direction::SOUTH);
 		}
 	}
 
-	return !directions.empty();
+	return !route.empty();
 }
 
 
@@ -768,9 +768,7 @@ void Map::getSpectators(SpectatorList& spectators, const Position& center, bool 
 				auto index = indexX + indexY + z;
 
 				const auto& creatures = _creatures[index];
-				for (auto it = creatures.begin(); it != creatures.end(); ++it) {
-					auto creature = (*it).get();
-
+				for (const auto& creature : creatures) {
 					const auto& position = creature->getPosition();
 					if (position.x < minX || position.x > maxX || position.y < minY || position.y > maxY) {
 						continue;
@@ -960,111 +958,51 @@ void Map::onCreatureMoved(Creature* creature, const Tile* fromTile, const Tile* 
 
 
 bool Map::placeCreature(const Position& center, Creature* creature, bool extendedRangeInSight /*= false*/, bool ignoreObstacles /*= false*/) {
-	// TODO refactor
-	typedef std::pair<int32_t, int32_t> PositionPair;
-	typedef std::vector<PositionPair> PairVector;
-
-	bool placeInProtectionZone = false;
-	bool tileIsValid = false;
-
 	Tile* tile = getTile(center);
-	if (tile != nullptr) {
-		placeInProtectionZone = tile->hasFlag(TILESTATE_PROTECTIONZONE);
+	if (tile == nullptr) {
+		return false;
+	}
 
-		uint32_t flags = FLAG_IGNOREBLOCKITEM;
-		if (creature->isAccountManager()) {
-			flags |= FLAG_IGNOREBLOCKCREATURE;
-		}
+	uint32_t flags = FLAG_PATHFINDING;
+	if (creature->isAccountManager()) {
+		flags |= FLAG_IGNOREBLOCKCREATURE;
+	}
+	if (tile->hasFlag(TILESTATE_PROTECTIONZONE)) {
+		flags |= FLAG_IGNORE_PROTECTION_ZONE;
+	}
+	if (ignoreObstacles) {
+		flags |= FLAG_IGNOREFIELDDAMAGE;
+	}
 
-		if (ignoreObstacles) {
-			tileIsValid = true;
+	if (tile->addCreature(creature, flags) == RET_NOERROR) {
+		return true;
+	}
+
+	auto directNeighbors = tile->neighbors(1);
+	std::random_shuffle(directNeighbors.begin(), directNeighbors.end());
+
+	for (auto neighbor : directNeighbors) {
+		if (neighbor->addCreature(creature, flags) == RET_NOERROR) {
+			return true;
 		}
-		else {
-			ReturnValue result = tile->__queryAdd(0, creature, 1, flags);
-			if (result == RET_NOERROR || result == RET_PLAYERISNOTINVITED) {
-				tileIsValid = true;
+	}
+
+	if (extendedRangeInSight) {
+		auto extendedNeighbors = tile->neighbors(2);
+		std::random_shuffle(extendedNeighbors.begin(), extendedNeighbors.end());
+
+		for (auto neighbor : extendedNeighbors) {
+			if (!isSightClear(center, neighbor->getPosition(), false)) {
+				continue;
+			}
+
+			if (neighbor->addCreature(creature, flags) == RET_NOERROR) {
+				return true;
 			}
 		}
 	}
 
-	if (!tileIsValid) {
-		PairVector possibleOffsets;
-		if (extendedRangeInSight) {
-			possibleOffsets.push_back(PositionPair(-2, 0));
-			possibleOffsets.push_back(PositionPair(0, -2));
-			possibleOffsets.push_back(PositionPair(0, 2));
-			possibleOffsets.push_back(PositionPair(2, 0));
-			std::random_shuffle(possibleOffsets.begin(), possibleOffsets.end());
-		}
-
-		possibleOffsets.push_back(PositionPair(-1, -1));
-		possibleOffsets.push_back(PositionPair(-1, 0));
-		possibleOffsets.push_back(PositionPair(-1, 1));
-		possibleOffsets.push_back(PositionPair(0, -1));
-		possibleOffsets.push_back(PositionPair(0, 1));
-		possibleOffsets.push_back(PositionPair(1, -1));
-		possibleOffsets.push_back(PositionPair(1, 0));
-		possibleOffsets.push_back(PositionPair(1, 1));
-		std::random_shuffle(possibleOffsets.end() - 8, possibleOffsets.end());
-
-		Position position;
-		position.z = center.z;
-
-		for (PairVector::iterator it = possibleOffsets.begin(); it != possibleOffsets.end() && !tileIsValid; ++it) {
-			int32_t x = center.x + it->first;
-			if (x < 0 || x > Map::maxX) {
-				continue;
-			}
-
-			int32_t y = center.y + it->second;
-			if (y < 0 || y > Map::maxY) {
-				continue;
-			}
-
-			position.x = static_cast<uint16_t>(x);
-			position.y = static_cast<uint16_t>(y);
-
-			tile = getTile(position);
-			if (tile == nullptr) {
-				continue;
-			}
-
-			if (placeInProtectionZone && !tile->hasFlag(TILESTATE_PROTECTIONZONE)) {
-				continue;
-			}
-
-			if (tile->__queryAdd(0, creature, 1, 0) != RET_NOERROR) {
-				continue;
-			}
-
-			if (extendedRangeInSight && !isSightClear(center, position, false)) {
-				continue;
-			}
-
-			tileIsValid = true;
-		}
-
-		if (!tileIsValid) {
-			return false;
-		}
-	}
-
-	int32_t index = 0;
-	uint32_t flags = 0;
-
-	Item* toItem = nullptr;
-
-	Cylinder* toCylinder = tile->__queryDestination(index, creature, &toItem, flags);
-	if (toCylinder != nullptr) {
-		toCylinder->__internalAddThing(creature);
-
-		Tile* toTile = toCylinder->getTile();
-		if (toTile != nullptr) {
-			onCreatureMoved(creature, nullptr, toTile);
-		}
-	}
-
-	return true;
+	return false;
 }
 
 

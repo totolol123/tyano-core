@@ -19,6 +19,7 @@
 
 #include "player.h"
 
+#include "account.h"
 #include "configmanager.h"
 #include "game.h"
 #include "server.h"
@@ -58,7 +59,7 @@ bool WaitingList::login(const Player* player)
 {
 	uint32_t online = server.game().getPlayersOnline(), max = server.configManager().getNumber(ConfigManager::MAX_PLAYERS);
 	if(player->hasFlag(PlayerFlag_CanAlwaysLogin) || player->isAccountManager() || (waitList.empty()
-		&& online < max) || (server.configManager().getBool(ConfigManager::PREMIUM_SKIP_WAIT) && player->isPremium()))
+		&& online < max))
 		return true;
 
 	cleanup();
@@ -81,7 +82,7 @@ bool WaitingList::login(const Player* player)
 	}
 
 	Wait* wait = new Wait();
-	if(player->isPremium())
+	if(player->getAccount()->hasPremium())
 	{
 		slot = 1;
 		WaitList::iterator it = waitList.end();
@@ -106,7 +107,7 @@ bool WaitingList::login(const Player* player)
 
 	wait->name = player->getName();
 	wait->ip = player->getIP();
-	wait->premium = player->isPremium();
+	wait->premium = player->getAccount()->hasPremium();
 
 	wait->timeout = OTSYS_TIME() + getTimeout(slot) * 1000;
 	return false;

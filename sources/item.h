@@ -39,11 +39,14 @@ class  Player;
 class  PropStream;
 class  PropWriteStream;
 class  Raid;
-class  Teleport;
+class  SchedulerTask;
+class  Teleporter;
 class  TrashHolder;
 
-typedef std::shared_ptr<ItemKind>        ItemKindP;
-typedef std::shared_ptr<const ItemKind>  ItemKindPC;
+using ItemKindP      = Shared<ItemKind>;
+using ItemKindPC     = Shared<const ItemKind>;
+using SchedulerTaskP = Shared<SchedulerTask>;
+using ItemP          = boost::intrusive_ptr<Item>;
 
 
 enum ITEMPROPERTY
@@ -123,16 +126,65 @@ enum Attr_ReadValue
 	ATTR_READ_END
 };
 
-// from iomap.h
-#pragma pack(1)
-struct TeleportDest
-{
-	uint16_t _x, _y;
-	uint8_t _z;
-};
-#pragma pack()
 
 class Item : public Thing {
+
+public:
+
+	virtual ~Item();
+
+	void copyReleaseInfo   (const Item& item);
+	Time getExpirationTime () const;
+	bool isReleasable      () const;
+	bool isReleased        () const;
+	bool isRetained        () const;
+	void release           ();
+	void retain            ();
+
+
+private:
+
+	class ReleaseInfo {
+
+	public:
+
+		ReleaseInfo() = default;
+
+		void           copy              (const ReleaseInfo& releaseInfo, const Function& testExpirationCallback);
+		SchedulerTaskP getTask           () const;
+		Time           getExpirationTime () const;
+		bool           isExpired         () const;
+		bool           isReleased        () const;
+		bool           isRetained        () const;
+		void           release           (Duration expirationDelay, const Function& testExpirationCallback);
+		void           retain            ();
+
+
+	private:
+
+		ReleaseInfo (const ReleaseInfo&) = delete;
+		ReleaseInfo (ReleaseInfo&&) = delete;
+
+
+		static constexpr const Time BREAK_TIME_NEVER      = Time::min();
+		static constexpr const Time EXPIRATION_TIME_NEVER = Time::max();
+
+		Time                _breakTime       = BREAK_TIME_NEVER;
+		Duration            _expirationDelay;
+		Time                _expirationTime  = EXPIRATION_TIME_NEVER;
+		Weak<SchedulerTask> _task;
+
+	};
+
+
+	void testReleaseExpiration();
+
+
+	Unique<ReleaseInfo> _releaseInfo;
+
+
+
+
 
 	public:
 
@@ -182,7 +234,6 @@ class Item : public Thing {
 
 		// Constructor for items
 		Item(const ItemKindPC& kind, uint16_t amount = 0);
-		virtual ~Item() {}
 
 		virtual boost::intrusive_ptr<Item> clone() const;
 		virtual void copyAttributes(Item* item);
@@ -193,8 +244,8 @@ class Item : public Thing {
 		virtual Container* getContainer() {return nullptr;}
 		virtual const Container* getContainer() const {return nullptr;}
 
-		virtual Teleport* getTeleport() {return nullptr;}
-		virtual const Teleport* getTeleport() const {return nullptr;}
+		virtual Teleporter* asTeleporter() {return nullptr;}
+		virtual const Teleporter* asTeleporter() const {return nullptr;}
 
 		virtual TrashHolder* getTrashHolder() {return nullptr;}
 		virtual const TrashHolder* getTrashHolder() const {return nullptr;}
@@ -228,7 +279,7 @@ class Item : public Thing {
 		//serialization
 		virtual Attr_ReadValue readAttr(AttrTypes_t attr, PropStream& propStream);
 		virtual bool unserializeAttr(PropStream& propStream);
-		virtual bool serializeAttr(PropWriteStream& propWriteStream) const;
+		virtual void serializeAttr(PropWriteStream& propWriteStream) const;
 		virtual bool unserializeItemNode(FileLoader& f, const NodeStruct* node, PropStream& propStream) {return unserializeAttr(propStream);}
 
 		// Item attributes
@@ -323,7 +374,7 @@ class Item : public Thing {
 		bool isFluidContainer() const;
 		bool isDoor() const;
 		bool isMagicField() const;
-		bool isTeleport() const;
+		bool isTeleporter() const;
 		bool isKey() const;
 		bool isDepot() const;
 		bool isMailbox() const;

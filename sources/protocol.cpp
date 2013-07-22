@@ -89,7 +89,7 @@ OutputMessage_ptr Protocol::getOutputBuffer()
 void Protocol::releaseProtocol()
 {
 	if(m_refCount > 0)
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(SCHEDULER_MINTICKS), std::bind(&Protocol::releaseProtocol, this)));
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(SCHEDULER_MINTICKS), std::bind(&Protocol::releaseProtocol, this)));
 	else
 		deleteProtocolTask();
 }

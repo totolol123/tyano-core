@@ -28,7 +28,7 @@ class Position;
 
 using CreatureP     = boost::intrusive_ptr<Creature>;
 using PlayerP       = boost::intrusive_ptr<Player>;
-using SpectatorList = std::list<Creature*>;
+using SpectatorList = std::list<CreatureP>;
 
 
 //for luascript callback
@@ -387,7 +387,7 @@ class MagicField : public Item
 		bool isReplaceable() const;
 		CombatType_t getCombatType() const;
 
-		void onStepInField(const CreatureP& creature, bool purposeful = true);
+		void onStepInField(const CreatureP& creature);
 
 	private:
 		uint64_t createTime;

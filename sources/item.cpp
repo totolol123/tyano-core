@@ -23,7 +23,7 @@
 #include "container.h"
 #include "depot.h"
 
-#include "teleport.h"
+#include "teleporter.h"
 #include "trashholder.h"
 #include "fileloader.h"
 #include "mailbox.h"
@@ -42,6 +42,8 @@
 #include "movement.h"
 #include "player.h"
 #include "raids.h"
+#include "scheduler.h"
+#include "schedulertask.h"
 #include "server.h"
 
 
@@ -72,6 +74,42 @@ const std::string Item::ATTRIBUTE_WRITER("writer");
 
 LOGGER_DEFINITION(Item);
 
+
+
+Item::~Item() {
+	if (_releaseInfo != nullptr) {
+		auto task = _releaseInfo->getTask();
+		if (task != nullptr) {
+			server.scheduler().cancelTask(task->getId());
+		}
+	}
+}
+
+
+void Item::copyReleaseInfo(const Item& item) {
+	if (&item == this) {
+		return;
+	}
+
+	if (item._releaseInfo == nullptr) {
+		if (_releaseInfo != nullptr) {
+			auto task = _releaseInfo->getTask();
+			if (task != nullptr) {
+				server.scheduler().cancelTask(task->getId());
+			}
+
+			_releaseInfo.reset();
+		}
+
+		return;
+	}
+
+	if (_releaseInfo == nullptr) {
+		_releaseInfo.reset(new ReleaseInfo);
+	}
+
+	_releaseInfo->copy(*item._releaseInfo, std::bind(&Item::testReleaseExpiration, ItemP(this)));
+}
 
 
 Item::Attributes& Item::getAttributes() {
@@ -123,9 +161,222 @@ const std::string& Item::getClassName() {
 }
 
 
+Time Item::getExpirationTime() const {
+	if (_releaseInfo == nullptr) {
+		return Time::max();
+	}
+
+	return _releaseInfo->getExpirationTime();
+}
+
+
 uint16_t Item::getId() const {
 	return kind->id;
 }
+
+
+bool Item::isReleasable() const {
+	if (isLoadedFromMap()) {
+		return false;
+	}
+	if (!isMoveable()) {
+		return false;
+	}
+	if (isScriptProtected()) {
+		return false;
+	}
+	if (kind->expirationDelay == Duration::zero()) {
+		return false;
+	}
+
+	return true;
+}
+
+
+bool Item::isReleased() const {
+	if (_releaseInfo == nullptr) {
+		return false;
+	}
+
+	return _releaseInfo->isReleased();
+}
+
+
+bool Item::isRetained() const {
+	if (_releaseInfo == nullptr) {
+		return true;
+	}
+
+	return _releaseInfo->isRetained();
+}
+
+
+void Item::release() {
+	if (!isReleasable()) {
+		return;
+	}
+
+	LOGt("Releasing item '" << getName() << "' at " << getPosition() << ".");
+
+	if (_releaseInfo == nullptr) {
+		_releaseInfo.reset(new ReleaseInfo);
+	}
+
+	_releaseInfo->release(kind->expirationDelay, std::bind(&Item::testReleaseExpiration, ItemP(this)));
+}
+
+
+void Item::retain() {
+	LOGt("Retaining item '" << getName() << "' at " << getPosition() << ".");
+
+	if (_releaseInfo == nullptr) {
+		return;
+	}
+
+	_releaseInfo->retain();
+}
+
+
+void Item::testReleaseExpiration() {
+	if (_releaseInfo == nullptr) {
+		return;
+	}
+	if (!_releaseInfo->isReleased() || !isReleasable()) {
+		LOGt("Item '" << getName() << "' at " << getPosition() << " was retained again. Will free release info memory.");
+		_releaseInfo.reset();
+		return;
+	}
+
+	if (!_releaseInfo->isExpired()) {
+		auto now = Clock::now();
+
+		LOGf("Item #" << getId() << " '" << getName() << "' at " << getPosition() << " was expected to be expired. But it will expire on " << _releaseInfo->getExpirationTime().time_since_epoch().count() << " - now is " << now.time_since_epoch().count() << ".");
+		assert(_releaseInfo->isExpired());
+	}
+
+	auto parent = getParent();
+	if (parent != nullptr) {
+		LOGt("Removing expired item '" << getName() << "' at " << getPosition() << ".");
+
+		server.game().internalRemoveItem(nullptr, this, -1);
+	}
+}
+
+
+
+
+constexpr const Time Item::ReleaseInfo::BREAK_TIME_NEVER;
+constexpr const Time Item::ReleaseInfo::EXPIRATION_TIME_NEVER;
+
+
+void Item::ReleaseInfo::copy(const ReleaseInfo& releaseInfo, const Function& testExpirationCallback) {
+	if (&releaseInfo == this) {
+		return;
+	}
+
+	auto task = getTask();
+	if (task != nullptr) {
+		server.scheduler().cancelTask(task->getId());
+	}
+
+	_breakTime = releaseInfo._breakTime;
+	_expirationDelay = releaseInfo._expirationDelay;
+	_expirationTime = releaseInfo._expirationTime;
+
+	server.scheduler().addTask(SchedulerTask::create(_expirationTime, testExpirationCallback));
+}
+
+
+SchedulerTaskP Item::ReleaseInfo::getTask() const {
+	return _task.lock();
+}
+
+
+Time Item::ReleaseInfo::getExpirationTime() const {
+	return _expirationTime;
+}
+
+
+bool Item::ReleaseInfo::isExpired() const {
+	return (_breakTime == BREAK_TIME_NEVER && _expirationTime <= Clock::now());
+}
+
+
+bool Item::ReleaseInfo::isReleased() const {
+	return (_breakTime == BREAK_TIME_NEVER);
+}
+
+
+bool Item::ReleaseInfo::isRetained() const {
+	return (_breakTime != BREAK_TIME_NEVER);
+}
+
+
+void Item::ReleaseInfo::release(Duration expirationDelay, const Function& testExpirationCallback) {
+	auto now = Clock::now();
+	auto task = _task.lock();
+
+	Time newExpirationTime;
+	if (expirationDelay == _expirationDelay) {
+		if (isReleased()) {
+			newExpirationTime = _expirationTime;
+		}
+		else {
+			Duration continuationDuration = expirationDelay / 2;
+			Duration durationSinceBreak = now - _breakTime;
+			if (durationSinceBreak <= continuationDuration) {
+				newExpirationTime = _expirationTime + durationSinceBreak;
+			}
+			else {
+				newExpirationTime = now + expirationDelay;
+			}
+		}
+	}
+	else {
+		newExpirationTime = now + expirationDelay;
+	}
+
+	if (task != nullptr) {
+		if (_expirationTime != newExpirationTime) {
+			server.scheduler().cancelTask(task->getId());
+			task = nullptr;
+		}
+	}
+
+	if (task == nullptr) {
+		task = SchedulerTask::create(newExpirationTime, testExpirationCallback);
+
+		server.scheduler().addTask(task);
+		_task = task;
+	}
+
+	_breakTime = BREAK_TIME_NEVER;
+	_expirationDelay = expirationDelay;
+	_expirationTime = newExpirationTime;
+}
+
+
+void Item::ReleaseInfo::retain() {
+	if (isRetained()) {
+		return;
+	}
+
+	_breakTime = Clock::now();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 boost::intrusive_ptr<Item> Item::CreateItem(uint16_t kindId, uint16_t amount/* = 1*/) {
@@ -177,8 +428,8 @@ boost::intrusive_ptr<Item> Item::CreateItem(uint16_t kindId, uint16_t amount/* =
 		item = new Depot(kind);
 	else if(kind->isContainer())
 		item = new Container(kind);
-	else if(kind->isTeleport())
-		item = new Teleport(kind);
+	else if(kind->isTeleporter())
+		item = new Teleporter(kind);
 	else if(kind->isMagicField())
 		item = new MagicField(kind);
 	else if(kind->isDoor())
@@ -373,7 +624,7 @@ int32_t Item::getMaxWriteLength() const {return kind->maxTextLen;}
 uint64_t Item::getWorth() const {return static_cast<uint64_t>(getItemCount()) * kind->worth;}
 int32_t Item::getThrowRange() const {return (isPickupable() ? 15 : 2);}
 
-bool Item::forceSerialize() const {return kind->forceSerialize || canWriteText() || isContainer() || isBed() || isDoor();}
+bool Item::forceSerialize() const {return kind->forceSerialize || canWriteText() || isContainer() || isBed();}
 
 bool Item::hasSubType() const {return kind->hasSubType();}
 bool Item::hasCharges() const {return kind->charges;}
@@ -389,7 +640,7 @@ bool Item::isSplash() const {return kind->isSplash();}
 bool Item::isFluidContainer() const {return (kind->isFluidContainer());}
 bool Item::isDoor() const {return kind->isDoor();}
 bool Item::isMagicField() const {return kind->isMagicField();}
-bool Item::isTeleport() const {return kind->isTeleport();}
+bool Item::isTeleporter() const {return kind->isTeleporter();}
 bool Item::isKey() const {return kind->isKey();}
 bool Item::isDepot() const {return kind->isDepot();}
 bool Item::isMailbox() const {return kind->isMailbox();}
@@ -743,16 +994,6 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			break;
 		}
 
-		//Teleport class
-		case ATTR_TELE_DEST:
-		{
-			TeleportDest* dest;
-			if(!propStream.GET_STRUCT(dest))
-				return ATTR_READ_ERROR;
-
-			break;
-		}
-
 		//Bed class
 		case ATTR_SLEEPERGUID:
 		{
@@ -794,6 +1035,13 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 
 			if(!ret)
 				return ATTR_READ_ERROR;
+
+			break;
+		}
+
+		case ATTR_TELE_DEST: {
+			LOGw("Item " << kind->id << " is not a teleporter but contains related data. Ignoring that data for now.");
+			propStream.SKIP_N(5);
 
 			break;
 		}
@@ -1054,7 +1302,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 		int32_t show = kind->abilities.getAbsorb(COMBAT_PHYSICALDAMAGE);
 		for(uint32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.getAbsorb((CombatType_t)i) == show)
+			auto combatType = static_cast<CombatType_t>(i);
+			if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+				continue;
+			}
+
+			if(kind->abilities.getAbsorb(combatType) == show)
 				continue;
 
 			show = 0;
@@ -1066,7 +1319,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			bool tmp = true;
 			for(uint32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				int16_t absorb = kind->abilities.getAbsorb((CombatType_t)i);
+				auto combatType = static_cast<CombatType_t>(i);
+				if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+					continue;
+				}
+
+				int16_t absorb = kind->abilities.getAbsorb(combatType);
 				if(absorb <= 0)
 					continue;
 
@@ -1086,7 +1344,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 				else
 					s << ", ";
 
-				s << getCombatName((CombatType_t)i) << " " << absorb << "%";
+				s << getCombatName(combatType) << " " << absorb << "%";
 			}
 		}
 		else
@@ -1163,7 +1421,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 		int32_t show = kind->abilities.getAbsorb(COMBAT_PHYSICALDAMAGE);
 		for(int32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.getAbsorb((CombatType_t)i) == show)
+			auto combatType = static_cast<CombatType_t>(i);
+			if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+				continue;
+			}
+
+			if(kind->abilities.getAbsorb(combatType) == show)
 				continue;
 
 			show = 0;
@@ -1175,7 +1438,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			bool tmp = true;
 			for(int32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				int16_t absorb = kind->abilities.getAbsorb((CombatType_t)i);
+				auto combatType = static_cast<CombatType_t>(i);
+				if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+					continue;
+				}
+
+				int16_t absorb = kind->abilities.getAbsorb(combatType);
 				if(absorb <= 0)
 					continue;
 
@@ -1195,7 +1463,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 				else
 					s << ", ";
 
-				s << getCombatName((CombatType_t)i) << " " << absorb << "%";
+				s << getCombatName(combatType) << " " << absorb << "%";
 			}
 		}
 		else
@@ -1214,7 +1482,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 		show = kind->abilities.getReflect(COMBAT_PHYSICALDAMAGE, REFLECT_CHANCE);
 		for(int32_t i = (COMBAT_PHYSICALDAMAGE + 1); i <= COMBAT_LAST; i++)
 		{
-			if(kind->abilities.getReflect((CombatType_t)i, REFLECT_CHANCE) == show)
+			auto combatType = static_cast<CombatType_t>(i);
+			if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+				continue;
+			}
+
+			if(kind->abilities.getReflect(combatType, REFLECT_CHANCE) == show)
 				continue;
 
 			show = 0;
@@ -1226,7 +1499,12 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 			bool tmp = true;
 			for(int32_t i = COMBAT_PHYSICALDAMAGE; i <= COMBAT_LAST; i++)
 			{
-				int16_t chance = kind->abilities.getReflect((CombatType_t)i, REFLECT_CHANCE);
+				auto combatType = static_cast<CombatType_t>(i);
+				if (combatType == COMBAT_HEALING || combatType == COMBAT_MANADRAIN) {
+					continue;
+				}
+
+				int16_t chance = kind->abilities.getReflect(combatType, REFLECT_CHANCE);
 				if(chance <= 0)
 					continue;
 
@@ -1248,7 +1526,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 
 				std::string ss = "no";
 
-				int16_t percent = kind->abilities.getReflect((CombatType_t)i, REFLECT_PERCENT);
+				int16_t percent = kind->abilities.getReflect(combatType, REFLECT_PERCENT);
 				if(percent > 99)
 					ss = "all";
 				else if(percent >= 75)
@@ -1260,7 +1538,7 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 				else if(percent > 0)
 					ss = "tiny";
 
-				s << getCombatName((CombatType_t)i) << " " << chance << "% for " << ss;
+				s << getCombatName(combatType) << " " << chance << "% for " << ss;
 			}
 
 			if(!tmp)
@@ -1382,8 +1660,6 @@ std::string Item::getDescription(const ItemKindPC& kind, int32_t lookDistance, c
 	if(kind->wieldInfo)
 	{
 		s << std::endl << "It can only be wielded properly by ";
-		if(kind->wieldInfo & WIELDINFO_PREMIUM)
-			s << "premium ";
 
 		if(kind->wieldInfo & WIELDINFO_VOCREQ)
 			s << kind->vocationString;
@@ -1842,7 +2118,7 @@ typedef enum {
 
 
 
-bool Item::serializeAttr(PropWriteStream& stream) const
+void Item::serializeAttr(PropWriteStream& stream) const
 {
 	if(isStackable() || isFluidContainer() || isSplash())
 	{
@@ -1886,8 +2162,6 @@ bool Item::serializeAttr(PropWriteStream& stream) const
 			}
 		}
 	}
-
-	return true;
 }
 
 

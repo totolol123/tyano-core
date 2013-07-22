@@ -27,6 +27,10 @@ typedef std::unique_ptr<DBResult>  DBResultP;
 class DBResult
 {
 	public:
+
+		virtual bool isNull(const std::string& field) = 0;
+		virtual uint32_t getUnsigned32(const std::string& field) = 0;
+
 		/** Get the Integer value of a field in database
 		*\returns The Integer value of the selected field and row
 		*\param s The name of the field

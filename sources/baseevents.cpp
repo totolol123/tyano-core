@@ -101,6 +101,11 @@ bool Event::checkScript(const std::string& script, bool file)
 }
 
 
+bool Event::validate() const {
+	return true;
+}
+
+
 
 LOGGER_DEFINITION(CallBack);
 

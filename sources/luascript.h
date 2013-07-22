@@ -213,8 +213,35 @@ enum ErrorCode_t
 
 #define errorEx(a) error(__FUNCTION__, a)
 
-class LuaScriptInterface
-{
+class LuaScriptInterface {
+
+private:
+
+	static int luaAddPlayerPremiumDays           (lua_State* L);
+	static int luaGetPlayerPremiumDays           (lua_State* L);
+	static int luaGetPlayerPremiumExpirationText (lua_State* L);
+	static int luaPlayerHasPremium               (lua_State* L);
+	static int luaPlayerHasUnlimitedPremium      (lua_State* L);
+	static int luaRemovePlayerPremiumDays        (lua_State* L);
+	static int luaSetPlayerPremiumDays           (lua_State* L);
+	static int luaSetPlayerUnlimitedPremium      (lua_State* L);
+
+	static void      push           (lua_State* L, bool value);
+	static void      push           (lua_State* L, int32_t value);
+	static void      push           (lua_State* L, uint32_t value);
+	static void      push           (lua_State* L, int64_t value);
+	static void      push           (lua_State* L, uint64_t value);
+	static void      push           (lua_State* L, double value);
+	static void      push           (lua_State* L, const char* string);
+	static void      push           (lua_State* L, const std::string& string);
+	static Creature* readCreature   (lua_State* L, uint32_t argumentIndex);
+	static double    readDouble     (lua_State* L, uint32_t argumentIndex);
+	static Player*   readPlayer     (lua_State* L, uint32_t argumentIndex);
+	static int32_t   readSigned32   (lua_State* L, uint32_t argumentIndex);
+	static uint32_t  readUnsigned32 (lua_State* L, uint32_t argumentIndex);
+
+
+
 	public:
 		LuaScriptInterface(std::string interfaceName);
 		virtual ~LuaScriptInterface();
@@ -322,6 +349,7 @@ class LuaScriptInterface
 		virtual void registerFunctions();
 
 		//lua functions
+
 		static int32_t luaDoRemoveItem(lua_State* L);
 		static int32_t luaDoFeedPlayer(lua_State* L);
 		static int32_t luaDoPlayerSendCancel(lua_State* L);
@@ -401,6 +429,7 @@ class LuaScriptInterface
 		static int32_t luaGetCreatureByName(lua_State* L);
 		static int32_t luaGetPlayerByGUID(lua_State* L);
 		static int32_t luaGetPlayerByGUIDEx(lua_State* L);
+		static int32_t luaGetPlayerByName(lua_State* L);
 		static int32_t luaGetPlayerByNameWildcard(lua_State* L);
 		static int32_t luaGetPlayerGUIDByName(lua_State* L);
 		static int32_t luaGetPlayerNameByGUID(lua_State* L);
@@ -607,8 +636,6 @@ class LuaScriptInterface
 		static int32_t luaDoPlayerSendTutorial(lua_State* L);
 		static int32_t luaDoPlayerSendMailByName(lua_State* L);
 		static int32_t luaDoPlayerAddMapMark(lua_State* L);
-		static int32_t luaGetPlayerPremiumDays(lua_State* L);
-		static int32_t luaDoPlayerAddPremiumDays(lua_State* L);
 		static int32_t luaGetCreatureNoMove(lua_State* L);
 		static int32_t luaDoCreatureSetNoMove(lua_State* L);
 		static int32_t luaGetTownId(lua_State* L);
@@ -624,7 +651,6 @@ class LuaScriptInterface
 		static int32_t luaDoReloadInfo(lua_State* L);
 		static int32_t luaDoSaveServer(lua_State* L);
 		static int32_t luaDoCleanHouse(lua_State* L);
-		static int32_t luaDoCleanMap(lua_State* L);
 		static int32_t luaDoRefreshMap(lua_State* L);
 		static int32_t luaDoUpdateHouseAuctions(lua_State* L);
 		static int32_t luaGetItemIdByName(lua_State* L);
@@ -713,7 +739,6 @@ class LuaScriptInterface
 			PlayerInfoGUID,
 			PlayerInfoAccountId,
 			PlayerInfoAccount,
-			PlayerInfoPremiumDays,
 			PlayerInfoBalance,
 			PlayerInfoStamina,
 			PlayerInfoLossSkill,

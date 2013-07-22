@@ -1,4 +1,4 @@
-LICENSE
+License
 =======
 
 					  GNU GENERAL PUBLIC LICENSE

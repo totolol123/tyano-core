@@ -64,7 +64,7 @@ Dispatcher::~Dispatcher() {
 }
 
 
-void Dispatcher::addTask(TaskP task, bool urgent /*= false*/) {
+void Dispatcher::addTask(const TaskP& task, bool urgent /*= false*/) {
 	if (task == nullptr) {
 		assert(task != nullptr);
 		return;
@@ -76,10 +76,10 @@ void Dispatcher::addTask(TaskP task, bool urgent /*= false*/) {
 	case State::STOPPED:
 	case State::STARTED:
 		if (urgent) {
-			_tasks.push_front(std::move(task));
+			_tasks.push_front(task);
 		}
 		else {
-			_tasks.push_back(std::move(task));
+			_tasks.push_back(task);
 		}
 
 		if (_tasks.size() == 1) {
@@ -126,8 +126,8 @@ void Dispatcher::runTasks(const TaskDeque& tasks) const {
 	auto& game = server.game();
 	auto messagePool = OutputMessagePool::getInstance();
 
-	for (auto task = tasks.begin(); task != tasks.end(); ++task) {
-		runTask(**task, game, messagePool);
+	for (const auto& task : tasks) {
+		runTask(*task, game, messagePool);
 	}
 }
 

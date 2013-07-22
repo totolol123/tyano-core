@@ -258,7 +258,7 @@ InstantSpellP Spells::getInstantSpellByName(const std::string& name)
 	return nullptr;
 }
 
-Position Spells::getCasterPosition(Creature* creature, Direction dir)
+Position Spells::getCasterPosition(const Creature* creature, Direction dir)
 {
 	return getNextPosition(dir, creature->getPosition());
 }
@@ -463,7 +463,6 @@ Spell::Spell()
 	blockingSolid = false;
 	blockingCreature = false;
 	enabled = true;
-	premium = false;
 	isAggressive = true;
 	learnable = false;
 }
@@ -518,9 +517,6 @@ bool Spell::configureSpell(xmlNodePtr p)
 
 	if(readXMLString(p, "enabled", strValue))
 		enabled = booleanString(strValue);
-
-	if(readXMLString(p, "prem", strValue) || readXMLString(p, "premium", strValue))
-		premium = booleanString(strValue);
 
 	if(readXMLString(p, "needtarget", strValue))
 		needTarget = booleanString(strValue);
@@ -595,19 +591,12 @@ bool Spell::playerSpellCheck(Player* player) const
 	else if(player->hasCondition(CONDITION_EXHAUST, EXHAUST_HEALING))
 		exhausted = true;
 
-	if(exhausted && !player->hasFlag(PlayerFlag_HasNoExhaustion))
+	if(exhausted && exhaustion > 0 && !player->hasFlag(PlayerFlag_HasNoExhaustion))
 	{
 		player->sendCancelMessage(RET_YOUAREEXHAUSTED);
 		if(isInstant())
 			server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 
-		return false;
-	}
-
-	if(isPremium() && !player->isPremium())
-	{
-		player->sendCancelMessage(RET_YOUNEEDPREMIUMACCOUNT);
-		server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 		return false;
 	}
 
@@ -1432,7 +1421,7 @@ bool InstantSpell::Levitate(const InstantSpell* spell, Creature* creature, const
 					&& tile->hasFlag(TILESTATE_HOUSE) == tmpTile->hasFlag(TILESTATE_HOUSE)
 					&& tile->hasFlag(TILESTATE_PROTECTIONZONE) == tmpTile->hasFlag(TILESTATE_PROTECTIONZONE)
 				)
-						ret = server.game().internalMoveCreature(nullptr, player, tile, tmpTile, FLAG_IGNOREBLOCKITEM | FLAG_IGNOREBLOCKCREATURE);
+						ret = tmpTile->addCreature(player, FLAG_IGNOREBLOCKITEM|FLAG_IGNOREBLOCKCREATURE);
 			}
 		}
 	}

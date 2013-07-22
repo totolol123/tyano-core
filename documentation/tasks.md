@@ -4,20 +4,24 @@ Tasks
 Urgent
 ------
 
-- Nothing is urgent right now! :)
+- Rework teleporters and stairs.
 
 
 Important
 ---------
 
-- Migrate creature walking code to thinking cycles.
-- Make NPCs walk only while there are players nearby.
-- Make items automatically disappear after a while on the ground instead of regulary cleaning the map to distribute CPU load.
+- Nothing is important right now :)
 
 
 Soon
 ----
 
+- Chat channels are not joined automatically when connecting while the character is already in the game.
+- Add check to not serialize unsupported character directions in `ProtocolGame`.
+- Monsters should spawn in alternative locations if the destination is occupied.
+- Add pathfinding test to stairs and teleporters so that they don't move players to places where they aren't supposed to be.
+- Add popup window which informs players about new server updates when connecting.
+- Create new efficient scheduler/dispatcher system based on C++11 STL (and refactor `Item::ReleaseInfo::release` after that) (crit bits?).
 - Broadcast message with pop-up because a server-wide red chat message will actually not be read by most players.
 - Refactor talkaction system to unify commands & help system.
 - Fix that one boost network socket leaks every time a new connection is accepted.
@@ -25,12 +29,33 @@ Soon
 - Find to-dos written directly in the code and migrate them here.
 - Refactor chat messages to be more visible (e.g. gamemaster broadcasts, etc.)
 - Reduce overall number of corpses and also make them disappear faster. Esp. if there are more than 7-8 corpses on a single tile it get's tricky and players may lose loot.
+- Refactor networking code because the current one is unstable and unsafe.  
+  E.g. what if an invisible creature becomes visible? The stack *order* of creatures would vary across clients. The current code cannot handle that!
+- Swimming pools are most likely broken.
 
 
 Improvements
 ------------
 
-- Use other approaches to load the map because the current approach is limited to small maps.
+- Improve creature damage map to be limited in time and to better take of killed creatures (e.g. if a player's summon caused most damage and dies before the target dies, the player won't be attributed).
+- Refine monster logic regarding magic fields - the higher the damage to the monster, the less likely it should run over it.
+- Monsters should not spawn in damage fields unless they are immune.
+- Rework decaying tuse Scheduler. Decaying is also buggy if it's toggeled due to item transformation (not properly removed from Game's decaying list).
+- Improve stairs movement so that the player exits a the most logical position if free.
+- Improve updating creature direction after diagonal movement.
+- Make `Game::clearSpectatorCache` obsolete by (partial?) invalidation in `Map::onCreatureMoved`.
+- Use scheduler for decaying items.
+- Corpse lifecycles without difficult decaying configuration and flexible lifetime (e.g. corpses of bosses and players should last longer and be immobile for longer).
+- Make monsters think in groups. E.g. a boss is attacked, the other monsters should support him. 
+  And if a summon is attacked, the master should support it.
+- Once there are too many corpses and/or items on a tile, merge them into a box?
+- Make separate item class for item type for corpses?
+- `Game::internalMoveItem` deletes and re-creates a full stack of stackable items which is inefficient. 
+- Replace `boost::function` with `std::function`.
+- Replace all occurrences of `std::(shared|unique|weak)_ptr` with `Shared|Unique|Weak`.
+- Replace `const Time&` with just `Time` as `timepoint_t` is backed by `duration` which is a primitive type. 
+- Use separate dispatching/scheduling for cross-thread and inter-game-thread avoid unnecessary locks and to speed up everything.
+- Use other approach to load the map because the current approach is limited to small maps.
 - Improve autowalking. Currently you lag when clicking multiple times and the walking randomly ends, e.g. when a creature walks into the path.
 - Add randomization to the think intervals to distribute CPU load as much as possible.
 - Use C++11 random number generators. Also check if the random number generating functions are not used concurrently.

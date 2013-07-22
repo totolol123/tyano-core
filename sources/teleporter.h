@@ -15,43 +15,39 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
 
-#include "otpch.h"
+#ifndef _TELEPORTER_H
+#define _TELEPORTER_H
 
-#include "schedulertask.h"
+#include "item.h"
+#include "position.h"
 
-
-SchedulerTask::SchedulerTask(Time time, const Function& function)
-	: Task(function),
-	  _id(0),
-	  _time(time)
-{}
+class Creature;
 
 
-auto SchedulerTask::create(Duration delay, const Function& function) -> SchedulerTaskP {
-	if (delay <= Duration::zero()) {
-		assert(delay > Duration::zero());
-		delay = Duration::zero();
-	}
+class Teleporter : public Item {
 
-	return std::make_shared<SchedulerTask>(Clock::now() + delay, function);
-}
+public:
 
+	static ClassAttributesP   getClassAttributes ();
+	static const std::string& getClassName();
 
-auto SchedulerTask::create(Time time, const Function& function) -> SchedulerTaskP {
-	return std::make_shared<SchedulerTask>(time, function);
-}
+	Teleporter          (const ItemKindPC& kind);
+	virtual ~Teleporter ();
 
-
-SchedulerTask::Id SchedulerTask::getId() const {
-	return _id;
-}
+	virtual Teleporter*       asTeleporter   ();
+	virtual const Teleporter* asTeleporter   () const;
+	        const Position&   getDestination () const;
+	virtual Attr_ReadValue    readAttr       (AttrTypes_t attribute, PropStream& stream);
+	virtual void              serializeAttr  (PropWriteStream& stream) const;
+	        void              setDestination (const Position& destination);
 
 
-Time SchedulerTask::getTime() const {
-	return _time;
-}
+private:
 
+	LOGGER_DECLARATION;
 
-void SchedulerTask::setId(Id id) {
-	_id = id;
-}
+	Position _destination;
+
+};
+
+#endif // _TELEPORTER_H

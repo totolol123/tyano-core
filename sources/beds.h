@@ -41,7 +41,7 @@ class BedItem : public Item
 		virtual const BedItem* getBed() const {return this;}
 
 		virtual Attr_ReadValue readAttr(AttrTypes_t attr, PropStream& propStream);
-		virtual bool serializeAttr(PropWriteStream& propWriteStream) const;
+		virtual void serializeAttr(PropWriteStream& propWriteStream) const;
 
 		virtual bool canRemove() const {return house;}
 

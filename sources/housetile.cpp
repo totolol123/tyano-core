@@ -28,6 +28,32 @@
 LOGGER_DEFINITION(HouseTile);
 
 
+ReturnValue HouseTile::testAddCreature(const Creature& creature, uint32_t flags) const {
+	auto result = DynamicTile::testAddCreature(creature, flags);
+	if (result != RET_NOERROR) {
+		return result;
+	}
+
+	if (auto player = creature.getPlayer()) {
+		if (!house->isInvited(player)) {
+			return RET_PLAYERISNOTINVITED;
+		}
+
+		return RET_NOERROR;
+	}
+
+	return RET_NOTPOSSIBLE;
+}
+
+
+
+
+
+
+
+
+
+
 HouseTile::HouseTile(int32_t x, int32_t y, int32_t z, House* _house):
 	DynamicTile(x, y, z)
 {
@@ -35,24 +61,22 @@ HouseTile::HouseTile(int32_t x, int32_t y, int32_t z, House* _house):
 	setFlag(TILESTATE_HOUSE);
 }
 
-void HouseTile::__addThing(Creature* actor, int32_t index, Thing* thing)
+void HouseTile::__addThing(Creature* actor, int32_t index, Item* item)
 {
-	Tile::__addThing(actor, index, thing);
-	if(!thing->getParent())
+	Tile::__addThing(actor, index, item);
+	if(!item->getParent())
 		return;
 
-	if(Item* item = thing->getItem())
-		updateHouse(item);
+	updateHouse(item);
 }
 
-void HouseTile::__internalAddThing(uint32_t index, Thing* thing)
+void HouseTile::__internalAddThing(uint32_t index, Item* item)
 {
-	Tile::__internalAddThing(index, thing);
-	if(!thing->getParent())
+	Tile::__internalAddThing(index, item);
+	if(!item->getParent())
 		return;
 
-	if(Item* item = thing->getItem())
-		updateHouse(item);
+	updateHouse(item);
 }
 
 void HouseTile::updateHouse(Item* item)
@@ -61,55 +85,23 @@ void HouseTile::updateHouse(Item* item)
 		return;
 
 	Door* door = item->getDoor();
-	if(door && door->getDoorId())
-		house->addDoor(door);
+	if(door) {
+		if (door->getDoorId()) {
+			house->addDoor(door);
+		}
+		else {
+			LOGe("House entrance at " << door->getPosition() << " has no door ID and won't work.");
+		}
+	}
 	else if(BedItem* bed = item->getBed())
 		house->addBed(bed);
 }
 
-ReturnValue HouseTile::__queryAdd(int32_t index, const Thing* thing, uint32_t count, uint32_t flags) const
+ReturnValue HouseTile::__queryAdd(int32_t index, const Item* item, uint32_t count, uint32_t flags) const
 {
-	if(const Creature* creature = thing->getCreature())
-	{
-		if(const Player* player = creature->getPlayer())
-		{
-			if(!house->isInvited(player))
-				return RET_PLAYERISNOTINVITED;
-		}
-		else
-			return RET_NOTPOSSIBLE;
-	}
-	else if(thing->getItem())
-	{
-		const uint32_t itemLimit = server.configManager().getNumber(ConfigManager::ITEMLIMIT_HOUSETILE);
-		if(itemLimit && getThingCount() > itemLimit)
-			return RET_TILEISFULL;
-	}
+	const uint32_t itemLimit = server.configManager().getNumber(ConfigManager::ITEMLIMIT_HOUSETILE);
+	if(itemLimit && getThingCount() > itemLimit)
+		return RET_TILEISFULL;
 
-	return Tile::__queryAdd(index, thing, count, flags);
-}
-
-Cylinder* HouseTile::__queryDestination(int32_t& index, const Thing* thing, Item** destItem, uint32_t& flags)
-{
-	if(const Creature* creature = thing->getCreature())
-	{
-		if(const Player* player = creature->getPlayer())
-		{
-			if(!house->isInvited(player) && !player->hasFlag(PlayerFlag_CanEditHouses))
-			{
-				Tile* destTile = server.game().getTile(house->getEntry());
-				if(!destTile)
-				{
-					LOGe("[HouseTile::__queryDestination] Tile at house entry position for house: " << house->getName() << " (" << house->getId() << ") does not exist.");
-					destTile = server.game().getTile(player->getMasterPosition());
-				}
-
-				index = -1;
-				*destItem = nullptr;
-				return destTile;
-			}
-		}
-	}
-
-	return Tile::__queryDestination(index, thing, destItem, flags);
+	return Tile::__queryAdd(index, item, count, flags);
 }

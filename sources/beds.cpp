@@ -95,15 +95,14 @@ Attr_ReadValue BedItem::readAttr(AttrTypes_t attr, PropStream& propStream)
 	return Item::readAttr(attr, propStream);
 }
 
-bool BedItem::serializeAttr(PropWriteStream& propWriteStream) const
+void BedItem::serializeAttr(PropWriteStream& propWriteStream) const
 {
-	bool ret = Item::serializeAttr(propWriteStream);
+	Item::serializeAttr(propWriteStream);
 	if(!sleeper)
-		return ret;
+		return;
 
 	propWriteStream.ADD_UCHAR(ATTR_SLEEPERGUID);
 	propWriteStream.ADD_ULONG(sleeper);
-	return ret;
 }
 
 BedItem* BedItem::getNextBedItem()
@@ -116,8 +115,7 @@ BedItem* BedItem::getNextBedItem()
 
 bool BedItem::canUse(Player* player)
 {
-	if(!house || !player || player->isRemoved() || (!player->isPremium() && server.configManager().getBool(
-		ConfigManager::BED_REQUIRE_PREMIUM)) || player->hasCondition(CONDITION_INFIGHT))
+	if(!house || !player || player->isRemoved() || player->hasCondition(CONDITION_INFIGHT))
 		return false;
 
 	if(!sleeper || house->getHouseAccessLevel(player) == HOUSE_OWNER)
@@ -137,6 +135,10 @@ void BedItem::sleep(Player* player)
 
 	if(!sleeper)
 	{
+		if (getTile()->addCreature(player, FLAG_IGNOREBLOCKCREATURE) != RET_NOERROR) {
+			return;
+		}
+
 		Beds::getInstance()->setBedSleeper(this, player->getGUID());
 		internalSetSleeper(player);
 
@@ -148,9 +150,8 @@ void BedItem::sleep(Player* player)
 		if(nextBedItem)
 			nextBedItem->updateAppearance(player);
 
-		player->getTile()->moveCreature(nullptr, player, getTile());
 		server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_SLEEP);
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(SCHEDULER_MINTICKS), std::bind(&Game::kickPlayer, &server.game(), player->getID(), false)));
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(SCHEDULER_MINTICKS), std::bind(&Game::kickPlayer, &server.game(), player->getID(), false)));
 		return;
 	}
 
@@ -212,7 +213,7 @@ void BedItem::regeneratePlayer(Player* player) const
 				condition->setTicks(tmp);
 		}
 
-		player->changeHealth(amount);
+		player->changeHealth(amount, nullptr);
 		player->changeMana(amount);
 	}
 

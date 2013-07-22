@@ -56,21 +56,26 @@ public:
 	explicit Account(uint32_t id);
 	~Account();
 
-	Characters&        getCharacters  ();
-	const Characters&  getCharacters  () const;
-	uint32_t           getId          () const;
-	uint32_t           getLastDay     () const;
-	const std::string& getName        () const;
-	const std::string& getPassword    () const;
-	uint16_t           getPremiumDays () const;
-	const std::string& getRecoveryKey () const;
-	uint32_t           getWarnings    () const;
-	void               setLastDay     (uint32_t lastDay);
-	void               setName        (const std::string& name);
-	void               setPassword    (const std::string& password);
-	void               setPremiumDays (uint16_t premiumDays);
-	void               setRecoveryKey (const std::string& recoveryKey);
-	void               setWarnings    (uint32_t warnings);
+	Characters&        getCharacters        ();
+	const Characters&  getCharacters        () const;
+	uint32_t           getId                () const;
+	const std::string& getName              () const;
+	const std::string& getPassword          () const;
+	Days               getPremiumDays       () const;
+	RealTime           getPremiumExpiration () const;
+	const std::string& getRecoveryKey       () const;
+	uint32_t           getWarnings          () const;
+	bool               hasPremium           () const;
+	bool               hasUnlimitedPremium  () const;
+	void               setName              (const std::string& name);
+	void               setPassword          (const std::string& password);
+	void               setPremiumExpiration (RealTime premiumExpiration);
+	void               setRecoveryKey       (const std::string& recoveryKey);
+	void               setWarnings          (uint32_t warnings);
+
+
+	static const RealTime PREMIUM_NONE;
+	static const RealTime PREMIUM_UNLIMITED;
 
 
 private:
@@ -78,12 +83,12 @@ private:
 	Account(const Account& account) = delete;
 	Account(Account&& account) = delete;
 
+
 	Characters     _characters;
 	const uint32_t _id;
-	uint32_t       _lastDay;
 	std::string    _name;
 	std::string    _password;
-	uint16_t       _premiumDays;
+	RealTime       _premiumExpiration;
 	std::string    _recoveryKey;
 	uint32_t       _warnings;
 

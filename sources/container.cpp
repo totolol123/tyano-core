@@ -84,6 +84,7 @@ void Container::addItem(Item* item)
 {
 	itemlist.push_back(item);
 	item->setParent(this);
+	item->retain();
 }
 
 Attr_ReadValue Container::readAttr(AttrTypes_t attr, PropStream& propStream)
@@ -294,7 +295,7 @@ Creature* Container::getCreature() {return nullptr;}
 const Creature* Container::getCreature() const {return nullptr;}
 
 
-ReturnValue Container::__queryAdd(int32_t index, const Thing* thing, uint32_t count,
+ReturnValue Container::__queryAdd(int32_t index, const Item* item, uint32_t count,
 	uint32_t flags) const
 {
 	if(((flags & FLAG_CHILDISOWNER) == FLAG_CHILDISOWNER))
@@ -304,7 +305,6 @@ ReturnValue Container::__queryAdd(int32_t index, const Thing* thing, uint32_t co
 		return RET_NOERROR;
 	}
 
-	const Item* item = thing->getItem();
 	if(!item)
 		return RET_NOTPOSSIBLE;
 
@@ -333,10 +333,9 @@ ReturnValue Container::__queryAdd(int32_t index, const Thing* thing, uint32_t co
 	return RET_NOERROR;
 }
 
-ReturnValue Container::__queryMaxCount(int32_t index, const Thing* thing, uint32_t count,
+ReturnValue Container::__queryMaxCount(int32_t index, const Item* item, uint32_t count,
 	uint32_t& maxQueryCount, uint32_t flags) const
 {
-	const Item* item = thing->getItem();
 	if(!item)
 	{
 		maxQueryCount = 0;
@@ -378,13 +377,12 @@ ReturnValue Container::__queryMaxCount(int32_t index, const Thing* thing, uint32
 	return RET_NOERROR;
 }
 
-ReturnValue Container::__queryRemove(const Thing* thing, uint32_t count, uint32_t flags) const
+ReturnValue Container::__queryRemove(const Item* item, uint32_t count, uint32_t flags) const
 {
-	int32_t index = __getIndexOfThing(thing);
+	int32_t index = __getIndexOfThing(item);
 	if(index == -1)
 		return RET_NOTPOSSIBLE;
 
-	const Item* item = thing->getItem();
 	if(item == nullptr)
 		return RET_NOTPOSSIBLE;
 
@@ -397,7 +395,7 @@ ReturnValue Container::__queryRemove(const Thing* thing, uint32_t count, uint32_
 	return RET_NOERROR;
 }
 
-Cylinder* Container::__queryDestination(int32_t& index, const Thing* thing, Item** destItem,
+Cylinder* Container::__queryDestination(int32_t& index, const Item* item, Item** destItem,
 	uint32_t& flags)
 {
 	if(index == 254 /*move up*/)
@@ -449,25 +447,25 @@ Cylinder* Container::__queryDestination(int32_t& index, const Thing* thing, Item
 	return this;
 }
 
-void Container::__addThing(Creature* actor, Thing* thing)
+void Container::__addThing(Creature* actor, Item* item)
 {
-	return __addThing(actor, 0, thing);
+	return __addThing(actor, 0, item);
 }
 
-void Container::__addThing(Creature* actor, int32_t index, Thing* thing)
+void Container::__addThing(Creature* actor, int32_t index, Item* item)
 {
 	if(index >= (int32_t)capacity())
 	{
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
-	Item* item = thing->getItem();
 	if(item == nullptr)
 	{
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
 	item->setParent(this);
+	item->retain();
 
 	/*
 	// needs netcode update!
@@ -490,15 +488,14 @@ void Container::__addThing(Creature* actor, int32_t index, Thing* thing)
 		onAddContainerItem(item);
 }
 
-void Container::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
+void Container::__updateThing(Item* item, uint16_t itemId, uint32_t count)
 {
-	int32_t index = __getIndexOfThing(thing);
+	int32_t index = __getIndexOfThing(item);
 	if(index == -1)
 	{
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
-	Item* item = thing->getItem();
 	if(item == nullptr)
 	{
 		return /*RET_NOTPOSSIBLE*/;
@@ -513,6 +510,7 @@ void Container::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
 	const double oldWeight = item->getWeight();
 	item->setKind(newType);
 	item->setSubType(count);
+	item->retain();
 
 	const double diffWeight = -oldWeight + item->getWeight();
 	totalWeight += diffWeight;
@@ -524,9 +522,8 @@ void Container::__updateThing(Thing* thing, uint16_t itemId, uint32_t count)
 		onUpdateContainerItem(index, item, oldType, item, newType);
 }
 
-void Container::__replaceThing(uint32_t index, Thing* thing)
+void Container::__replaceThing(uint32_t index, Item* item)
 {
-	Item* item = thing->getItem();
 	if(item == nullptr)
 	{
 		return /*RET_NOTPOSSIBLE*/;
@@ -556,7 +553,8 @@ void Container::__replaceThing(uint32_t index, Thing* thing)
 
 	itemlist.insert(cit, item);
 	item->setParent(this);
-	//send change to client
+	item->retain();
+
 	if(getParent())
 	{
 		onUpdateContainerItem(index, (*cit).get(), existingItem->getKind(), item, item->getKind());
@@ -568,21 +566,20 @@ void Container::__replaceThing(uint32_t index, Thing* thing)
 	itemlist.erase(cit);
 }
 
-void Container::__removeThing(Thing* thing, uint32_t count)
+void Container::__removeThing(Item* item, uint32_t count)
 {
-	Item* item = thing->getItem();
 	if(item == nullptr)
 	{
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
-	int32_t index = __getIndexOfThing(thing);
+	int32_t index = __getIndexOfThing(item);
 	if(index == -1)
 	{
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
-	ItemList::iterator cit = std::find(itemlist.begin(), itemlist.end(), thing);
+	ItemList::iterator cit = std::find(itemlist.begin(), itemlist.end(), item);
 	if(cit == itemlist.end())
 	{
 		return /*RET_NOTPOSSIBLE*/;
@@ -751,24 +748,17 @@ void Container::postRemoveNotification(Creature* actor, Thing* thing, const Cyli
 			index, isCompleteRemoval, LINK_TOPPARENT);
 }
 
-void Container::__internalAddThing(Thing* thing)
+void Container::__internalAddThing(Item* item)
 {
-	__internalAddThing(0, thing);
+	__internalAddThing(0, item);
 }
 
-void Container::__internalAddThing(uint32_t index, Thing* thing)
+void Container::__internalAddThing(uint32_t index, Item* item)
 {
-	if(!thing)
-		return;
-
-	Item* item = thing->getItem();
-	if(item == nullptr)
-	{
-		return;
-	}
-
 	itemlist.push_front(item);
+
 	item->setParent(this);
+	item->retain();
 
 	totalWeight += item->getWeight();
 	if(Container* parentContainer = getParentContainer())

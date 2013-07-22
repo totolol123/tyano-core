@@ -532,8 +532,8 @@ bool Actions::useItem(Player* player, Item* item, const ExtendedPosition& origin
 		return false;
 
 	player->setNextActionTask(nullptr);
-	player->stopWalk();
-	player->setNextAction(OTSYS_TIME() + server.configManager().getNumber(ConfigManager::ACTIONS_DELAY_INTERVAL) - SCHEDULER_MINTICKS);
+	player->stopRouting();
+	player->setNextAction(Clock::now() + Milliseconds(server.configManager().getNumber(ConfigManager::ACTIONS_DELAY_INTERVAL)));
 
 	ReturnValue ret = internalUseItem(player, item, origin, openContainerId, 0);
 	if(ret == RET_NOERROR)
@@ -605,8 +605,8 @@ bool Actions::useItemEx(Player* player, const ExtendedPosition& origin, const Ex
 		return false;
 
 	player->setNextActionTask(nullptr);
-	player->stopWalk();
-	player->setNextAction(OTSYS_TIME() + server.configManager().getNumber(ConfigManager::EX_ACTIONS_DELAY_INTERVAL) - SCHEDULER_MINTICKS);
+	player->stopRouting();
+	player->setNextAction(Clock::now() + Milliseconds(server.configManager().getNumber(ConfigManager::EX_ACTIONS_DELAY_INTERVAL)));
 
 	ActionP action = getAction(item, ACTION_ANY);
 	if(!action)

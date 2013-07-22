@@ -91,7 +91,7 @@ struct Outfit
 	}
 
 
-	bool isDefault, isPremium, manaShield, invisible, regeneration;
+	bool isDefault, manaShield, invisible, regeneration;
 	AddonRequirement_t requirement;
 
 	uint16_t accessLevel, addons;

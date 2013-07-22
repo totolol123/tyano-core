@@ -45,36 +45,177 @@
 LOGGER_DEFINITION(IOLoginData);
 
 
+bool IOLoginData::addPremiumDaysToAccount(Account& account, uint32_t days) const {
+	if (days == 0) {
+		return true;
+	}
 
-AccountP IOLoginData::loadAccount(uint32_t accountId, bool preloadOnly/* = false*/) {
+	if (!loadAccount(account)) {
+		return false;
+	}
+
+	if (account.hasUnlimitedPremium()) {
+		return true;
+	}
+
+	RealTime expiration;
+	if (account.hasPremium()) {
+		expiration = account.getPremiumExpiration();
+	}
+	else {
+		expiration = RealClock::now();
+	}
+
+	expiration += Days(days);
+
+	DBQuery query;
+	query << "UPDATE `accounts` SET `premiumExpiration` = " << UnixTimestamp(expiration) << " WHERE `id` = " << account.getId();
+
+	if (!server.database().executeQuery(query.str())) {
+		LOGe("Failed to add premium days to account " << account.getId() << ".");
+		return false;
+	}
+
+	account.setPremiumExpiration(expiration);
+
+	return true;
+}
+
+
+bool IOLoginData::removePremiumDaysFromAccount(Account& account, uint32_t days) const {
+	if (days == 0) {
+		return true;
+	}
+
+	if (!loadAccount(account)) {
+		return false;
+	}
+
+	if (account.hasUnlimitedPremium()) {
+		return true;
+	}
+	if (!account.hasPremium()) {
+		return true;
+	}
+
+	RealTime expiration = account.getPremiumExpiration() - Days(days);
+
+	RealTime now = RealClock::now();
+	if (expiration < now) {
+		expiration = now;
+	}
+
+	DBQuery query;
+	query << "UPDATE `accounts` SET `premiumExpiration` = " << UnixTimestamp(expiration) << " WHERE `id` = " << account.getId();
+
+	if (!server.database().executeQuery(query.str())) {
+		LOGe("Failed to remove premium expiration from account " << account.getId() << ".");
+		return false;
+	}
+
+	account.setPremiumExpiration(expiration);
+
+	return true;
+}
+
+
+bool IOLoginData::setPremiumDaysForAccount(Account& account, uint32_t days) const {
+	if (!loadAccount(account)) {
+		return false;
+	}
+
+	if (!account.hasPremium() && days == 0) {
+		return true;
+	}
+
+	RealTime expiration = RealClock::now() + Days(days);
+
+	DBQuery query;
+	query << "UPDATE `accounts` SET `premiumExpiration` = " << UnixTimestamp(expiration) << " WHERE `id` = " << account.getId();
+
+	if (!server.database().executeQuery(query.str())) {
+		LOGe("Failed to set premium expiration for account " << account.getId() << ".");
+		return false;
+	}
+
+	account.setPremiumExpiration(expiration);
+
+	return true;
+}
+
+
+bool IOLoginData::setUnlimitedPremiumForAccount(Account& account) const {
+	if (!loadAccount(account)) {
+		return false;
+	}
+
+	if (account.hasUnlimitedPremium()) {
+		return true;
+	}
+
+	DBQuery query;
+	query << "UPDATE `accounts` SET `premiumExpiration` = 0 WHERE `id` = " << account.getId();
+
+	if (!server.database().executeQuery(query.str())) {
+		LOGe("Failed to set unlimited premium for account " << account.getId() << ".");
+		return false;
+	}
+
+	account.setPremiumExpiration(Account::PREMIUM_UNLIMITED);
+
+	return true;
+}
+
+
+
+bool IOLoginData::loadAccount(Account& account, bool preloadOnly/* = false*/) const {
 	Database& database = server.database();
 
 	DBQuery query;
-	query << "SELECT `id`, `name`, `password`, `premdays`, `lastday`, `key`, `warnings` FROM `accounts` WHERE `id` = " << accountId << " LIMIT 1";
+	query << "SELECT `id`, `name`, `password`, `premiumExpiration`, `key`, `warnings` FROM `accounts` WHERE `id` = " << account.getId() << " LIMIT 1";
 
 	DBResultP result = database.storeQuery(query.str());
 	if (result == nullptr) {
-		LOGe("Failed to load account " << accountId << ".");
-		return nullptr;
+		LOGe("Failed to load account " << account.getId() << ".");
+		return false;
 	}
 
-	AccountP account = std::make_shared<Account>(result->getDataInt("id"));
-	account->setName(result->getDataString("name"));
-	account->setPassword(result->getDataString("password"));
-	account->setPremiumDays(result->getDataInt("premdays"));
-	account->setLastDay(result->getDataInt("lastday"));
-	account->setRecoveryKey(result->getDataString("key"));
-	account->setWarnings(result->getDataInt("warnings"));
+	account.setName(result->getDataString("name"));
+	account.setPassword(result->getDataString("password"));
+	account.setRecoveryKey(result->getDataString("key"));
+	account.setWarnings(result->getDataInt("warnings"));
+
+	if (result->isNull("premiumExpiration")) {
+		account.setPremiumExpiration(Account::PREMIUM_NONE);
+	}
+	else {
+		uint32_t premiumExpiration = result->getUnsigned32("premiumExpiration");
+		if (premiumExpiration == 0) {
+			account.setPremiumExpiration(Account::PREMIUM_UNLIMITED);
+		}
+		else {
+			account.setPremiumExpiration(UnixTimestamp(premiumExpiration));
+		}
+	}
 
 	if (!preloadOnly) {
-		loadCharacters(*account);
+		loadCharacters(account);
+	}
+
+	return true;
+}
+
+AccountP IOLoginData::loadAccount(uint32_t accountId, bool preloadOnly/* = false*/) const {
+	AccountP account = std::make_shared<Account>(accountId);
+	if (!loadAccount(*account, preloadOnly)) {
+		return nullptr;
 	}
 
 	return account;
 }
 
 
-void IOLoginData::loadCharacters(Account& account) {
+void IOLoginData::loadCharacters(Account& account) const {
 	DBQuery query;
 #ifdef __LOGIN_SERVER__
 	query << "SELECT `name`, `level`, `vocation`, `world_id` FROM `players` WHERE `account_id` = " << accountId << " AND `deleted` = 0 ORDER BY `name` ASC";
@@ -119,7 +260,7 @@ void IOLoginData::loadCharacters(Account& account) {
 void IOLoginData::saveAccount(const Account& account)
 {
 	DBQuery query;
-	query << "UPDATE `accounts` SET `premdays` = " << account.getPremiumDays() << ", `warnings` = " << account.getWarnings() << ", `lastday` = " << account.getLastDay() << " WHERE `id` = " << account.getId();
+	query << "UPDATE `accounts` SET `warnings` = " << account.getWarnings() << " WHERE `id` = " << account.getId();
 
 	if (!server.database().executeQuery(query.str())) {
 		LOGe("Failed to save account: " << account.getName() << "!");
@@ -330,31 +471,6 @@ uint64_t IOLoginData::createAccount(std::string name, std::string password)
 }
 
 
-void IOLoginData::removePremium(Account& account) {
-	std::time_t now = std::time(nullptr);
-
-	uint16_t premiumDays = account.getPremiumDays();
-	if (premiumDays > 0 && premiumDays < std::numeric_limits<uint16_t>::max()) {
-		uint32_t daysToRemove = static_cast<uint32_t>(std::ceil((now - account.getLastDay()) / 86400.0));
-		if (daysToRemove == 0) {
-			return;
-		}
-
-		if (premiumDays >= daysToRemove) {
-			premiumDays -= static_cast<uint16_t>(daysToRemove);
-		}
-		else {
-			premiumDays = 0;
-		}
-
-		account.setPremiumDays(premiumDays);
-	}
-
-	account.setLastDay(now);
-
-	saveAccount(account);
-}
-
 const Group* IOLoginData::getPlayerGroupByAccount(uint32_t accountId)
 {
 	Database& db = server.database();
@@ -372,7 +488,7 @@ bool IOLoginData::loadPlayer(Player* player, const std::string& name, bool preLo
 {
 	Database& db = server.database();
 	DBQuery query;
-	query << "SELECT `id`, `account_id`, `group_id`, `world_id`, `sex`, `vocation`, `experience`, `level`, `maglevel`, ";
+	query << "SELECT `id`, `group_id`, `world_id`, `sex`, `vocation`, `experience`, `level`, `maglevel`, ";
 	query << "`health`, `healthmax`, `blessings`, `mana`, `manamax`, `manaspent`, `soul`, `lookbody`, `lookfeet`, ";
 	query << "`lookhead`, `looklegs`, `looktype`, `lookaddons`, `posx`, `posy`, `posz`, `cap`, `lastlogin`, ";
 	query << "`lastlogout`, `lastip`, `conditions`, `skull`, `skulltime`, `guildnick`, `rank_id`, `town_id`, ";
@@ -385,21 +501,10 @@ bool IOLoginData::loadPlayer(Player* player, const std::string& name, bool preLo
 	if(!(result = db.storeQuery(query.str())))
 		return false;
 
-	uint32_t accountId = result->getDataInt("account_id");
-	if(accountId < 1)
-	{
-		return false;
-	}
-
-	AccountP account = loadAccount(accountId, true);
-	player->accountId = accountId;
-	player->account = account->getName();
-
 	Group* group = Groups::getInstance()->getGroup(result->getDataInt("group_id"));
 	player->setGroup(group);
 
 	player->setGUID(result->getDataInt("id"));
-	player->premiumDays = account->getPremiumDays();
 
 	nameCacheMap[player->getGUID()] = name;
 	guidCacheMap[name] = player->getGUID();
@@ -432,8 +537,7 @@ bool IOLoginData::loadPlayer(Player* player, const std::string& name, bool preLo
 	player->setStamina(result->getDataLong("stamina"));
 	player->balance = result->getDataLong("balance");
 	player->marriage = result->getDataInt("marriage");
-	if(player->isPremium() || !server.configManager().getBool(ConfigManager::BLESSING_ONLY_PREMIUM))
-		player->blessings = result->getDataInt("blessings");
+	player->blessings = result->getDataInt("blessings");
 
 	uint64_t conditionsSize = 0;
 	const char* conditions = result->getDataStream("conditions", conditionsSize);
@@ -554,7 +658,7 @@ bool IOLoginData::loadPlayer(Player* player, const std::string& name, bool preLo
 	}
 
 	query.str("");
-	query << "SELECT `password` FROM `accounts` WHERE `id` = " << accountId << " LIMIT 1";
+	query << "SELECT `password` FROM `accounts` WHERE `id` = " << player->getAccount()->getId() << " LIMIT 1";
 	if(!(result = db.storeQuery(query.str())))
 		return false;
 
@@ -674,7 +778,7 @@ bool IOLoginData::loadPlayer(Player* player, const std::string& name, bool preLo
 	//load vip
 	query.str("");
 	if(!server.configManager().getBool(ConfigManager::VIPLIST_PER_PLAYER))
-		query << "SELECT `player_id` AS `vip` FROM `account_viplist` WHERE `account_id` = " << account->getId() << " AND `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID);
+		query << "SELECT `player_id` AS `vip` FROM `account_viplist` WHERE `account_id` = " << player->getAccount()->getId() << " AND `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID);
 	else
 		query << "SELECT `vip_id` AS `vip` FROM `player_viplist` WHERE `player_id` = " << player->getGUID();
 
@@ -827,8 +931,7 @@ bool IOLoginData::savePlayer(Player* player, bool preSave/* = true*/, bool shall
 	query << "`loss_items` = " << (uint32_t)player->getLossPercent(LOSS_ITEMS) << ", ";
 
 	query << "`lastlogout` = " << player->getLastLogout() << ", ";
-	if(player->isPremium() || !server.configManager().getBool(ConfigManager::BLESSING_ONLY_PREMIUM))
-		query << "`blessings` = " << player->blessings << ", ";
+	query << "`blessings` = " << player->blessings << ", ";
 
 	query << "`marriage` = " << player->marriage << ", ";
 	if(server.configManager().getBool(ConfigManager::INGAME_GUILD_MANAGEMENT))
@@ -963,7 +1066,7 @@ bool IOLoginData::savePlayer(Player* player, bool preSave/* = true*/, bool shall
 	//save vip list- FIXME: merge it to one config query?
 	query.str("");
 	if(!server.configManager().getBool(ConfigManager::VIPLIST_PER_PLAYER))
-		query << "DELETE FROM `account_viplist` WHERE `account_id` = " << player->getAccount() << " AND `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID);
+		query << "DELETE FROM `account_viplist` WHERE `account_id` = " << player->getAccount()->getId() << " AND `world_id` = " << server.configManager().getNumber(ConfigManager::WORLD_ID);
 	else
 		query << "DELETE FROM `player_viplist` WHERE `player_id` = " << player->getGUID();
 
@@ -981,7 +1084,7 @@ bool IOLoginData::savePlayer(Player* player, bool preSave/* = true*/, bool shall
 			continue;
 
 		if(!server.configManager().getBool(ConfigManager::VIPLIST_PER_PLAYER))
-			sprintf(buffer, "%d, %d, %d", player->getAccount(), server.configManager().getNumber(ConfigManager::WORLD_ID), *it);
+			sprintf(buffer, "%d, %d, %d", player->getAccount()->getId(), server.configManager().getNumber(ConfigManager::WORLD_ID), *it);
 		else
 			sprintf(buffer, "%d, %d", player->getGUID(), *it);
 
@@ -1223,32 +1326,6 @@ bool IOLoginData::hasCustomFlag(PlayerCustomFlags value, uint32_t guid)
 	return group && group->hasCustomFlag(value);
 }
 
-bool IOLoginData::isPremium(uint32_t guid)
-{
-	if(server.configManager().getBool(ConfigManager::FREE_PREMIUM))
-		return true;
-
-	Database& db = server.database();
-	DBQuery query;
-	query << "SELECT `account_id`, `group_id` FROM `players` WHERE `id` = " << guid << " AND `deleted` = 0 LIMIT 1";
-
-	DBResultP result;
-	if(!(result = db.storeQuery(query.str())))
-		return false;
-
-	Group* group = Groups::getInstance()->getGroup(result->getDataInt("group_id"));
-	const uint32_t account = result->getDataInt("account_id");
-
-	if(group && group->hasCustomFlag(PlayerFlag_IsAlwaysPremium))
-		return true;
-
-	query.str("");
-	query << "SELECT `premdays` FROM `accounts` WHERE `id` = " << account << " LIMIT 1";
-	if(!(result = db.storeQuery(query.str())))
-		return false;
-
-	return result->getDataInt("premdays");
-}
 
 bool IOLoginData::playerExists(uint32_t guid, bool multiworld /*= false*/, bool checkCache /*= true*/)
 {
@@ -1597,27 +1674,6 @@ bool IOLoginData::getDefaultTownByName(const std::string& name, uint32_t& townId
 	return true;
 }
 
-bool IOLoginData::updatePremiumDays()
-{
-	Database& db = server.database();
-	DBQuery query;
-
-	DBTransaction trans(db);
-	if(!trans.begin())
-		return false;
-
-	DBResultP result;
-	query << "SELECT `id` FROM `accounts` WHERE `lastday` <= " << time(nullptr) - 86400;
-	if(!(result = db.storeQuery(query.str())))
-		return false;
-
-	do
-		removePremium(*loadAccount(result->getDataInt("id"), true));
-	while(result->next());
-
-	query.str("");
-	return trans.commit();
-}
 
 bool IOLoginData::updateOnlineStatus(uint32_t guid, bool login)
 {

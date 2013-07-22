@@ -25,11 +25,14 @@ class SchedulerTask : public Task {
 
 public:
 
-	typedef uint32_t                        Id;
-	typedef std::unique_ptr<SchedulerTask>  UniquePointer;
+	typedef uint32_t               Id;
+	typedef Shared<SchedulerTask>  SchedulerTaskP;
 
 
-	static UniquePointer create(Duration delay, const Function& function);
+	static SchedulerTaskP create (Duration delay, const Function& function);
+	static SchedulerTaskP create (Time time, const Function& function);
+
+	SchedulerTask (Time time, const Function& function);
 
 	Id   getId   () const;
 	Time getTime () const;
@@ -37,9 +40,6 @@ public:
 
 
 private:
-
-	SchedulerTask(Duration delay, const Function& function);
-
 
 	Id   _id;
 	Time _time;

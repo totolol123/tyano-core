@@ -37,7 +37,8 @@ enum cylinderflags_t
 	FLAG_CHILDISOWNER = 8,			//Used by containers to query capacity of the carrier (player)
 	FLAG_PATHFINDING = 16,			//An additional check is done for floor changing/teleport items
 	FLAG_IGNOREFIELDDAMAGE = 32,	//Bypass field damage checks
-	FLAG_IGNORENOTMOVEABLE = 64		//Bypass check for movability
+	FLAG_IGNORENOTMOVEABLE = 64,	//Bypass check for movability
+	FLAG_IGNORE_PROTECTION_ZONE = 128, //Bypass check for protection zone
 };
 
 enum cylinderlink_t
@@ -74,7 +75,7 @@ class Cylinder
 			* if FLAG_NOLIMIT is set blocking items/container limits is ignored
 		  * \returns ReturnValue holds the return value
 		  */
-		virtual ReturnValue __queryAdd(int32_t index, const Thing* Item, uint32_t count,
+		virtual ReturnValue __queryAdd(int32_t index, const Item* item, uint32_t count,
 			uint32_t flags) const = 0;
 
 		/**
@@ -87,7 +88,7 @@ class Cylinder
 		  * \param flags optional flags to modifiy the default behaviour
 		  * \returns ReturnValue holds the return value
 		  */
-		virtual ReturnValue __queryMaxCount(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryMaxCount(int32_t index, const Item* item, uint32_t count,
 			uint32_t& maxQueryCount, uint32_t flags) const = 0;
 
 		/**
@@ -97,7 +98,7 @@ class Cylinder
 		  * \param flags optional flags to modifiy the default behaviour
 		  * \returns ReturnValue holds the return value
 		  */
-		virtual ReturnValue __queryRemove(const Thing* thing, uint32_t count, uint32_t flags) const = 0;
+		virtual ReturnValue __queryRemove(const Item* item, uint32_t count, uint32_t flags) const = 0;
 
 		/**
 		  * Query the destination cylinder
@@ -109,7 +110,7 @@ class Cylinder
 			* this method can modifiy the flags
 		  * \returns Cylinder returns the destination cylinder
 		  */
-		virtual Cylinder* __queryDestination(int32_t& index, const Thing* thing, Item** destItem,
+		virtual Cylinder* __queryDestination(int32_t& index, const Item* item, Item** destItem,
 			uint32_t& flags) = 0;
 
 		/**
@@ -117,7 +118,7 @@ class Cylinder
 		  * \param actor is creature adding the object (can be nullptr)
 		  * \param item is the object to add
 		  */
-		virtual void __addThing(Creature* actor, Thing* thing) = 0;
+		virtual void __addThing(Creature* actor, Item* item) = 0;
 
 		/**
 		  * Add the object to the cylinder
@@ -125,7 +126,7 @@ class Cylinder
 		  * \param index points to the destination index (inventory slot/container position)
 		  * \param item is the object to add
 		  */
-		virtual void __addThing(Creature* actor, int32_t index, Thing* thing) = 0;
+		virtual void __addThing(Creature* actor, int32_t index, Item* item) = 0;
 
 		/**
 		  * Update the item count or type for an object
@@ -133,21 +134,21 @@ class Cylinder
 		  * \param itemId is the new item id
 		  * \param count is the new count value
 		  */
-		virtual void __updateThing(Thing* thing, uint16_t itemId, uint32_t count) = 0;
+		virtual void __updateThing(Item* item, uint16_t itemId, uint32_t count) = 0;
 
 		/**
 		  * Replace an object with a new
 		  * \param index is the position to change (inventory slot/container position)
 		  * \param thing is the object to update
 		  */
-		virtual void __replaceThing(uint32_t index, Thing* thing) = 0;
+		virtual void __replaceThing(uint32_t index, Item* item) = 0;
 
 		/**
 		  * Remove an object
 		  * \param thing is the object to delete
 		  * \param count is the new count value
 		  */
-		virtual void __removeThing(Thing* thing, uint32_t count) = 0;
+		virtual void __removeThing(Item* item, uint32_t count) = 0;
 
 		/**
 		  * Is sent after an operation (move/add) to update internal values
@@ -218,14 +219,14 @@ class Cylinder
 		  * Adds an object to the cylinder without sending to the client(s)
 		  * \param thing is the object to add
 		  */
-		virtual void __internalAddThing(Thing* thing) {}
+		virtual void __internalAddThing(Item* item) {}
 
 		/**
 		  * Adds an object to the cylinder without sending to the client(s)
 		  * \param thing is the object to add
 		  * \param index points to the destination index (inventory slot/container position)
 		  */
-		virtual void __internalAddThing(uint32_t index, Thing* thing) {}
+		virtual void __internalAddThing(uint32_t index, Item* item) {}
 
 		virtual void __startDecaying() {}
 };
@@ -247,20 +248,20 @@ class VirtualCylinder : public Cylinder
 		virtual Creature* getCreature() {return nullptr;}
 		virtual const Creature* getCreature() const {return nullptr;}
 
-		virtual ReturnValue __queryAdd(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryAdd(int32_t index, const Item* item, uint32_t count,
 			uint32_t flags) const;
-		virtual ReturnValue __queryMaxCount(int32_t index, const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryMaxCount(int32_t index, const Item* item, uint32_t count,
 			uint32_t& maxQueryCount, uint32_t flags) const;
-		virtual ReturnValue __queryRemove(const Thing* thing, uint32_t count,
+		virtual ReturnValue __queryRemove(const Item* item, uint32_t count,
 			uint32_t flags) const;
-		virtual Cylinder* __queryDestination(int32_t& index, const Thing* thing, Item** destItem,
+		virtual Cylinder* __queryDestination(int32_t& index, const Item* item, Item** destItem,
 			uint32_t& flags);
 
-		virtual void __addThing(Creature* actor, Thing* thing) {}
-		virtual void __addThing(Creature* actor, int32_t index, Thing* thing) {}
-		virtual void __updateThing(Thing* thing, uint16_t itemId, uint32_t count) {}
-		virtual void __replaceThing(uint32_t index, Thing* thing) {}
-		virtual void __removeThing(Thing* thing, uint32_t count) {}
+		virtual void __addThing(Creature* actor, Item* item) {}
+		virtual void __addThing(Creature* actor, int32_t index, Item* item) {}
+		virtual void __updateThing(Item* item, uint16_t itemId, uint32_t count) {}
+		virtual void __replaceThing(uint32_t index, Item* item) {}
+		virtual void __removeThing(Item* item, uint32_t count) {}
 
 		virtual void postAddNotification(Creature* actor, Thing* thing, const Cylinder* oldParent,
 			int32_t index, cylinderlink_t link = LINK_OWNER) {}

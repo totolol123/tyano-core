@@ -75,7 +75,7 @@ template<class FunctionType>
 void ProtocolGame::addGameTaskInternal(uint32_t delay, const FunctionType& func)
 {
 	if(delay > 0)
-		server.dispatcher().addTask(Task::create(std::chrono::milliseconds(delay), func));
+		server.dispatcher().addTask(Task::create(Milliseconds(delay), func));
 	else
 		server.dispatcher().addTask(Task::create(func));
 }
@@ -117,10 +117,27 @@ bool ProtocolGame::login(const std::string& name, uint32_t id, const std::string
 
 	if(!_player || name == "Account Manager" || server.configManager().getNumber(ConfigManager::ALLOW_CLONES) > (int32_t)players.size())
 	{
-		player = new Player(name, this);
+		auto io = *IOLoginData::getInstance();
+
+		AccountP account;
+		if (name != "Account Manager") {
+			auto accountId = io.getAccountIdByName(name);
+			if (accountId == 0) {
+				disconnectClient(0x14, "Your character could not be loaded.");
+				return false;
+			}
+
+			account = io.loadAccount(accountId, true);
+			if (account == nullptr) {
+				disconnectClient(0x14, "Your character could not be loaded.");
+				return false;
+			}
+		}
+
+		player = new Player(account, name, this);
 
 		player->setID();
-		if(!IOLoginData::getInstance()->loadPlayer(player.get(), name, true))
+		if(!io.loadPlayer(player.get(), name, true))
 		{
 			disconnectClient(0x14, "Your character could not be loaded.");
 			return false;
@@ -303,7 +320,7 @@ bool ProtocolGame::login(const std::string& name, uint32_t id, const std::string
 
 		addRef();
 		m_eventConnect = server.scheduler().addTask(SchedulerTask::create(
-			std::chrono::milliseconds(1000), std::bind(&ProtocolGame::connect, this, _player->getID(), operatingSystem, version)));
+			Milliseconds(1000), std::bind(&ProtocolGame::connect, this, _player->getID(), operatingSystem, version)));
 		return true;
 	}
 
@@ -323,7 +340,7 @@ bool ProtocolGame::logout(bool displayEffect, bool forceLogout)
 	{
 		if(!forceLogout)
 		{
-			if(!IOLoginData::getInstance()->hasCustomFlag(player->getAccount(), PlayerCustomFlag_CanLogoutAnytime))
+			if(!IOLoginData::getInstance()->hasCustomFlag(player->getAccount()->getId(), PlayerCustomFlag_CanLogoutAnytime))
 			{
 				if(player->getTile() != nullptr && player->getTile()->hasFlag(TILESTATE_NOLOGOUT))
 				{
@@ -833,7 +850,7 @@ void ProtocolGame::parsePacket(NetworkMessage &msg)
 					int64_t banTime = -1;
 					ViolationAction_t action = ACTION_BANISHMENT;
 
-					AccountP account = IOLoginData::getInstance()->loadAccount(player->getAccount(), true);
+					AccountP account = player->getAccount();
 					if (account == nullptr) {
 						return;
 					}
@@ -858,7 +875,7 @@ void ProtocolGame::parsePacket(NetworkMessage &msg)
 						player->sendTextMessage(MSG_INFO_DESCR, "You have been banished.");
 
 						server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_WRAPS_GREEN);
-						server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(1000), std::bind(
+						server.scheduler().addTask(SchedulerTask::create(Milliseconds(1000), std::bind(
 							&Game::kickPlayer, &server.game(), player->getID(), false)));
 					}
 				}
@@ -1003,7 +1020,7 @@ void ProtocolGame::correctRegisteredCreature(const CreatureP& creature, const St
 	if (creature == player) {
 		NetworkMessage_ptr message = getOutputBuffer();
 		if (message) {
-			LOGf("\tI moved the player to " << newPosition << ".");
+			LOGf("\tI moved the player to " << newPosition << " and re-sent the map.");
 			LOGf(std::setfill('-') << std::setw(90) << "");
 
 			RemoveTileCreature(message, validationResult.expectedPosition);
@@ -1339,7 +1356,7 @@ void ProtocolGame::parseReceivePing(NetworkMessage& msg)
 void ProtocolGame::parseAutoWalk(NetworkMessage& msg)
 {
 	// first we get all directions...
-	std::list<Direction> path;
+	std::deque<Direction> path;
 	size_t dirCount = msg.GetByte();
 	for(size_t i = 0; i < dirCount; ++i)
 	{
@@ -2963,10 +2980,8 @@ void ProtocolGame::sendOutfitWindow()
 				msg->AddString(it->name);
 				if(player->hasCustomFlag(PlayerCustomFlag_CanWearAllAddons))
 					msg->AddByte(0x03);
-				else if(!server.configManager().getBool(ConfigManager::ADDONS_PREMIUM) || player->isPremium())
-					msg->AddByte(it->addons);
 				else
-					msg->AddByte(0x00);
+					msg->AddByte(it->addons);
 			}
 		}
 		else

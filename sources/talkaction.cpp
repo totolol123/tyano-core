@@ -28,8 +28,8 @@
 #include "monster.h"
 #include "town.h"
 
+#include "account.h"
 #include "ioguild.h"
-#include "teleport.h"
 #include "status.h"
 #include "textlogger.h"
 #include "vocation.h"
@@ -157,7 +157,7 @@ bool TalkActions::onPlayerSay(Creature* creature, uint16_t channelId, const std:
 	if(talkAction->isLogged())
 	{
 		if(player)
-			player->sendTextMessage(MSG_STATUS_CONSOLE_RED, words.c_str());
+			player->sendTextMessage(MSG_STATUS_CONSOLE_BLUE, "> " + words);
 
 		DeprecatedLogger::getInstance()->eFile("talkactions/" + creature->getName() + ".log", words, true);
 	}
@@ -374,19 +374,12 @@ bool TalkAction::houseBuy(Creature* creature, const std::string& cmd, const std:
 		}
 
 		uint16_t accountHouses = server.configManager().getNumber(ConfigManager::HOUSES_PER_ACCOUNT);
-		if(accountHouses > 0 && Houses::getInstance()->getHousesCount(player->getAccount()) >= accountHouses)
+		if(accountHouses > 0 && Houses::getInstance()->getHousesCount(player->getAccount()->getId()) >= accountHouses)
 		{
 			char buffer[80];
 			sprintf(buffer, "You may own only %d house%s per account.", accountHouses, (accountHouses != 1 ? "s" : ""));
 
 			player->sendCancel(buffer);
-			server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
-			return false;
-		}
-
-		if(server.configManager().getBool(ConfigManager::HOUSE_NEED_PREMIUM) && !player->isPremium())
-		{
-			player->sendCancelMessage(RET_YOUNEEDPREMIUMACCOUNT);
 			server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 			return false;
 		}
@@ -500,19 +493,12 @@ bool TalkAction::houseSell(Creature* creature, const std::string& cmd, const std
 		}
 
 		uint16_t housesPerAccount = server.configManager().getNumber(ConfigManager::HOUSES_PER_ACCOUNT);
-		if(housesPerAccount > 0 && Houses::getInstance()->getHousesCount(tradePartner->getAccount()) >= housesPerAccount)
+		if(housesPerAccount > 0 && Houses::getInstance()->getHousesCount(tradePartner->getAccount()->getId()) >= housesPerAccount)
 		{
 			char buffer[100];
 			sprintf(buffer, "Trade player has reached limit of %d house%s per account.", housesPerAccount, (housesPerAccount != 1 ? "s" : ""));
 
 			player->sendCancel(buffer);
-			server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
-			return false;
-		}
-
-		if(!tradePartner->isPremium() && !server.configManager().getBool(ConfigManager::HOUSE_NEED_PREMIUM))
-		{
-			player->sendCancel("Trade player does not have a premium account.");
 			server.game().addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 			return false;
 		}
@@ -563,6 +549,8 @@ bool TalkAction::houseSell(Creature* creature, const std::string& cmd, const std
 	player->transferContainer.__addThing(nullptr, transferItem.get());
 
 	player->transferContainer.setParent(player);
+	player->transferContainer.retain();
+
 	if(!server.game().internalStartTrade(player, tradePartner, transferItem.get()))
 		transferItem->onTradeEvent(ON_TRADE_CANCEL, player, nullptr);
 
@@ -751,15 +739,6 @@ bool TalkAction::guildCreate(Creature* creature, const std::string& cmd, const s
 		return true;
 	}
 
-	const int32_t premiumDays = server.configManager().getNumber(ConfigManager::GUILD_PREMIUM_DAYS);
-	if(player->getPremiumDays() < premiumDays)
-	{
-		char buffer[70 + premiumDays];
-		sprintf(buffer, "You need to have at least %d premium days to form a guild.", premiumDays);
-		player->sendCancel(buffer);
-		return true;
-	}
-
 	player->setGuildName(param_);
 	IOGuild::getInstance()->createGuild(player);
 
@@ -826,14 +805,6 @@ bool TalkAction::thingProporties(Creature* creature, const std::string& cmd, con
 				if(tmp >= 1000 || tmp <= 0xFFFF)
 					item->setUniqueId(tmp);
 			}
-			else if(action == "destination" || action == "position"
-				|| action == "pos" || action == "dest") //TODO: doesn't work
-			{
-				if(Teleport* teleport = item->getTeleport())
-					teleport->setDestination(Position(atoi(parseParams(it,
-						tokens.end()).c_str()), atoi(parseParams(it, tokens.end()).c_str()),
-						atoi(parseParams(it, tokens.end()).c_str())));
-			}
 			else
 			{
 				std::stringstream s;
@@ -845,7 +816,7 @@ bool TalkAction::thingProporties(Creature* creature, const std::string& cmd, con
 		else if(Creature* _creature = thing->getCreature())
 		{
 			if(action == "health")
-				_creature->changeHealth(atoi(parseParams(it, tokens.end()).c_str()));
+				_creature->changeHealth(atoi(parseParams(it, tokens.end()).c_str()), nullptr);
 			else if(action == "maxhealth")
 				_creature->changeMaxHealth(atoi(parseParams(it, tokens.end()).c_str()));
 			else if(action == "mana")

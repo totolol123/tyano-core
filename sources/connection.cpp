@@ -255,7 +255,7 @@ void Connection::releaseConnection()
 	LOGt("Connection::releaseConnection()");
 
 	if(m_refCount > 0) //Reschedule it and try again.
-		server.scheduler().addTask(SchedulerTask::create(std::chrono::milliseconds(SCHEDULER_MINTICKS),
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(SCHEDULER_MINTICKS),
 			std::bind(&Connection::releaseConnection, this)));
 	else
 		deleteConnection();
