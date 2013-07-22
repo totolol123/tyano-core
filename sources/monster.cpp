@@ -800,19 +800,22 @@ void Monster::updateTarget() {
 	if (hasMaster()) {
 		target(_master->getAttackedCreature());
 	}
-	else if (attackedCreature == nullptr || !canAttack(*attackedCreature)) {
-		retarget();
-	}
 	else {
-		// retarget if target is out of sight + we cannot walk there
-		auto& game = server.game();
-		if (!game.isSightClear(getPosition(), attackedCreature->getPosition(), true)) {
-			FindPathParams parameters;
-			getPathSearchParams(attackedCreature, parameters);
+		CreatureP attackedCreature = this->attackedCreature;
+		if (attackedCreature == nullptr || !canAttack(*attackedCreature)) {
+			retarget();
+		}
+		else {
+			// retarget if target is out of sight + we cannot walk there
+			auto& game = server.game();
+			if (!game.isSightClear(getPosition(), attackedCreature->getPosition(), true)) {
+				FindPathParams parameters;
+				getPathSearchParams(attackedCreature.get(), parameters);
 
-			DirectionRoute route;
-			if (!server.game().getPathToEx(this, _followedCreature->getPosition(), route, parameters)) {
-				retarget();
+				DirectionRoute route;
+				if (!server.game().getPathToEx(this, attackedCreature->getPosition(), route, parameters)) {
+					retarget();
+				}
 			}
 		}
 	}
