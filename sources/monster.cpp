@@ -431,15 +431,6 @@ void Monster::onAttackedCreatureDrain(Creature* target, int32_t points) {
 }
 
 
-void Monster::onCreatureAppear(const CreatureP& creature) {
-	Creature::onCreatureAppear(creature);
-
-	if (creature == this) {
-		startWandering();
-	}
-}
-
-
 bool Monster::onDeath() {
 	if (!Creature::onDeath()) {
 		return false;

@@ -65,7 +65,6 @@ public:
 	        bool       hasRaid            () const;
 	        bool       hasSpawn           () const;
 	virtual bool       isEnemy            (const Creature& creature) const;
-	virtual void       onCreatureAppear   (const CreatureP& creature);
 	        void       release            ();
 	        void       removeFromRaid     ();
 	        void       removeFromSpawn    ();
