@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([Tyano Core],[1.0],[],[tc])
+AC_INIT([Tyano Core],[1.0.1],[],[tc])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([sources/server.h])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
