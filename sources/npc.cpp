@@ -86,7 +86,12 @@ Duration Npc::getWanderingInterval() const {
 bool Npc::hasToThinkAboutCreature(const CreaturePC& creature) const {
 	assert(creature != nullptr);
 
-	if (creature->hasController()) {
+	auto controller = creature->getController();
+	if (controller != nullptr) {
+		if (controller->hasCondition(CONDITION_GAMEMASTER, GAMEMASTER_SNEAKY, false)) {
+			return false;
+		}
+
 		return true;
 	}
 
