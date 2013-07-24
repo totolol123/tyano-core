@@ -85,7 +85,7 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 	auto& game = server.game();
 
 	if (isForwarder()) {
-		auto destinationTile = getCreatureForwardingTile(*creature, true);
+		auto destinationTile = getCreatureForwardingTile(*creature);
 		if (destinationTile == nullptr) {
 			return RET_DESTINATIONOUTOFREACH;
 		}
@@ -388,7 +388,7 @@ Position Tile::getForwardingDestination() const {
 }
 
 
-Tile* Tile::getCreatureForwardingTile(const Creature& creature, bool circumvenWhenFull) const {
+Tile* Tile::getCreatureForwardingTile(const Creature& creature) const {
 	static const uint32_t MAXIMUM_DISTANCE = 10;
 
 	auto tile = getForwardingDestinationTile();
@@ -396,45 +396,8 @@ Tile* Tile::getCreatureForwardingTile(const Creature& creature, bool circumvenWh
 		return nullptr;
 	}
 
-	auto directFlags = creature.getMoveFlags();
-	auto indirectFlags = directFlags | FLAG_IGNOREFIELDDAMAGE;
-
-	// try finding a tile two times: first pass without ignoring blocking creatures and second pass with ignoring blocking creatures
-	for (bool ignoresBlockingCreatures = false; !ignoresBlockingCreatures; ignoresBlockingCreatures = true) {
-		if (ignoresBlockingCreatures) {
-			directFlags |= FLAG_IGNOREBLOCKCREATURE;
-			indirectFlags |= FLAG_IGNOREBLOCKCREATURE;
-		}
-
-		// try destination tile first
-		if (!tile->isForwarder() && tile->testAddCreature(creature, directFlags) == RET_NOERROR) {
-			return tile;
-		}
-
-		if (circumvenWhenFull) {
-			// try neighbor tiles in random order
-			for (uint32_t distance = 1; distance <= MAXIMUM_DISTANCE; ++distance) {
-				auto alternativeTiles = tile->neighbors(distance);
-				if (!alternativeTiles.empty()) {
-					std::random_shuffle(alternativeTiles.begin(), alternativeTiles.end());
-
-					for (auto alternativeTile : alternativeTiles) {
-						if (alternativeTile->isForwarder()) {
-							continue;
-						}
-						if (alternativeTile->testAddCreature(creature, indirectFlags) != RET_NOERROR) {
-							continue;
-						}
-
-						return alternativeTile;
-					}
-				}
-			}
-		}
-	}
-
-	// give up!
-	return nullptr;
+	auto moveFlags = creature.getMoveFlags();
+	return server.game().getAvailableTileForThingNearPosition(creature, tile->getPosition(), MAXIMUM_DISTANCE, moveFlags|FLAG_PATHFINDING, moveFlags|FLAG_IGNOREFIELDDAMAGE|FLAG_PATHFINDING);
 }
 
 
@@ -640,7 +603,7 @@ ReturnValue Tile::testAddCreature(const Creature& creature, uint32_t flags) cons
 			return result;
 		}
 
-		if (getCreatureForwardingTile(creature, true) == nullptr) {
+		if (getCreatureForwardingTile(creature) == nullptr) {
 			// Also cannot find an alternative.
 			return RET_DESTINATIONOUTOFREACH;
 		}

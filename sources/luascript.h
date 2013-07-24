@@ -225,6 +225,7 @@ private:
 	static int luaRemovePlayerPremiumDays        (lua_State* L);
 	static int luaSetPlayerPremiumDays           (lua_State* L);
 	static int luaSetPlayerUnlimitedPremium      (lua_State* L);
+	static int luaTeleportThingNearPosition      (lua_State* L);
 
 	static void      push           (lua_State* L, bool value);
 	static void      push           (lua_State* L, int32_t value);
@@ -234,11 +235,16 @@ private:
 	static void      push           (lua_State* L, double value);
 	static void      push           (lua_State* L, const char* string);
 	static void      push           (lua_State* L, const std::string& string);
+	static void      push           (lua_State* L, const Position& position);
 	static Creature* readCreature   (lua_State* L, uint32_t argumentIndex);
 	static double    readDouble     (lua_State* L, uint32_t argumentIndex);
+	static double    readDouble     (lua_State* L, uint32_t argumentIndex, double defaultValue);
 	static Player*   readPlayer     (lua_State* L, uint32_t argumentIndex);
+	static Position  readPosition   (lua_State* L, uint32_t argumentIndex);
 	static int32_t   readSigned32   (lua_State* L, uint32_t argumentIndex);
+	static Thing*    readThing      (lua_State* L, uint32_t argumentIndex);
 	static uint32_t  readUnsigned32 (lua_State* L, uint32_t argumentIndex);
+	static uint32_t  readUnsigned32 (lua_State* L, uint32_t argumentIndex, uint32_t defaultValue);
 
 
 

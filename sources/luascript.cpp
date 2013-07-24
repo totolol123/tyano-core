@@ -71,7 +71,7 @@ int LuaScriptInterface::luaAddPlayerPremiumDays(lua_State* L) {
 	auto player = readPlayer(L, 1);
 	auto days = readUnsigned32(L, 2);
 
-	AccountP account = player->getAccount();
+	auto account = player->getAccount();
 	if (account->hasUnlimitedPremium()) {
 		push(L, false);
 		push(L, "Player has unlimited premium.");
@@ -189,6 +189,39 @@ int LuaScriptInterface::luaSetPlayerUnlimitedPremium(lua_State* L) {
 }
 
 
+int LuaScriptInterface::luaTeleportThingNearPosition(lua_State* L) {
+	auto thing = readThing(L, 1);
+	auto position = readPosition(L, 2);
+	auto radius = readUnsigned32(L, 3, 5);
+	auto directFlags = readUnsigned32(L, 4, FLAG_PATHFINDING);
+	auto indirectFlags = readUnsigned32(L, 5, FLAG_IGNOREFIELDDAMAGE|FLAG_PATHFINDING);
+	auto previousPosition = thing->getPosition();
+
+	auto tile = server.game().getAvailableTileForThingNearPosition(*thing, position, radius, directFlags, indirectFlags);
+	if (tile != nullptr) {
+		auto& game = server.game();
+
+		game.internalTeleport(thing, tile->getPosition(), false, directFlags|indirectFlags);
+
+		auto newPosition = thing->getPosition();
+		if (newPosition.distanceTo(previousPosition) >= 2) {
+			auto creature = thing->getCreature();
+			auto ghost = (creature != nullptr ? creature->isGhost() : false);
+
+			game.addMagicEffect(previousPosition, MAGIC_EFFECT_TELEPORT, ghost);
+			game.addMagicEffect(newPosition, MAGIC_EFFECT_TELEPORT, ghost);
+		}
+
+		push(L, true);
+	}
+	else {
+		push(L, false);
+	}
+
+	return 1;
+}
+
+
 void LuaScriptInterface::push(lua_State* L, bool value) {
 	lua_pushboolean(L, value ? 1 : 0);
 }
@@ -229,6 +262,16 @@ void LuaScriptInterface::push(lua_State* L, const std::string& string) {
 }
 
 
+void LuaScriptInterface::push(lua_State* L, const Position& position) {
+	assert(position.isValid());
+
+	lua_newtable(L);
+	setField(L, "x", position.x);
+	setField(L, "y", position.y);
+	setField(L, "z", position.z);
+}
+
+
 Creature* LuaScriptInterface::readCreature(lua_State* L, uint32_t argumentIndex) {
 	auto creatureId = readUnsigned32(L, argumentIndex);
 
@@ -246,23 +289,12 @@ double LuaScriptInterface::readDouble(lua_State* L, uint32_t argumentIndex) {
 }
 
 
-int32_t LuaScriptInterface::readSigned32(lua_State* L, uint32_t argumentIndex) {
-	double value = std::round(readDouble(L, argumentIndex));
-	if (value < std::numeric_limits<int32_t>::min() || value > std::numeric_limits<int32_t>::max()) {
-		luaL_error(L, "Argument %d must a 32-bit integer.", argumentIndex);
+double LuaScriptInterface::readDouble(lua_State* L, uint32_t argumentIndex, double defaultValue) {
+	if (!lua_isnumber(L, argumentIndex)) {
+		return defaultValue;
 	}
 
-	return static_cast<int32_t>(value);
-}
-
-
-uint32_t LuaScriptInterface::readUnsigned32(lua_State* L, uint32_t argumentIndex) {
-	double value = std::round(readDouble(L, argumentIndex));
-	if (value < std::numeric_limits<uint32_t>::min() || value > std::numeric_limits<uint32_t>::max()) {
-		luaL_error(L, "Argument %d must a 32-bit unsigned integer.", argumentIndex);
-	}
-
-	return static_cast<uint32_t>(value);
+	return luaL_checknumber(L, argumentIndex);
 }
 
 
@@ -278,6 +310,69 @@ Player* LuaScriptInterface::readPlayer(lua_State* L, uint32_t argumentIndex) {
 	}
 
 	return player;
+}
+
+
+Position LuaScriptInterface::readPosition(lua_State* L, uint32_t argumentIndex) {
+	lua_pushstring(L, "x");
+	lua_gettable(L, argumentIndex);
+	auto x = luaL_checkinteger(L, -1);
+	lua_pushstring(L, "y");
+	lua_gettable(L, argumentIndex);
+	auto y = luaL_checkinteger(L, -1);
+	lua_pushstring(L, "z");
+	lua_gettable(L, argumentIndex);
+	auto z = luaL_checkinteger(L, -1);
+	lua_pop(L, 3);
+
+	if (!Position::isValid(x, y, z)) {
+		luaL_error(L, "Invalid position %d/%d/%d passed to argument %d.", x, y, z, argumentIndex);
+		return Position();
+	}
+
+	return Position(x, y, z);
+}
+
+
+int32_t LuaScriptInterface::readSigned32(lua_State* L, uint32_t argumentIndex) {
+	double value = std::round(readDouble(L, argumentIndex));
+	if (value < std::numeric_limits<int32_t>::min() || value > std::numeric_limits<int32_t>::max()) {
+		luaL_error(L, "Argument %d must a 32-bit integer.", argumentIndex);
+	}
+
+	return static_cast<int32_t>(value);
+}
+
+
+Thing* LuaScriptInterface::readThing(lua_State* L, uint32_t argumentIndex) {
+	auto thingId = readUnsigned32(L, argumentIndex);
+
+	auto thing = getEnv()->getThingByUID(thingId);
+	if (thing == nullptr) {
+		luaL_error(L, "There is no thing with id %d passed to argument %d.", thingId, argumentIndex);
+	}
+
+	return thing;
+}
+
+
+uint32_t LuaScriptInterface::readUnsigned32(lua_State* L, uint32_t argumentIndex) {
+	double value = std::round(readDouble(L, argumentIndex));
+	if (value < std::numeric_limits<uint32_t>::min() || value > std::numeric_limits<uint32_t>::max()) {
+		luaL_error(L, "Argument %d must a 32-bit unsigned integer.", argumentIndex);
+	}
+
+	return static_cast<uint32_t>(value);
+}
+
+
+uint32_t LuaScriptInterface::readUnsigned32(lua_State* L, uint32_t argumentIndex, uint32_t defaultValue) {
+	double value = std::round(readDouble(L, argumentIndex, defaultValue));
+	if (value < std::numeric_limits<uint32_t>::min() || value > std::numeric_limits<uint32_t>::max()) {
+		luaL_error(L, "Argument %d must a 32-bit unsigned integer.", argumentIndex);
+	}
+
+	return static_cast<uint32_t>(value);
 }
 
 
@@ -1851,11 +1946,7 @@ void LuaScriptInterface::moveValue(lua_State* from, lua_State* to)
 	lua_pop(from, 1); // Pop the value we just read
 }
 
-void LuaScriptInterface::registerFunctions()
-{
-	//example(...)
-	//lua_register(L, "name", C_function);
-
+void LuaScriptInterface::registerFunctions() {
 	lua_register(m_luaState, "addPlayerPremiumDays",           LuaScriptInterface::luaAddPlayerPremiumDays);
 	lua_register(m_luaState, "getPlayerPremiumDays",           LuaScriptInterface::luaGetPlayerPremiumDays);
 	lua_register(m_luaState, "getPlayerPremiumExpirationText", LuaScriptInterface::luaGetPlayerPremiumExpirationText);
@@ -1864,6 +1955,7 @@ void LuaScriptInterface::registerFunctions()
 	lua_register(m_luaState, "removePlayerPremiumDays",        LuaScriptInterface::luaRemovePlayerPremiumDays);
 	lua_register(m_luaState, "setPlayerPremiumDays",           LuaScriptInterface::luaSetPlayerPremiumDays);
 	lua_register(m_luaState, "setPlayerUnlimitedPremium",      LuaScriptInterface::luaSetPlayerUnlimitedPremium);
+	lua_register(m_luaState, "teleportThingNearPosition",      LuaScriptInterface::luaTeleportThingNearPosition);
 
 	//getCreatureHealth(cid)
 	lua_register(m_luaState, "getCreatureHealth", LuaScriptInterface::luaGetCreatureHealth);

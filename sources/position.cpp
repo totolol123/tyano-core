@@ -89,6 +89,51 @@ bool Position::isValid(int_fast32_t x, int_fast32_t y, int_fast32_t z) {
 }
 
 
+std::vector<Position> Position::neighbors(uint16_t distance) const {
+	std::vector<Position> neighbors;
+
+	if (distance == 0) {
+		return neighbors;
+	}
+
+	auto startOffset = -static_cast<int32_t>(distance);
+	auto endOffset   = static_cast<int32_t>(distance);
+
+	auto neighbor = *this;
+	for (auto xOffset = startOffset; xOffset <= endOffset; ++xOffset) {
+		auto x = this->x + xOffset;
+		if (x < static_cast<int32_t>(MIN_X) || x > static_cast<int32_t>(MAX_X)) {
+			continue;
+		}
+
+		neighbor.x = static_cast<int16_t>(x);
+
+		int32_t yOffsetIncrease;
+		if (xOffset == startOffset || xOffset == endOffset) {
+			// we're on the left or the right border - go through all y tiles
+			yOffsetIncrease = 1;
+		}
+		else {
+			// we're somewhere in between - go through top and bottom tile only
+			yOffsetIncrease = endOffset - startOffset;
+		}
+
+		for (auto yOffset = startOffset; yOffset <= endOffset; yOffset += yOffsetIncrease) {
+			auto y = this->y + yOffset;
+			if (y < static_cast<int32_t>(MIN_Y) || y > static_cast<int32_t>(MAX_Y)) {
+				continue;
+			}
+
+			neighbor.y = static_cast<int16_t>(y);
+
+			neighbors.push_back(neighbor);
+		}
+	}
+
+	return neighbors;
+}
+
+
 Position& Position::operator = (const Position& position) {
 	assert(position.isValid() || position == INVALID);
 

@@ -147,7 +147,11 @@ class Game {
 
 public:
 
-	Tile* getNextTile(const Tile& tile, Direction direction) const;
+	Tile* getAvailableTileForThingNearPosition (const Thing& thing, const Position& position, uint16_t radius, uint32_t directFlags = FLAG_PATHFINDING, uint32_t indirectFlags = FLAG_IGNOREFIELDDAMAGE|FLAG_PATHFINDING) const;
+	Tile* getNextTile                          (const Tile& tile, Direction direction) const;
+
+
+private:
 
 
 

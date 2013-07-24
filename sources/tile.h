@@ -136,7 +136,7 @@ public:
 
 	ReturnValue         addCreature                        (const CreatureP& creature, uint32_t flags = 0, const CreatureP& actor = nullptr);
 	Tile*               getAvailableItemForwardingTile     (const Item& item) const;
-	Tile*               getCreatureForwardingTile          (const Creature& creature, bool circumvenWhenFull) const;
+	Tile*               getCreatureForwardingTile          (const Creature& creature) const;
 	Position            getForwardingDestination           () const;
 	Tile*               getForwardingDestinationTile       () const;
 	ItemP               getGround                          () const;

@@ -68,6 +68,72 @@
 
 LOGGER_DEFINITION(Game);
 
+Tile* Game::getAvailableTileForThingNearPosition(const Thing& thing, const Position& position, uint16_t radius, uint32_t directFlags, uint32_t indirectFlags) const {
+	auto creature = thing.getCreature();
+	if (creature != nullptr) {
+		auto tile = getTile(position);
+		if (tile != nullptr && tile->testAddCreature(*creature, directFlags) == RET_NOERROR) {
+			return tile;
+		}
+
+		for (uint16_t distance = 1; distance <= radius; ++distance) {
+			auto alternativePositions = position.neighbors(distance);
+			if (!alternativePositions.empty()) {
+				std::random_shuffle(alternativePositions.begin(), alternativePositions.end());
+
+				for (auto alternativePosition : alternativePositions) {
+					tile = getTile(alternativePosition);
+					if (tile != nullptr && tile->testAddCreature(*creature, indirectFlags) == RET_NOERROR) {
+						return tile;
+					}
+				}
+			}
+		}
+	}
+
+	auto item = thing.getItem();
+	if (item != nullptr) {
+		auto tile = getTile(position);
+		if (tile != nullptr && tile->__queryAdd(INDEX_WHEREEVER, item, 1, directFlags) == RET_NOERROR) {
+			return tile;
+		}
+
+		for (uint16_t distance = 1; distance <= radius; ++distance) {
+			auto alternativePositions = position.neighbors(distance);
+			if (!alternativePositions.empty()) {
+				std::random_shuffle(alternativePositions.begin(), alternativePositions.end());
+
+				for (auto alternativePosition : alternativePositions) {
+					tile = getTile(alternativePosition);
+					if (tile != nullptr && tile->__queryAdd(INDEX_WHEREEVER, item, 1, indirectFlags) == RET_NOERROR) {
+						return tile;
+					}
+				}
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+
+Tile* Game::getNextTile(const Tile& tile, Direction direction) const {
+	Position nextPosition = getNextPosition(direction, tile.getPosition());
+	if (!nextPosition.isValid()) {
+		return nullptr;
+	}
+
+	return getTile(nextPosition);
+}
+
+
+
+
+
+
+
+
+
 
 Game::Game()
 {
@@ -5927,16 +5993,6 @@ void Game::showHotkeyUseMessage(Player* player, Item* item)
 		sprintf(buffer, "Using one of %d %s...", count, kind->pluralName.c_str());
 
 	player->sendTextMessage(MSG_INFO_DESCR, buffer);
-}
-
-
-Tile* Game::getNextTile(const Tile& tile, Direction direction) const {
-	Position nextPosition = getNextPosition(direction, tile.getPosition());
-	if (!nextPosition.isValid()) {
-		return nullptr;
-	}
-
-	return getTile(nextPosition);
 }
 
 
