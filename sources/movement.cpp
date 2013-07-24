@@ -35,13 +35,21 @@
 LOGGER_DEFINITION(MoveEvents);
 
 
-ReturnValue MoveEvents::willAddCreature(Tile& tile, const CreatureP& creature, const CreatureP& actor) const {
+ReturnValue MoveEvents::willAddCreature(Tile& tile, const CreatureP& creature, const CreatureP& actor, uint32_t* numberOfScriptsCalledOutput) const {
 	assert(creature != nullptr);
+
+	uint32_t numberOfScriptsCalled = 0;
 
 	auto event = getEvent(&tile, MOVE_EVENT_WILL_ADD_CREATURE);
 	if (event != nullptr) {
+		++numberOfScriptsCalled;
+
 		auto result = event->willAddCreature(tile, creature, actor);
 		if (result != RET_NOERROR) {
+			if (numberOfScriptsCalledOutput != nullptr) {
+				*numberOfScriptsCalledOutput = numberOfScriptsCalled;
+			}
+
 			return result;
 		}
 	}
@@ -50,8 +58,14 @@ ReturnValue MoveEvents::willAddCreature(Tile& tile, const CreatureP& creature, c
 	if (ground != nullptr) {
 		event = getEvent(*ground, MOVE_EVENT_WILL_ADD_CREATURE);
 		if (event != nullptr) {
+			++numberOfScriptsCalled;
+
 			auto result = event->willAddCreature(tile, creature, actor);
 			if (result != RET_NOERROR) {
+				if (numberOfScriptsCalledOutput != nullptr) {
+					*numberOfScriptsCalledOutput = numberOfScriptsCalled;
+				}
+
 				return result;
 			}
 		}
@@ -62,12 +76,22 @@ ReturnValue MoveEvents::willAddCreature(Tile& tile, const CreatureP& creature, c
 		for (auto i = items->cbegin(); i != items->cend(); ++i) {
 			event = getEvent(**i, MOVE_EVENT_WILL_ADD_CREATURE);
 			if (event != nullptr) {
+				++numberOfScriptsCalled;
+
 				auto result = event->willAddCreature(tile, creature, actor);
 				if (result != RET_NOERROR) {
+					if (numberOfScriptsCalledOutput != nullptr) {
+						*numberOfScriptsCalledOutput = numberOfScriptsCalled;
+					}
+
 					return result;
 				}
 			}
 		}
+	}
+
+	if (numberOfScriptsCalledOutput != nullptr) {
+		*numberOfScriptsCalledOutput = numberOfScriptsCalled;
 	}
 
 	return RET_NOERROR;

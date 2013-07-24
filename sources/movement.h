@@ -58,7 +58,7 @@ class MoveEvents : public BaseEvents<MoveEvent> {
 
 public:
 
-	ReturnValue willAddCreature (Tile& tile, const CreatureP& creature, const CreatureP& actor) const;
+	ReturnValue willAddCreature (Tile& tile, const CreatureP& creature, const CreatureP& actor, uint32_t* numberOfScriptsCalled = nullptr) const;
 
 
 

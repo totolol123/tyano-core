@@ -135,9 +135,10 @@ class Tile : public Cylinder {
 public:
 
 	ReturnValue         addCreature                        (const CreatureP& creature, uint32_t flags = 0, const CreatureP& actor = nullptr);
-	Tile*               getAvailableCreatureForwardingTile (const Creature& creature) const;
 	Tile*               getAvailableItemForwardingTile     (const Item& item) const;
+	Tile*               getCreatureForwardingTile          (const Creature& creature, bool circumvenWhenFull) const;
 	Position            getForwardingDestination           () const;
+	Tile*               getForwardingDestinationTile       () const;
 	ItemP               getGround                          () const;
 	bool                isForwarder                        () const;
 	bool                isLocalForwarder                   () const;
