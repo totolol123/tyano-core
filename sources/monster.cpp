@@ -1507,7 +1507,20 @@ bool Monster::isAttackable() const {return _type->isAttackable;}
 
 bool Monster::canPushItems() const {return _type->canPushItems;}
 bool Monster::canPushCreatures() const {return _type->canPushCreatures;}
-bool Monster::isHostile() const {return _type->isHostile;}
+
+bool Monster::isHostile() const {
+	if (hasController()) {
+		auto controller = getController()->getMonster();
+		if (controller != nullptr) {
+			return controller->isHostile();
+		}
+
+		return false;
+	}
+
+	return _type->isHostile;
+}
+
 bool Monster::isWalkable() const {return _type->isWalkable;}
 bool Monster::canSeeInvisibility() const {return Creature::isImmune(CONDITION_INVISIBLE);}
 uint32_t Monster::getManaCost() const {return _type->manaCost;}

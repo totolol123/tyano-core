@@ -653,9 +653,11 @@ ReturnValue Tile::testAddCreature(const Creature& creature, uint32_t flags) cons
 
 		auto monster = creature.getMonster();
 		if (monster != nullptr) {
-			if (!hasBitSet(FLAG_IGNORE_PROTECTION_ZONE, flags) && hasFlag(TILESTATE_PROTECTIONZONE)) {
-				if (previousTile == nullptr || previousTile->hasFlag(TILESTATE_PROTECTIONZONE)) {
-					return RET_NOTPOSSIBLE;
+			if (monster->isHostile()) {
+				if (!hasBitSet(FLAG_IGNORE_PROTECTION_ZONE, flags) && hasFlag(TILESTATE_PROTECTIONZONE)) {
+					if (previousTile == nullptr || !previousTile->hasFlag(TILESTATE_PROTECTIONZONE)) {
+						return RET_NOTPOSSIBLE;
+					}
 				}
 			}
 
