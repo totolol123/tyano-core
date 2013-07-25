@@ -587,34 +587,13 @@ ReturnValue Tile::testAddCreature(const Creature& creature, uint32_t flags) cons
 		return RET_NOTPOSSIBLE;
 	}
 
-	if (isForwarder()) {
-		if (hasBitSet(FLAG_PATHFINDING, flags) && !hasBitSet(FLAG_NOLIMIT, flags)) {
-			return RET_NOTPOSSIBLE;
-		}
-
-		auto destinationTile = getForwardingDestinationTile();
-		if (destinationTile == nullptr) {
-			return RET_NOTPOSSIBLE;
-		}
-
-		auto result = destinationTile->testAddCreature(creature, flags);
-		if (result != RET_NOERROR && result != RET_NOTENOUGHROOM) {
-			// Creature is not allowed to use the teleporter since it's not allowed to move on the destination tile in general.
-			return result;
-		}
-
-		if (getCreatureForwardingTile(creature) == nullptr) {
-			// Also cannot find an alternative.
-			return RET_DESTINATIONOUTOFREACH;
-		}
-	}
-	else if (!hasBitSet(FLAG_NOLIMIT, flags)) {
+	auto monster = creature.getMonster();
+	if (!hasBitSet(FLAG_NOLIMIT, flags)) {
 		auto magicField = getFieldItem();
 		if (magicField != nullptr && magicField->isBlocking(&creature)) {
 			return RET_NOTPOSSIBLE;
 		}
 
-		auto monster = creature.getMonster();
 		if (monster != nullptr) {
 			if (monster->isHostile()) {
 				if (!hasBitSet(FLAG_IGNORE_PROTECTION_ZONE, flags) && hasFlag(TILESTATE_PROTECTIONZONE)) {
@@ -691,59 +670,81 @@ ReturnValue Tile::testAddCreature(const Creature& creature, uint32_t flags) cons
 				}
 			}
 		}
+	}
 
-		if (hasBitSet(FLAG_IGNOREBLOCKITEM, flags)) {
-			if (ground->isBlocking(&creature)) {
-				return RET_NOTPOSSIBLE;
-			}
-
-			auto existingItems = getItemList();
-			if (existingItems != nullptr && !existingItems->empty()) {
-				for (const auto& existingItem : *existingItems) {
-					if (!existingItem->isBlocking(&creature)) {
-						continue;
-					}
-
-					if (existingItem->isMoveable()) {
-						continue;
-					}
-
-					return RET_NOTPOSSIBLE;
-				}
-			}
-		}
-		else if (hasFlag(TILESTATE_BLOCKSOLID)) {
+	if (isForwarder()) {
+		if (hasBitSet(FLAG_PATHFINDING, flags) && !hasBitSet(FLAG_NOLIMIT, flags)) {
 			return RET_NOTPOSSIBLE;
 		}
 
-		if (!hasBitSet(FLAG_IGNOREBLOCKCREATURE, flags)) {
-			auto existingCreatures = getCreatures();
-			if (existingCreatures != nullptr && !existingCreatures->empty()) {
-				if (monster != nullptr && monster->canPushCreatures() && !monster->hasController()) {
-					for (const auto& existingCreature : *existingCreatures) {
-						if (creature.canWalkthrough(existingCreature.get())) { // FIXME remove .get()
-							continue;
-						}
+		auto destinationTile = getForwardingDestinationTile();
+		if (destinationTile == nullptr) {
+			return RET_NOTPOSSIBLE;
+		}
 
-						auto existingMonster = existingCreature->getMonster();
-						if (existingMonster == nullptr) {
-							return RET_NOTENOUGHROOM;
-						}
+		auto result = destinationTile->testAddCreature(creature, flags);
+		if (result != RET_NOERROR && result != RET_NOTENOUGHROOM) {
+			// Creature is not allowed to use the teleporter since it's not allowed to move on the destination tile in general.
+			return result;
+		}
 
-						if (!existingMonster->isPushable()) {
-							return RET_NOTENOUGHROOM;
-						}
+		if (getCreatureForwardingTile(creature) == nullptr) {
+			// Also cannot find an alternative.
+			return RET_DESTINATIONOUTOFREACH;
+		}
+	}
 
-						if (existingMonster->hasController()) {
-							return RET_NOTENOUGHROOM;
-						}
+	if (hasBitSet(FLAG_IGNOREBLOCKITEM, flags)) {
+		if (ground->isBlocking(&creature)) {
+			return RET_NOTPOSSIBLE;
+		}
+
+		auto existingItems = getItemList();
+		if (existingItems != nullptr && !existingItems->empty()) {
+			for (const auto& existingItem : *existingItems) {
+				if (!existingItem->isBlocking(&creature)) {
+					continue;
+				}
+
+				if (existingItem->isMoveable()) {
+					continue;
+				}
+
+				return RET_NOTPOSSIBLE;
+			}
+		}
+	}
+	else if (hasFlag(TILESTATE_BLOCKSOLID)) {
+		return RET_NOTPOSSIBLE;
+	}
+
+	if (!hasBitSet(FLAG_IGNOREBLOCKCREATURE, flags)) {
+		auto existingCreatures = getCreatures();
+		if (existingCreatures != nullptr && !existingCreatures->empty()) {
+			if (monster != nullptr && monster->canPushCreatures() && !monster->hasController()) {
+				for (const auto& existingCreature : *existingCreatures) {
+					if (creature.canWalkthrough(existingCreature.get())) { // FIXME remove .get()
+						continue;
+					}
+
+					auto existingMonster = existingCreature->getMonster();
+					if (existingMonster == nullptr) {
+						return RET_NOTENOUGHROOM;
+					}
+
+					if (!existingMonster->isPushable()) {
+						return RET_NOTENOUGHROOM;
+					}
+
+					if (existingMonster->hasController()) {
+						return RET_NOTENOUGHROOM;
 					}
 				}
-				else {
-					for (const auto& existingCreature : *existingCreatures) {
-						if (!creature.canWalkthrough(existingCreature.get())) { // FIXME remove .get()
-							return RET_NOTENOUGHROOM;
-						}
+			}
+			else {
+				for (const auto& existingCreature : *existingCreatures) {
+					if (!creature.canWalkthrough(existingCreature.get())) { // FIXME remove .get()
+						return RET_NOTENOUGHROOM;
 					}
 				}
 			}
