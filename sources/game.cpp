@@ -844,6 +844,7 @@ bool Game::placeCreature(const CreatureP& creature, const Position& pos, bool ex
 		return false;
 
 	if (!creature->isAlive()) {
+		creature->remove();
 		return false;
 	}
 
