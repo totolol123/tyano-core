@@ -284,7 +284,7 @@ void Item::ReleaseInfo::copy(const ReleaseInfo& releaseInfo, const Function& tes
 	_expirationTime = releaseInfo._expirationTime;
 
 	if (_breakTime == BREAK_TIME_NEVER) {
-		assert(_expirationTime < Clock::now());
+		assert(_expirationTime >= Clock::now());
 
 		auto task = SchedulerTask::create(_expirationTime, testExpirationCallback);
 		server.scheduler().addTask(task);
