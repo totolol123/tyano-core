@@ -279,9 +279,17 @@ bool ProtocolGame::login(const std::string& name, uint32_t id, const std::string
 		player->setClientVersion(version);
 		if(!server.game().placeCreature(player.get(), player->getLoginPosition()) && !server.game().placeCreature(player.get(), player->getMasterPosition(), false, true))
 		{
+			LOGe("Temple position is wrong for player '" + player->getName() + "'.");
+
 			disconnectClient(0x14, "Temple position is wrong. Contact with the administration.");
 			return false;
+		}
 
+		if (!player->isAlive()) {
+			LOGe("Player '" + player->getName() + "' was dead while logging in. This should never happen!");
+
+			disconnectClient(0x14, "An internal error account and you character is unsable. Please contact the server support!");
+			return false;
 		}
 
 		player->lastIP = player->getIP();
