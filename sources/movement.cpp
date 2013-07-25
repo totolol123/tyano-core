@@ -44,7 +44,7 @@ ReturnValue MoveEvents::willAddCreature(Tile& tile, const CreatureP& creature, c
 	if (event != nullptr) {
 		++numberOfScriptsCalled;
 
-		auto result = event->willAddCreature(tile, creature, actor);
+		auto result = event->willAddCreature(tile, creature, actor, nullptr);
 		if (result != RET_NOERROR) {
 			if (numberOfScriptsCalledOutput != nullptr) {
 				*numberOfScriptsCalledOutput = numberOfScriptsCalled;
@@ -60,7 +60,7 @@ ReturnValue MoveEvents::willAddCreature(Tile& tile, const CreatureP& creature, c
 		if (event != nullptr) {
 			++numberOfScriptsCalled;
 
-			auto result = event->willAddCreature(tile, creature, actor);
+			auto result = event->willAddCreature(tile, creature, actor, ground);
 			if (result != RET_NOERROR) {
 				if (numberOfScriptsCalledOutput != nullptr) {
 					*numberOfScriptsCalledOutput = numberOfScriptsCalled;
@@ -74,11 +74,13 @@ ReturnValue MoveEvents::willAddCreature(Tile& tile, const CreatureP& creature, c
 	auto items = tile.getItemList();
 	if (items != nullptr) {
 		for (auto i = items->cbegin(); i != items->cend(); ++i) {
+			auto& item = **i;
+
 			event = getEvent(**i, MOVE_EVENT_WILL_ADD_CREATURE);
 			if (event != nullptr) {
 				++numberOfScriptsCalled;
 
-				auto result = event->willAddCreature(tile, creature, actor);
+				auto result = event->willAddCreature(tile, creature, actor, &item);
 				if (result != RET_NOERROR) {
 					if (numberOfScriptsCalledOutput != nullptr) {
 						*numberOfScriptsCalledOutput = numberOfScriptsCalled;
@@ -98,9 +100,7 @@ ReturnValue MoveEvents::willAddCreature(Tile& tile, const CreatureP& creature, c
 }
 
 
-
-
-ReturnValue MoveEvent::willAddCreature(Tile& tile, const CreatureP& creature, const CreatureP& actor) const {
+ReturnValue MoveEvent::willAddCreature(Tile& tile, const CreatureP& creature, const CreatureP& actor, const ItemP& item) const {
 	assert(creature != nullptr);
 
 	if (!m_interface->reserveEnv()) {
@@ -118,10 +118,16 @@ ReturnValue MoveEvent::willAddCreature(Tile& tile, const CreatureP& creature, co
 	LuaScriptInterface::pushPosition(L, tile.getPosition());
 	lua_pushnumber(L, env.addThing(creature));
 	lua_pushnumber(L, env.addThing(actor));
+	if (item != nullptr) {
+		LuaScriptInterface::pushThing(L, item.get(), env.addThing(item));
+	}
+	else {
+		lua_pushnil(L);
+	}
 
 	ReturnValue result = RET_NOERROR;
 
-	if (lua_pcall(L, 3, 1, 5)) {
+	if (lua_pcall(L, 4, 1, 5)) {
 		LuaScriptInterface::error(nullptr, LuaScriptInterface::popString(L));
 	}
 	else {

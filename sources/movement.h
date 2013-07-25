@@ -27,6 +27,7 @@ class Player;
 class Tile;
 
 typedef boost::intrusive_ptr<Creature>  CreatureP;
+typedef boost::intrusive_ptr<Item>      ItemP;
 typedef std::shared_ptr<MoveEvent>      MoveEventP;
 
 
@@ -122,7 +123,7 @@ class MoveEvent : public Event {
 
 public:
 
-	ReturnValue willAddCreature (Tile& tile, const CreatureP& creature, const CreatureP& actor) const;
+	ReturnValue willAddCreature (Tile& tile, const CreatureP& creature, const CreatureP& actor, const ItemP& item) const;
 
 
 public:
