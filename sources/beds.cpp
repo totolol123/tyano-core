@@ -135,10 +135,6 @@ void BedItem::sleep(Player* player)
 
 	if(!sleeper)
 	{
-		if (getTile()->addCreature(player, FLAG_IGNOREBLOCKCREATURE) != RET_NOERROR) {
-			return;
-		}
-
 		Beds::getInstance()->setBedSleeper(this, player->getGUID());
 		internalSetSleeper(player);
 
