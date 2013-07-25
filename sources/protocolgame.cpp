@@ -2126,52 +2126,26 @@ void ProtocolGame::sendGoods(const ShopInfoList& shop)
 		msg->AddU32(static_cast<uint32_t>(money));
 
 		std::map<uint32_t, uint32_t> goodsMap;
-		if(shop.size() >= 5)
+		for(ShopInfoList::const_iterator sit = shop.begin(); sit != shop.end(); ++sit)
 		{
-			for(ShopInfoList::const_iterator sit = shop.begin(); sit != shop.end(); ++sit)
+			if(sit->sellPrice < 0)
+				continue;
+
+			int8_t subType = -1;
+			if(sit->subType)
 			{
-				if(sit->sellPrice < 0)
-					continue;
-
-				int8_t subType = -1;
-				if(sit->subType)
-				{
-					ItemKindPC kind = server.items()[sit->itemId];
-					if(kind && kind->hasSubType() && !kind->stackable)
-						subType = sit->subType;
-				}
-
-				uint32_t count = player->__getItemTypeCount(sit->itemId, subType);
-				if(count > 0)
-					goodsMap[sit->itemId] = count;
+				ItemKindPC kind = server.items()[sit->itemId];
+				if(kind && kind->hasSubType() && !kind->stackable)
+					subType = sit->subType;
 			}
-		}
-		else
-		{
-			std::map<uint32_t, uint32_t> tmpMap;
-			player->__getAllItemTypeCount(tmpMap);
-			for(ShopInfoList::const_iterator sit = shop.begin(); sit != shop.end(); ++sit)
-			{
-				if(sit->sellPrice < 0)
-					continue;
 
-				int8_t subType = -1;
-				if(sit->subType)
-				{
-					ItemKindPC kind = server.items()[sit->itemId];
-					if(kind && kind->hasSubType() && !kind->stackable)
-						subType = sit->subType;
-				}
-
-				if(subType != -1)
-				{
-					uint32_t count = player->__getItemTypeCount(sit->itemId, subType);
-					if(count > 0)
-						goodsMap[sit->itemId] = count;
-				}
-				else
-					goodsMap[sit->itemId] = tmpMap[sit->itemId];
+			uint32_t count = player->__getItemTypeCount(sit->itemId, subType);
+			if (count == 1) {
+				count = player->__getItemTypeCount(sit->itemId, subType, true, false);
 			}
+
+			if(count > 0)
+				goodsMap[sit->itemId] = count;
 		}
 
 		msg->AddByte(std::min(goodsMap.size(), (size_t)255));

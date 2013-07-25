@@ -1593,10 +1593,10 @@ void Npc::executeResponse(Player* player, NpcState* npcState, const NpcResponse*
 						if(kind->hasSubType())
 							subType = npcState->subType;
 
-						int32_t itemCount = player->__getItemTypeCount(kind->id, subType, true);
+						int32_t itemCount = player->__getItemTypeCount(kind->id, subType, false);
 						if(itemCount >= npcState->amount)
 						{
-							server.game().removeItemOfType(player, kind->id, npcState->amount, subType, true);
+							server.game().removeItemOfType(player, kind->id, npcState->amount, subType, false);
 							server.game().addMoney(player, moneyCount, FLAG_NOLIMIT);
 						}
 					}
