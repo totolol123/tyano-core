@@ -104,7 +104,7 @@ ReturnValue MoveEvent::willAddCreature(Tile& tile, const CreatureP& creature, co
 	assert(creature != nullptr);
 
 	if (!m_interface->reserveEnv()) {
-		LOGe("[MoveEvent::executeStep] Call stack overflow.");
+		LOGe("[MoveEvent::willAddCreature] Call stack overflow.");
 		return RET_NOERROR;
 	}
 
@@ -114,7 +114,10 @@ ReturnValue MoveEvent::willAddCreature(Tile& tile, const CreatureP& creature, co
 
 	lua_State* L = m_interface->getState();
 	lua_pushcfunction(L, &LuaScriptInterface::handleFunction);
-	m_interface->pushFunction(m_scriptId);
+
+	bool success = m_interface->pushFunction(m_scriptId);
+	assert(success);
+
 	LuaScriptInterface::pushPosition(L, tile.getPosition());
 	lua_pushnumber(L, env.addThing(creature));
 	lua_pushnumber(L, env.addThing(actor));
@@ -127,7 +130,7 @@ ReturnValue MoveEvent::willAddCreature(Tile& tile, const CreatureP& creature, co
 
 	ReturnValue result = RET_NOERROR;
 
-	if (lua_pcall(L, 4, 1, 5)) {
+	if (lua_pcall(L, 4, 1, 6)) {
 		LuaScriptInterface::error(nullptr, LuaScriptInterface::popString(L));
 	}
 	else {
