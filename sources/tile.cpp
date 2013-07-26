@@ -2063,19 +2063,20 @@ void Tile::postRemoveNotification(Creature* actor, Thing* thing, const Cylinder*
 			tmpPlayer->postRemoveNotification(actor, thing, newParent, index, isCompleteRemoval, LINK_NEAR);
 	}
 
-	//calling movement scripts
-	if(Creature* creature = thing->getCreature())
-	{
-		const Tile* toTile = nullptr;
-		if(newParent)
-			toTile = newParent->getTile();
-
-		server.moveEvents().onCreatureMove(actor, creature, this, toTile, false);
+	if (auto creature = thing->getCreature()) {
+		if (newParent != nullptr) {
+			auto newTile = newParent->getTile();
+			if (newTile != nullptr) {
+				server.moveEvents().onCreatureMove(actor, creature, this, newTile, false);
+			}
+		}
 	}
-	else if(Item* item = thing->getItem())
-	{
+	else if (auto item = thing->getItem()) {
 		server.moveEvents().onRemoveTileItem(this, item);
-		server.moveEvents().onItemMove(actor, item, this, false);
+
+		if (newParent != nullptr) {
+			server.moveEvents().onItemMove(actor, item, this, false);
+		}
 	}
 }
 
