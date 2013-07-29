@@ -498,12 +498,12 @@ void Spawn::checkSpawn()
 			if(spawnId != 0)
 				spawnMap[spawnId].lastSpawn = OTSYS_TIME();
 
-			spawnedMap.erase(it++);
+			it = spawnedMap.erase(it);
 		}
 		else if(!isInSpawnZone(monster->getPosition()) && spawnId != 0)
 		{
 			spawnedMap.insert(SpawnedPair(0, monster));
-			spawnedMap.erase(it++);
+			it = spawnedMap.erase(it);
 		}
 		else
 			++it;
