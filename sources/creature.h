@@ -21,7 +21,6 @@
 #include "const.h"
 #include "position.h"
 #include "scheduler.h"
-#include "templates.h"
 #include "thing.h"
 
 class  Condition;
@@ -35,6 +34,7 @@ class  Monster;
 class  Npc;
 class  Player;
 class  Tile;
+class  World;
 
 typedef std::list<Condition*>                ConditionList;
 typedef boost::intrusive_ptr<Creature>       CreatureP;
@@ -112,13 +112,14 @@ class FrozenPathingConditionCall
 };
 
 
-class Creature : public AutoId, public Thing {
+class Creature : public Thing {
 
 public:
 
-	typedef std::deque<Direction>  DirectionRoute;
-	typedef std::deque<Position>   Route;
-
+	typedef std::deque<Direction>   DirectionRoute;
+	typedef uint32_t                Id;
+	typedef std::map<Id,CreatureP>  CreaturesById;
+	typedef std::deque<Position>    Route;
 
 	virtual bool         canAttack               (const Creature& creature) const = 0;
 	virtual bool         canFollow               (const CreatureP& target) const;
@@ -126,6 +127,10 @@ public:
 	        bool         canMoveTo               (const Position& position) const;
 	virtual bool         canMoveTo               (const Tile& tile) const;
 	        bool         canStep                 () const;
+	virtual void         didEnterWorld           (World& world);
+	virtual void         didExitWorld            (World& world);
+	        ReturnValue  enterWorld              (const Position& position);
+	        void         exitWorld               ();
 	        PlayerP      getController           ();
 	        PlayerPC     getController           () const;
 	virtual CreatureP    getDirectOwner          () = 0;
@@ -133,6 +138,7 @@ public:
 	        CreatureP    getFinalOwner           ();
 	        CreaturePC   getFinalOwner           () const;
 	        CreatureP    getFollowedCreature     () const;
+	        Id           getId                   () const;
 	virtual uint32_t     getMoveFlags            () const;
 	        Time         getNextMoveTime         () const;
 	        Direction    getRandomStepDirection  (bool includesNone = true) const;
@@ -144,11 +150,11 @@ public:
 	        bool         isDrunk                 () const;
 	virtual bool         isEnemy                 (const Creature& creature) const = 0;
 	        bool         isFollowing             () const;
+	        bool         isInWorld               () const;
 	        bool         isMonster               () const;
 	        bool         isNpc                   () const;
 	        bool         isPlayer                () const;
-	        bool         isRemoved               () const;
-	        bool         isRemoving              () const;
+	virtual bool         isRemoved               () const;
 	        bool         isRouting               () const;
 	        bool         isThinking              () const;
 	        bool         isWandering             () const;
@@ -157,8 +163,8 @@ public:
 	virtual void         onCreatureAppear        (const CreatureP& creature);
 	virtual void         onCreatureMove          (const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
 	        void         releaseSummons          ();
-	        bool         remove                  ();
 	        Direction    route                   ();
+	        void         setId                   (Id id);
 	        bool         shouldStagger           () const;
 	        Direction    stagger                 ();
 	        void         setDefaultOutfit        (Outfit_t defaultOutfit);
@@ -172,6 +178,8 @@ public:
 	        void         stopThinking            ();
 	        void         stopWandering           ();
 	        Direction    wander                  ();
+	virtual void         willEnterWorld          (World& world);
+	virtual void         willExitWorld           (World& world);
 
 
 protected:
@@ -196,6 +204,8 @@ protected:
 
 private:
 
+	static Id findNextFreeId();
+
 	void stopFollowing   (bool preliminary);
 	void think           ();
 	void updateFollowing ();
@@ -207,13 +217,14 @@ private:
 	static const Duration THINK_DURATION;
 	static const Duration THINK_INTERVAL;
 
+	static CreaturesById  _allById;
+
 	CreatureP         _followedCreature;
+	Id                _id;
 	bool              _needsNewRouteToFollowedCreature;
 	Time              _nextMoveTime;
 	Time              _nextWanderingTime;
 	Time              _previousThinkTime;
-	bool              _removed;
-	bool              _removing;
 	Route             _route;
 	Duration          _thinkDuration;
 	Scheduler::TaskId _thinkTaskId;
@@ -244,23 +255,6 @@ private:
 		virtual const std::string& getName() const = 0;
 		virtual const std::string& getNameDescription() const = 0;
 		virtual std::string getDescription(int32_t lookDistance) const;
-
-		uint32_t getID() const {return id;}
-		void setID()
-		{
-			/*
-			 * 0x10000000 - Player
-			 * 0x40000000 - Monster
-			 * 0x80000000 - NPC
-			 */
-			if(!id)
-				id = autoId | rangeId();
-		}
-
-
-		virtual uint32_t rangeId() = 0;
-		virtual void removeList() = 0;
-		virtual void addList() = 0;
 
 		virtual bool canSee(const Position& pos) const;
 		virtual bool canSeeCreature(const CreatureP& creature) const;
@@ -422,9 +416,6 @@ private:
 
 		virtual void onCreatureChangeOutfit(const Creature* creature, const Outfit_t& outfit) {}
 		virtual void onCreatureChangeVisible(const Creature* creature, Visible_t visible) {}
-		virtual void onPlacedCreature() {}
-		virtual void willRemove();
-		virtual void didRemove();
 
 		virtual WeaponType_t getWeaponType() {return WEAPON_NONE;}
 		virtual bool getCombatValues(int32_t& min, int32_t& max) {return false;}
@@ -459,7 +450,6 @@ private:
 
 	protected:
 
-		uint32_t id;
 		StorageMap storageMap;
 
 		int32_t health, healthMax;

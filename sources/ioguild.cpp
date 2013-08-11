@@ -23,6 +23,7 @@
 #include "game.h"
 #include "player.h"
 #include "server.h"
+#include "world.h"
 
 
 bool IOGuild::getGuildId(uint32_t& id, const std::string& name)
@@ -157,10 +158,10 @@ bool IOGuild::changeRank(uint32_t guild, const std::string& oldName, const std::
 	if(!db.executeQuery(query.str()))
 		return false;
 
-	for(AutoList<Player>::iterator it = Player::autoList.begin(); it != Player::autoList.end(); ++it)
-	{
-		if(it->second->getRankId() == id)
-			it->second->setRankName(newName);
+	for (auto& player : server.world().getPlayers()) {
+		if (player->getRankId() == id) {
+			player->setRankName(newName);
+		}
 	}
 
 	return true;
@@ -233,10 +234,10 @@ bool IOGuild::disbandGuild(uint32_t guildId)
 	if(!db.executeQuery(query.str()))
 		return false;
 
-	for(AutoList<Player>::iterator it = Player::autoList.begin(); it != Player::autoList.end(); ++it)
-	{
-		if(it->second->getGuildId() == guildId)
-			it->second->leaveGuild();
+	for (auto& player : server.world().getPlayers()) {
+		if (player->getGuildId() == guildId) {
+			player->leaveGuild();
+		}
 	}
 
 	query.str("");

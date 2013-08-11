@@ -48,6 +48,7 @@
 #include "scheduler.h"
 #include "schedulertask.h"
 #include "server.h"
+#include "world.h"
 #include "vocation.h"
 
 
@@ -56,6 +57,22 @@ LOGGER_DEFINITION(Player);
 
 bool Player::canAttack(const Creature& creature) const {
 	return creature.canAttack(*this);
+}
+
+
+void Player::didEnterWorld(World& world) {
+	Creature::didEnterWorld(world);
+
+	if (!server.creatureEvents().playerLogin(this)) {
+		kickPlayer(true, true);
+	}
+	else {
+		for (auto& player : server.world().getPlayers()) {
+			if (player->canSeeCreature(this)) {
+				player->notifyLogIn(this);
+			}
+		}
+	}
 }
 
 
@@ -114,6 +131,34 @@ void Player::onRoutingStopped(bool preliminary) {
 }
 
 
+void Player::willEnterWorld(World& world) {
+	Creature::willEnterWorld(world);
+
+	for (auto condition : storedConditionList) {
+		if (condition->getType() != CONDITION_MUTED) {
+			// wall time, not game time
+			auto timePassed = (time(nullptr) - lastLoad) * 1000;
+			if (timePassed >= condition->getTicks()) {
+				continue;
+			}
+
+			condition->setTicks(condition->getTicks() - timePassed);
+		}
+
+		addCondition(condition);
+	}
+}
+
+
+void Player::willExitWorld(World& world) {
+	for (auto& player : server.world().getPlayers()) {
+		if (player->canSeeCreature(this)) {
+			player->notifyLogOut(this);
+		}
+	}
+
+	Creature::willExitWorld(world);
+}
 
 
 
@@ -125,7 +170,8 @@ void Player::onRoutingStopped(bool preliminary) {
 
 
 
-AutoList<Player> Player::autoList;
+
+
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 uint32_t Player::playerCount = 0;
 #endif
@@ -822,7 +868,7 @@ void Player::closeContainer(uint32_t cid)
 
 bool Player::canOpenCorpse(uint32_t ownerId)
 {
-	return getID() == ownerId || (party && party->canOpenCorpse(ownerId)) || hasCustomFlag(PlayerCustomFlag_GamemasterPrivileges);
+	return getId() == ownerId || (party && party->canOpenCorpse(ownerId)) || hasCustomFlag(PlayerCustomFlag_GamemasterPrivileges);
 }
 
 uint16_t Player::getLookCorpse() const
@@ -1393,7 +1439,7 @@ void Player::onCreatureAppear(const CreatureP& creature)
 
 	Outfit outfit;
 	if(Outfits::getInstance()->getOutfit(defaultOutfit.lookType, outfit))
-		outfitAttributes = Outfits::getInstance()->addAttributes(getID(), outfit.outfitId, sex, defaultOutfit.lookAddons);
+		outfitAttributes = Outfits::getInstance()->addAttributes(getId(), outfit.outfitId, sex, defaultOutfit.lookAddons);
 
 	if(lastLogout && stamina < STAMINA_MAX)
 	{
@@ -1766,7 +1812,7 @@ void Player::onThink(Duration elapsedTime)
 		if(client)
 			client->logout(true, true);
 		else if(server.creatureEvents().playerLogout(this, true))
-			server.game().removeCreature(this, true);
+			exitWorld();
 	}
 
 	messageTicks += std::chrono::duration_cast<Milliseconds>(elapsedTime).count();
@@ -2294,7 +2340,7 @@ bool Player::onDeath()
 		sendSkills();
 
 		sendReLoginWindow();
-		server.game().removeCreature(this, false);
+		exitWorld();
 	}
 	else
 	{
@@ -2302,7 +2348,7 @@ bool Player::onDeath()
 		if(preventLoss)
 		{
 			sendReLoginWindow();
-			server.game().removeCreature(this, false);
+			exitWorld();
 		}
 	}
 
@@ -2417,49 +2463,13 @@ void Player::addDefaultRegeneration(uint32_t addTicks)
 	}
 }
 
-void Player::removeList()
-{
-	autoList.erase(id);
-	if(!isGhost())
-	{
-		for(AutoList<Player>::iterator it = autoList.begin(); it != autoList.end(); ++it)
-			it->second->notifyLogOut(this);
-	}
-	else
-	{
-		for(AutoList<Player>::iterator it = autoList.begin(); it != autoList.end(); ++it)
-		{
-			if(it->second->canSeeCreature(this))
-				it->second->notifyLogOut(this);
-		}
-	}
-}
-
-void Player::addList()
-{
-	if(!isGhost())
-	{
-		for(AutoList<Player>::iterator it = autoList.begin(); it != autoList.end(); ++it)
-			it->second->notifyLogIn(this);
-	}
-	else
-	{
-		for(AutoList<Player>::iterator it = autoList.begin(); it != autoList.end(); ++it)
-		{
-			if(it->second->canSeeCreature(this))
-				it->second->notifyLogIn(this);
-		}
-	}
-
-	autoList[id] = this;
-}
 
 void Player::kickPlayer(bool displayEffect, bool forceLogout)
 {
 	if(!client)
 	{
 		if(server.creatureEvents().playerLogout(this, forceLogout))
-			server.game().removeCreature(this);
+			exitWorld();
 	}
 	else
 		client->logout(displayEffect, forceLogout);
@@ -3205,7 +3215,7 @@ bool Player::setAttackedCreature(Creature* creature)
 		stopFollowing();
 
 	if(creature)
-		server.dispatcher().addTask(Task::create(std::bind(&Game::checkCreatureAttack, &server.game(), getID())));
+		server.dispatcher().addTask(Task::create(std::bind(&Game::checkCreatureAttack, &server.game(), getId())));
 
 	return true;
 }
@@ -3234,7 +3244,7 @@ void Player::doAttacking(uint32_t interval)
 	{
 		if(weapon->interruptSwing() && !canDoAction())
 		{
-			setNextActionTask(SchedulerTask::create(getNextActionTime(), std::bind(&Game::checkCreatureAttack, &server.game(), getID())));
+			setNextActionTask(SchedulerTask::create(getNextActionTime(), std::bind(&Game::checkCreatureAttack, &server.game(), getId())));
 		}
 		else if((!weapon->hasExhaustion() || !hasCondition(CONDITION_EXHAUST, EXHAUST_COMBAT)) && weapon->useWeapon(this, tool, attackedCreature))
 			lastAttack = OTSYS_TIME();
@@ -3513,13 +3523,6 @@ void Player::onThinkingStopped()
 		getParty()->clearPlayerPoints(this);
 }
 
-void Player::onPlacedCreature()
-{
-	//scripting event - onLogin
-	if(!server.creatureEvents().playerLogin(this))
-		kickPlayer(true, true);
-}
-
 void Player::onAttackedCreatureDrain(Creature* target, int32_t points)
 {
 	Creature::onAttackedCreatureDrain(target, points);
@@ -3724,11 +3727,11 @@ bool Player::changeOutfit(Outfit_t outfit, bool checkList)
 	if(outfitAttributes)
 	{
 		uint32_t oldId = Outfits::getInstance()->getOutfitId(defaultOutfit.lookType);
-		outfitAttributes = !Outfits::getInstance()->removeAttributes(getID(), oldId, sex);
+		outfitAttributes = !Outfits::getInstance()->removeAttributes(getId(), oldId, sex);
 	}
 
 	defaultOutfit = outfit;
-	outfitAttributes = Outfits::getInstance()->addAttributes(getID(), outfitId, sex, defaultOutfit.lookAddons);
+	outfitAttributes = Outfits::getInstance()->addAttributes(getId(), outfitId, sex, defaultOutfit.lookAddons);
 	return true;
 }
 
@@ -3838,7 +3841,7 @@ Skulls_t Player::getSkullClient(const Creature* creature) const
 bool Player::hasAttacked(const Player* attacked) const
 {
 	return !hasFlag(PlayerFlag_NotGainInFight) && attacked &&
-		attackedSet.find(attacked->getID()) != attackedSet.end();
+		attackedSet.find(attacked->getId()) != attackedSet.end();
 }
 
 void Player::addAttacked(const Player* attacked)
@@ -3846,7 +3849,7 @@ void Player::addAttacked(const Player* attacked)
 	if(hasFlag(PlayerFlag_NotGainInFight) || !attacked)
 		return;
 
-	uint32_t attackedId = attacked->getID();
+	uint32_t attackedId = attacked->getId();
 	if(attackedSet.find(attackedId) == attackedSet.end())
 		attackedSet.insert(attackedId);
 }
@@ -3926,7 +3929,7 @@ bool Player::addUnjustifiedKill(const Player* attacked)
 		sendTextMessage(MSG_INFO_DESCR, "You have been banished.");
 		server.game().addMagicEffect(getPosition(), MAGIC_EFFECT_WRAPS_GREEN);
 		server.scheduler().addTask(SchedulerTask::create(Milliseconds(1000), std::bind(
-			&Game::kickPlayer, &server.game(), getID(), false)));
+			&Game::kickPlayer, &server.game(), getId(), false)));
 	}
 	else
 	{

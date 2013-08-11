@@ -24,6 +24,7 @@
 
 #include "game.h"
 #include "server.h"
+#include "world.h"
 
 
 LOGGER_DEFINITION(Outfits);
@@ -628,7 +629,7 @@ bool Outfits::getOutfit(uint32_t outfitId, uint16_t sex, Outfit& outfit)
 
 bool Outfits::addAttributes(uint32_t playerId, uint32_t outfitId, uint16_t sex, uint16_t addons)
 {
-	Player* player = server.game().getPlayerByID(playerId);
+	auto player = server.world().getPlayerById(playerId);
 	if(!player || player->isRemoved())
 		return false;
 
@@ -654,7 +655,7 @@ bool Outfits::addAttributes(uint32_t playerId, uint32_t outfitId, uint16_t sex, 
 	}
 
 	if(outfit.speed)
-		server.game().changeSpeed(player, outfit.speed);
+		server.game().changeSpeed(player.get(), outfit.speed);
 
 	if(outfit.conditionSuppressions)
 	{
@@ -723,7 +724,7 @@ bool Outfits::addAttributes(uint32_t playerId, uint32_t outfitId, uint16_t sex, 
 
 bool Outfits::removeAttributes(uint32_t playerId, uint32_t outfitId, uint16_t sex)
 {
-	Player* player = server.game().getPlayerByID(playerId);
+	auto player = server.world().getPlayerById(playerId);
 	if(!player || player->isRemoved())
 		return false;
 
@@ -740,7 +741,7 @@ bool Outfits::removeAttributes(uint32_t playerId, uint32_t outfitId, uint16_t se
 		player->removeCondition(CONDITION_MANASHIELD, CONDITIONID_OUTFIT);
 
 	if(outfit.speed)
-		server.game().changeSpeed(player, -outfit.speed);
+		server.game().changeSpeed(player.get(), -outfit.speed);
 
 	if(outfit.conditionSuppressions)
 	{

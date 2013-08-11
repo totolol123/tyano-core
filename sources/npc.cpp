@@ -31,6 +31,7 @@
 #include "player.h"
 #include "server.h"
 #include "spawn.h"
+#include "world.h"
 
 
 LOGGER_DEFINITION(Npcs);
@@ -119,21 +120,24 @@ void Npc::onThinkingStarted() {
 
 
  
-AutoList<Npc> Npc::autoList;
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 uint32_t Npc::npcCount = 0;
 #endif
 NpcScriptInterface* Npc::m_interface = nullptr;
  
-void Npcs::reload()
-{
-	for(AutoList<Npc>::iterator it = Npc::autoList.begin(); it != Npc::autoList.end(); ++it)
-		it->second->closeAllShopWindows();
+void Npcs::reload() {
+	auto& world = server.world();
+
+	for (auto& npc : world.getNpcs()) {
+		npc->closeAllShopWindows();
+	}
 
 	delete Npc::m_interface;
 	Npc::m_interface = nullptr;
-	for(AutoList<Npc>::iterator it = Npc::autoList.begin(); it != Npc::autoList.end(); ++it)
-		it->second->reload();
+
+	for (auto& npc : world.getNpcs()) {
+		npc->reload();
+	}
 }
 
 
@@ -1110,7 +1114,7 @@ NpcState* Npc::getState(const Player* player, bool makeNew /*= true*/)
 {
 	for(StateList::iterator it = stateList.begin(); it != stateList.end(); ++it)
 	{
-		if((*it)->respondToCreature == player->getID())
+		if((*it)->respondToCreature == player->getId())
 			return *it;
 	}
 
@@ -1167,7 +1171,7 @@ void Npc::onCreatureAppear(const CreatureP& creature)
 		NpcState* npcState = getState(player);
 		if(npcState && canSee(player->getPosition()))
 		{
-			npcState->respondToCreature = player->getID();
+			npcState->respondToCreature = player->getId();
 			onPlayerEnter(player, npcState);
 		}
 	}
@@ -1186,7 +1190,7 @@ void Npc::onCreatureDisappear(const Creature* creature)
 		NpcState* npcState = getState(player);
 		if(npcState)
 		{
-			npcState->respondToCreature = player->getID();
+			npcState->respondToCreature = player->getId();
 			onPlayerLeave(player, npcState);
 		}
 	}
@@ -1211,17 +1215,17 @@ void Npc::onCreatureMove(const CreatureP& creature, const Position& origin, Tile
 			bool canSeedestination = canSee(destination), canSeeorigin = canSee(origin);
 			if(canSeedestination && !canSeeorigin)
 			{
-				npcState->respondToCreature = player->getID();
+				npcState->respondToCreature = player->getId();
 				onPlayerEnter(player, npcState);
 			}
 			else if(!canSeedestination && canSeeorigin)
 			{
-				npcState->respondToCreature = player->getID();
+				npcState->respondToCreature = player->getId();
 				onPlayerLeave(player, npcState);
 			}
 			else if(canSeedestination && canSeeorigin)
 			{
-				npcState->respondToCreature = player->getID();
+				npcState->respondToCreature = player->getId();
 				const NpcResponse* response = getResponse(player, npcState, EVENT_PLAYER_MOVE);
 				executeResponse(player, npcState, response);
 			}
@@ -1231,7 +1235,7 @@ void Npc::onCreatureMove(const CreatureP& creature, const Position& origin, Tile
 
 void Npc::onCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos/* = nullptr*/)
 {
-	if(creature->getID() == this->getID())
+	if(creature->getId() == this->getId())
 		return;
 
 	//only players for script events
@@ -1255,7 +1259,7 @@ void Npc::onCreatureSay(const Creature* creature, SpeakClasses type, const std::
 					if(NpcState* npcState = getState(player))
 					{
 						npcState->respondToText = text;
-						npcState->respondToCreature = player->getID();
+						npcState->respondToCreature = player->getId();
 					}
 				}
 			}
@@ -1282,9 +1286,11 @@ void Npc::onPlayerLeave(Player* player, NpcState* state)
 	executeResponse(player, state, response);
 }
 
-void Npc::onThink(Duration interval)
-{
+void Npc::onThink(Duration interval) {
 	Creature::onThink(interval);
+
+	auto& world = server.world();
+
 	if(m_npcEventHandler)
 		m_npcEventHandler->onThink();
 
@@ -1334,7 +1340,7 @@ void Npc::onThink(Duration interval)
 	for(StateList::iterator it = stateList.begin(); it != stateList.end();)
 	{
 		NpcState* npcState = *it;
-		Player* player = server.game().getPlayerByID(npcState->respondToCreature);
+		auto player = world.getPlayerById(npcState->respondToCreature);
 
 		const NpcResponse* response = nullptr;
 		bool closeConversation = false, idleTimeout = false;
@@ -1351,8 +1357,8 @@ void Npc::onThink(Duration interval)
 
 		if(idleResponse && player)
 		{
-			response = getResponse(player, EVENT_IDLE);
-			executeResponse(player, npcState, response);
+			response = getResponse(player.get(), EVENT_IDLE);
+			executeResponse(player.get(), npcState, response);
 			idleResponse = false;
 		}
 
@@ -1361,16 +1367,16 @@ void Npc::onThink(Duration interval)
 			if(queueList.empty())
 			{
 				if(idleTimeout && player)
-					onPlayerLeave(player, npcState);
+					onPlayerLeave(player.get(), npcState);
 			}
 			else
 			{
-				Player* nextPlayer = nullptr;
+				PlayerP nextPlayer = nullptr;
 				while(!queueList.empty())
 				{
-					if((nextPlayer = server.game().getPlayerByID(*queueList.begin())))
+					if((nextPlayer = world.getPlayerById(*queueList.begin())))
 					{
-						if(NpcState* nextPlayerState = getState(nextPlayer, false))
+						if(NpcState* nextPlayerState = getState(nextPlayer.get(), false))
 						{
 							nextPlayerState->respondToText = nextPlayerState->prevRespondToText;
 							nextPlayerState->isQueued = false;
@@ -1392,8 +1398,8 @@ void Npc::onThink(Duration interval)
 			if(hasBusyReply && !isIdle)
 			{
 				//Check if we have a busy reply
-				if((response = getResponse(player, npcState, EVENT_BUSY)))
-					executeResponse(player, npcState, response);
+				if((response = getResponse(player.get(), npcState, EVENT_BUSY)))
+					executeResponse(player.get(), npcState, response);
 			}
 			else
 			{
@@ -1401,16 +1407,16 @@ void Npc::onThink(Duration interval)
 				{
 					//Check previous response chain first
 					const ResponseList& list = npcState->lastResponse->getResponseList();
-					response = getResponse(list, player, npcState, npcState->respondToText);
+					response = getResponse(list, player.get(), npcState, npcState->respondToText);
 				}
 
 				if(!response)
-					response = getResponse(player, npcState, npcState->respondToText);
+					response = getResponse(player.get(), npcState, npcState->respondToText);
 
 				if(response)
 				{
-					setCreatureFocus(player);
-					executeResponse(player, npcState, response);
+					setCreatureFocus(player.get());
+					executeResponse(player.get(), npcState, response);
 				}
 			}
 
@@ -1418,13 +1424,13 @@ void Npc::onThink(Duration interval)
 			npcState->respondToText = "";
 		}
 
-		response = getResponse(player, npcState, EVENT_THINK);
-		executeResponse(player, npcState, response);
+		response = getResponse(player.get(), npcState, EVENT_THINK);
+		executeResponse(player.get(), npcState, response);
 		if(!npcState->isIdle)
 		{
 			isIdle = false;
 			if(hasBusyReply)
-				setCreatureFocus(player);
+				setCreatureFocus(player.get());
 		}
 
 		++it;
@@ -1571,9 +1577,9 @@ void Npc::executeResponse(Player* player, NpcState* npcState, const NpcResponse*
 
 				case ACTION_ADDQUEUE:
 				{
-					if(std::find(queueList.begin(), queueList.end(), player->getID()) == queueList.end())
+					if(std::find(queueList.begin(), queueList.end(), player->getId()) == queueList.end())
 					{
-						queueList.push_back(player->getID());
+						queueList.push_back(player->getId());
 						npcState->isQueued = true;
 					}
 
@@ -2028,7 +2034,7 @@ void Npc::setCreatureFocus(Creature* creature)
 	else if(dy > 0)
 		dir = Direction::NORTH;
 
-	focusCreature = creature->getID();
+	focusCreature = creature->getId();
 	stopWandering();
 
 	server.game().internalCreatureTurn(this, dir);

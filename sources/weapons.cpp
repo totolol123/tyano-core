@@ -372,7 +372,7 @@ bool Weapon::internalUseWeapon(Player* player, Item* item, Creature* target, int
 	{
 		LuaVariant var;
 		var.type = VARIANT_NUMBER;
-		var.number = target->getID();
+		var.number = target->getId();
 		executeUseWeapon(player, var);
 	}
 	else

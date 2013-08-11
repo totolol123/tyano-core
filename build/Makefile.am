@@ -93,7 +93,8 @@ server_SOURCES = sources/otpch.h.gch \
                  sources/trashholder.cpp \
                  sources/vocation.cpp \
                  sources/waitlist.cpp \
-                 sources/weapons.cpp
+                 sources/weapons.cpp \
+                 sources/world.cpp
 
 sources/otpch.h.gch: sources/otpch.h
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(server_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sources/otpch.h.gch -MD -MP -MF sources/$(DEPDIR)/server-otpch.Tpo -x c++-header -c -o sources/otpch.h.gch $<

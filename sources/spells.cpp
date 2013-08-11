@@ -33,6 +33,7 @@
 #include "game.h"
 #include "player.h"
 #include "server.h"
+#include "world.h"
 
 
 LOGGER_DEFINITION(Spells);
@@ -377,7 +378,7 @@ bool CombatSpell::castSpell(Creature* creature, Creature* target)
 		else
 		{
 			var.type = VARIANT_NUMBER;
-			var.number = target->getID();
+			var.number = target->getId();
 		}
 
 		return executeCastSpell(creature, var);
@@ -1070,7 +1071,7 @@ bool InstantSpell::playerCastInstant(Player* player, const std::string& param)
 	if(selfTarget)
 	{
 		var.type = VARIANT_NUMBER;
-		var.number = player->getID();
+		var.number = player->getId();
 		if(!playerInstantSpellCheck(player, player))
 			return false;
 	}
@@ -1129,7 +1130,7 @@ bool InstantSpell::playerCastInstant(Player* player, const std::string& param)
 			}
 
 			var.type = VARIANT_NUMBER;
-			var.number = target->getID();
+			var.number = target->getId();
 			if(!playerInstantSpellCheck(player, target))
 				return false;
 		}
@@ -1190,7 +1191,7 @@ bool InstantSpell::castSpell(Creature* creature)
 				return false;
 
 			var.type = VARIANT_NUMBER;
-			var.number = target->getID();
+			var.number = target->getId();
 			return internalCastSpell(creature, var);
 		}
 
@@ -1221,7 +1222,7 @@ bool InstantSpell::castSpell(Creature* creature, Creature* target)
 
 	LuaVariant var;
 	var.type = VARIANT_NUMBER;
-	var.number = target->getID();
+	var.number = target->getId();
 	return internalCastSpell(creature, var);
 }
 
@@ -1863,8 +1864,9 @@ ReturnValue RuneSpell::canExecuteAction(const Player* player, const ExtendedPosi
 	return RET_NOERROR;
 }
 
-bool RuneSpell::executeUse(Player* player, Item* item, const ExtendedPosition& origin, const ExtendedPosition& destination, bool extendedUse, uint32_t creatureId)
-{
+bool RuneSpell::executeUse(Player* player, Item* item, const ExtendedPosition& origin, const ExtendedPosition& destination, bool extendedUse, uint32_t creatureId) {
+	auto& world = server.world();
+
 	if(!playerRuneSpellCheck(player, destination))
 		return false;
 
@@ -1928,18 +1930,11 @@ bool RuneSpell::executeUse(Player* player, Item* item, const ExtendedPosition& o
                                           // show combo animations
                                           if(comboShowAnim)
                                           {
-                                                  Creature* creature = server.game().getCreatureByID(acit->first);
+                                                  auto creature = world.getCreatureById(acit->first);
                                                   if(creature != nullptr)
                                                   {
                                                         char buffer[20];
                                                         sprintf(buffer, "COMBO %d", acit->second);
-                                                  }
-                                                  for(AttackersMap::iterator sait = comboList.begin(); sait != comboList.end(); ++sait)
-                                                  {
-                                                        Creature* creature = server.game().getCreatureByID(sait->first);
-                                                        if(creature != nullptr)
-                                                        {
-                                                        }
                                                   }
                                           }
                                           comboFriendsNumber = 0;
@@ -1963,7 +1958,7 @@ bool RuneSpell::executeUse(Player* player, Item* item, const ExtendedPosition& o
                                               for(AttackersMap::iterator ccit2 = tmpAttackersMap.begin(); ccit2 != tmpAttackersMap.end(); ++ccit2)
                                                         if(comboList.find(ccit2->first) != comboList.end())
                                                         {
-                                                                  Creature* creature = server.game().getCreatureByID(ccit2->first);
+                                                                  auto creature = world.getCreatureById(ccit2->first);
                                     if(Player* player = creature->getPlayer())
                                                player->addExhaust(5*1000, EXHAUST_COMBAT);
                                                         }
@@ -1991,7 +1986,7 @@ bool RuneSpell::executeUse(Player* player, Item* item, const ExtendedPosition& o
                     comboLastCheck = time;
             }
             // add player to attackers list
-            comboAttackersList[player->getID()] = creatureId;
+            comboAttackersList[player->getId()] = creatureId;
             comboAttackersCount[creatureId] += 1;
         }  
 		if(hasCharges && item && server.configManager().getBool(ConfigManager::REMOVE_RUNE_CHARGES))
@@ -2008,7 +2003,7 @@ bool RuneSpell::castSpell(Creature* creature)
 
 	LuaVariant var;
 	var.type = VARIANT_NUMBER;
-	var.number = creature->getID();
+	var.number = creature->getId();
 	return internalCastSpell(creature, var);
 }
 
@@ -2019,7 +2014,7 @@ bool RuneSpell::castSpell(Creature* creature, Creature* target)
 
 	LuaVariant var;
 	var.type = VARIANT_NUMBER;
-	var.number = target->getID();
+	var.number = target->getId();
 	return internalCastSpell(creature, var);
 }
 

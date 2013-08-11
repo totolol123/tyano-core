@@ -63,6 +63,7 @@
 #include "schedulertask.h"
 #include "server.h"
 #include "task.h"
+#include "world.h"
 
 LOGGER_DEFINITION(ScriptEnviroment);
 
@@ -197,27 +198,27 @@ int LuaScriptInterface::luaTeleportThingNearPosition(lua_State* L) {
 	auto indirectFlags = readUnsigned32(L, 5, FLAG_IGNOREFIELDDAMAGE|FLAG_PATHFINDING);
 	auto previousPosition = thing->getPosition();
 
-	auto tile = server.game().getAvailableTileForThingNearPosition(*thing, position, radius, directFlags, indirectFlags);
-	if (tile != nullptr) {
-		auto& game = server.game();
-
-		game.internalTeleport(thing, tile->getPosition(), false, directFlags|indirectFlags);
-
-		auto newPosition = thing->getPosition();
-		if (newPosition.distanceTo(previousPosition) >= 2) {
-			auto creature = thing->getCreature();
-			auto ghost = (creature != nullptr ? creature->isGhost() : false);
-
-			game.addMagicEffect(previousPosition, MAGIC_EFFECT_TELEPORT, ghost);
-			game.addMagicEffect(newPosition, MAGIC_EFFECT_TELEPORT, ghost);
-		}
-
-		push(L, true);
-	}
-	else {
+	auto result = server.world().findTileForThingNearPosition(*thing, position, radius, directFlags, indirectFlags);
+	if (!result.isSuccess()) {
 		push(L, false);
+		return 1;
 	}
 
+	auto& game = server.game();
+	auto tile = result.getTile();
+
+	game.internalTeleport(thing, tile->getPosition(), false, directFlags|indirectFlags);
+
+	auto newPosition = thing->getPosition();
+	if (newPosition.distanceTo(previousPosition) >= 2) {
+		auto creature = thing->getCreature();
+		auto ghost = (creature != nullptr ? creature->isGhost() : false);
+
+		game.addMagicEffect(previousPosition, MAGIC_EFFECT_TELEPORT, ghost);
+		game.addMagicEffect(newPosition, MAGIC_EFFECT_TELEPORT, ghost);
+	}
+
+	push(L, true);
 	return 1;
 }
 
@@ -306,7 +307,7 @@ Player* LuaScriptInterface::readPlayer(lua_State* L, uint32_t argumentIndex) {
 
 	auto player = creature->getPlayer();
 	if (player == nullptr) {
-		luaL_error(L, "Creature id %d passed to argument %d is not a player.", creature->getID(), argumentIndex);
+		luaL_error(L, "Creature id %d passed to argument %d is not a player.", creature->getId(), argumentIndex);
 	}
 
 	return player;
@@ -585,8 +586,9 @@ uint32_t ScriptEnviroment::addThing(ThingP thing)
 
 	if(Creature* creature = thing->getCreature())
 	{
-		m_localMap[creature->getID()] = thing;
-		return creature->getID();
+		assert(creature->isInWorld());
+		m_localMap[creature->getId()] = thing;
+		return creature->getId();
 	}
 
 	if(Item* item = thing->getItem())
@@ -637,8 +639,8 @@ Thing* ScriptEnviroment::getThingByUID(uint32_t uid)
 	}
 
 	if (uid >= 0x10000000) {
-		CreatureP creature = server.game().getCreatureByID(uid);
-		if (creature && !creature->isRemoved()) {
+		auto creature = server.world().getCreatureById(uid);
+		if (creature && creature->isAlive()) {
 			m_localMap[uid] = creature;
 			return creature.get();
 		}
@@ -892,7 +894,7 @@ void ScriptEnviroment::streamThing(std::stringstream& stream, const std::string&
 	{
 		const Creature* creature = thing->getCreature();
 		if(!id)
-			id = creature->getID();
+			id = creature->getId();
 
 		stream << "uid = " << id << "," << std::endl;
 		stream << "itemid = 1," << std::endl;
@@ -1480,7 +1482,7 @@ void LuaScriptInterface::pushThing(lua_State* L, Thing* thing, uint32_t id/* = 0
 	{
 		const Creature* creature = thing->getCreature();
 		if(!id)
-			id = creature->getID();
+			id = creature->getId();
 
 		setField(L, "uid", id);
 		setField(L, "itemid", 1);
@@ -5228,8 +5230,7 @@ int32_t LuaScriptInterface::luaDoCreateMonster(lua_State* L)
 		return 1;
 	}
 
-	if(!server.game().placeCreature(monster.get(), pos, true, true))
-	{
+	if (monster->enterWorld(pos) != RET_NOERROR) {
 		if(displayError)
 			errorEx("Cannot create monster: " + name);
 
@@ -5263,8 +5264,7 @@ int32_t LuaScriptInterface::luaDoCreateNpc(lua_State* L)
 		return 1;
 	}
 
-	if(!server.game().placeCreature(npc, pos))
-	{
+	if (npc->enterWorld(pos) != RET_NOERROR) {
 		delete npc;
 		if(displayError)
 			errorEx("Cannot create npc: " + name);
@@ -5291,7 +5291,7 @@ int32_t LuaScriptInterface::luaDoRemoveCreature(lua_State* L)
 		if(Player* player = creature->getPlayer())
 			player->kickPlayer(true, forceLogout); //Players will get kicked without restrictions
 		else
-			server.game().removeCreature(creature); //Monsters/NPCs will get removed
+			creature->exitWorld();
 
 		lua_pushboolean(L, true);
 	}
@@ -6370,7 +6370,7 @@ int32_t LuaScriptInterface::luaDoCombat(lua_State* L)
 	{
 		case VARIANT_NUMBER:
 		{
-			Creature* target = server.game().getCreatureByID(var.number);
+			auto target = server.world().getCreatureById(var.number);
 			if(!target || !creature || !creature->canSeeCreature(target))
 			{
 				lua_pushboolean(L, false);
@@ -8907,7 +8907,7 @@ int32_t LuaScriptInterface::luaDoPlayerJoinParty(lua_State* L)
 		lua_pushboolean(L, false);
 	}
 
-	server.game().playerJoinParty(player->getID(), leader->getID());
+	server.game().playerJoinParty(player->getId(), leader->getId());
 	lua_pushboolean(L, true);
 	return 1;
 }
@@ -8928,7 +8928,7 @@ int32_t LuaScriptInterface::luaGetPartyMembers(lua_State* L)
 			for(uint32_t i = 1; it != list.end(); ++it, ++i)
 			{
 				lua_pushnumber(L, i);
-				lua_pushnumber(L, (*it)->getID());
+				lua_pushnumber(L, (*it)->getId());
 				pushTable(L);
 			}
 
@@ -9030,15 +9030,18 @@ int32_t LuaScriptInterface::luaGetPlayersOnline(lua_State* L)
 {
 	//getPlayersOnline()
 	ScriptEnviroment* env = getEnv();
-	AutoList<Player>::iterator it = Player::autoList.begin();
 
 	lua_newtable(L);
-	for(int32_t i = 1; it != Player::autoList.end(); ++it, ++i)
-	{
-		lua_pushnumber(L, i);
-		lua_pushnumber(L, env->addThing(it->second));
+
+	uint32_t index = 0;
+	for (auto& player : server.world().getPlayers()) {
+		lua_pushnumber(L, index);
+		lua_pushnumber(L, env->addThing(player));
 		pushTable(L);
+
+		++index;
 	}
+
 	return 1;
 }
 

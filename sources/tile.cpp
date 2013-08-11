@@ -34,6 +34,7 @@
 #include "game.h"
 #include "configmanager.h"
 #include "server.h"
+#include "world.h"
 
 
 LOGGER_DEFINITION(Tile);
@@ -41,6 +42,7 @@ LOGGER_DEFINITION(Tile);
 
 ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const CreatureP& actor) {
 	assert(creature != nullptr);
+	assert(creature->isInWorld());
 
 	if (_lockCount > 0) {
 		return RET_LOCKED;
@@ -397,7 +399,9 @@ Tile* Tile::getCreatureForwardingTile(const Creature& creature) const {
 	}
 
 	auto moveFlags = creature.getMoveFlags();
-	return server.game().getAvailableTileForThingNearPosition(creature, tile->getPosition(), MAXIMUM_DISTANCE, moveFlags|FLAG_PATHFINDING, moveFlags|FLAG_IGNOREFIELDDAMAGE|FLAG_PATHFINDING);
+
+	auto result = server.world().findTileForThingNearPosition(creature, tile->getPosition(), MAXIMUM_DISTANCE, moveFlags|FLAG_PATHFINDING, moveFlags|FLAG_IGNOREFIELDDAMAGE|FLAG_PATHFINDING);
+	return result.getTile();
 }
 
 
@@ -572,10 +576,6 @@ ReturnValue Tile::testAddCreature(const Creature& creature, uint32_t flags) cons
 
 	if (_lockCount > 0) {
 		return RET_LOCKED;
-	}
-
-	if (creature.isRemoved() || creature.isRemoving()) {
-		return RET_THISISIMPOSSIBLE;
 	}
 
 	auto previousTile = creature.getTile();

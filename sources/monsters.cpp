@@ -34,6 +34,7 @@
 #include "party.h"
 #include "player.h"
 #include "server.h"
+#include "world.h"
 
 
 void MonsterType::reset()
@@ -118,7 +119,7 @@ void MonsterType::dropLoot(Container* corpse)
 	if(!ownerId)
 		return;
 
-	Player* owner = server.game().getPlayerByID(ownerId);
+	auto owner = server.world().getPlayerById(ownerId);
 	if(!owner)
 		return;
 

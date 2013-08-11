@@ -27,6 +27,7 @@
 #include "scheduler.h"
 #include "schedulertask.h"
 #include "server.h"
+#include "world.h"
 
 
 LOGGER_DEFINITION(Raids);
@@ -738,8 +739,7 @@ bool SingleSpawnEvent::executeEvent() const {
 		return false;
 	}
 
-	if(!server.game().placeCreature(monster.get(), m_position))
-	{
+	if (monster->enterWorld(m_position) != RET_NOERROR) {
 		LOGe("[SingleSpawnEvent::executeEvent] Cannot spawn monster " << m_monsterName);
 		return false;
 	}
@@ -971,11 +971,11 @@ bool AreaSpawnEvent::executeEvent() const
 				return false;
 			}
 
-			for(int32_t t = 0; t < MAXIMUM_TRIES_PER_MONSTER; ++t)
-			{
-				if(!server.game().placeCreature(monster.get(), Position(random_range(m_fromPos.x, m_toPos.x),
-					random_range(m_fromPos.y, m_toPos.y), random_range(m_fromPos.z, m_toPos.z))))
+			for (int32_t t = 0; t < MAXIMUM_TRIES_PER_MONSTER; ++t) {
+				Position position(Position(random_range(m_fromPos.x, m_toPos.x), random_range(m_fromPos.y, m_toPos.y), random_range(m_fromPos.z, m_toPos.z)));
+				if (monster->enterWorld(position) != RET_NOERROR) {
 					continue;
+				}
 
 				break;
 			}
