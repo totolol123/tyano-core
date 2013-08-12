@@ -98,75 +98,141 @@ ReturnValue World::addCreature(const CreatureP& creature, const Position& positi
 
 
 auto World::findTileForThingNearPosition(const Thing& thing, const Position& position, uint16_t radius, uint32_t directFlags, uint32_t indirectFlags) const -> FindTileResult {
-	auto& game = server.game();
+	static const uint16_t optimisticRadius = 10;  // we prepare our pathfinding unordered_set's memory allocation using this value [max expected elements = ((optimisticRadius * 2) + 1) ^ 2]
 
-	auto reportedError = RET_NOERROR;
+	using Test = std::function<ReturnValue(const Tile& tile, uint32_t flags)>;
 
+	Test test;
 	if (auto creature = thing.getCreature()) {
-		auto tile = game.getTile(position);
-		if (tile != nullptr) {
-			reportedError = tile->testAddCreature(*creature, directFlags);
-			if (reportedError == RET_NOERROR) {
-				return FindTileResult(tile, directFlags);
-			}
-		}
-
-		for (uint16_t distance = 1; distance <= radius; ++distance) {
-			auto alternativePositions = position.neighbors(distance);
-			if (!alternativePositions.empty()) {
-				std::random_shuffle(alternativePositions.begin(), alternativePositions.end());
-
-				// TODO for distance > 1 check if there is a walkable path between position and alternativePosition
-				for (auto alternativePosition : alternativePositions) {
-					tile = game.getTile(alternativePosition);
-					if (tile != nullptr) {
-						auto error = tile->testAddCreature(*creature, indirectFlags);
-						if (error == RET_NOERROR) {
-							return FindTileResult(tile, indirectFlags);
-						}
-						if (reportedError == RET_NOERROR) {
-							reportedError = RET_NOTPOSSIBLE;
-						}
-					}
-				}
-			}
-		}
+		test = [creature] (const Tile& tile, uint32_t flags) {
+			return tile.testAddCreature(*creature, flags);
+		};
 	}
 	else if (auto item = thing.getItem()) {
-		auto tile = game.getTile(position);
-		if (tile != nullptr) {
-			reportedError = tile->__queryAdd(INDEX_WHEREEVER, item, 1, directFlags);
-			if (reportedError == RET_NOERROR) {
-				return FindTileResult(tile, directFlags);
-			}
+		test = [item] (const Tile& tile, uint32_t flags) {
+			return tile.__queryAdd(INDEX_WHEREEVER, item, 1, flags);
+		};
+	}
+	else {
+		assert(false && "invalid thing");
+		return FindTileResult(RET_NOTPOSSIBLE);
+	}
+
+	auto& game = server.game();
+	auto pathfindingFlags = directFlags|indirectFlags|FLAG_IGNOREBLOCKCREATURE|FLAG_PATHFINDING;
+	auto finalResult = RET_NOERROR;
+
+	// try the exact destination
+	auto tile = game.getTile(position);
+	if (tile != nullptr) {
+		finalResult = test(*tile, directFlags);
+		if (finalResult == RET_NOERROR) {
+			return FindTileResult(tile, directFlags);
 		}
+	}
 
-		for (uint16_t distance = 1; distance <= radius; ++distance) {
-			auto alternativePositions = position.neighbors(distance);
-			if (!alternativePositions.empty()) {
-				std::random_shuffle(alternativePositions.begin(), alternativePositions.end());
+	if (radius >= 1) {
+		std::vector<Position> moreNeighbors; // reusable vector for neighbors
 
-				for (auto alternativePosition : alternativePositions) {
-					tile = game.getTile(alternativePosition);
+		auto directNeighborPositions = position.neighbors(1);
+		if (!directNeighborPositions.empty()) {
+			bool hasDirectNeighborTiles = false;
+
+			// next try direct neighbors
+			for (auto directNeighborPosition : directNeighborPositions) {
+				tile = game.getTile(directNeighborPosition);
+				if (tile == nullptr) {
+					continue;
+				}
+
+				auto result = test(*tile, indirectFlags);
+				if (result == RET_NOERROR) {
+					return FindTileResult(tile, indirectFlags);
+				}
+				if (finalResult == RET_NOERROR) {
+					finalResult = RET_NOTPOSSIBLE;
+				}
+
+				hasDirectNeighborTiles = true;
+			}
+
+			if (radius >= 2 && hasDirectNeighborTiles) {
+				// next we walk paths until we find something or hit the radius limit
+
+				std::queue<Position> testablePositions;
+				std::unordered_set<Position> testedPositions;
+
+				const auto optimisticAxisLength = ((optimisticRadius * 2) + 1);
+				testedPositions.reserve(optimisticAxisLength * optimisticAxisLength);
+				testedPositions.insert(position);
+				testedPositions.insert(directNeighborPositions.begin(), directNeighborPositions.end());
+
+				std::vector<Position> nextNeighborPositions; // reusable vector to reduce memory allocations
+
+				auto queueNeighbors = [&nextNeighborPositions,pathfindingFlags,position,radius,&test,&testablePositions,&testedPositions] (Tile& tile, const Position& tilePosition) {
+					auto result = test(tile, pathfindingFlags);
+					switch (result) {
+					case RET_NOERROR:
+					case RET_NOTENOUGHROOM:
+					case RET_TILEISFULL: {
+						nextNeighborPositions.clear();
+						tilePosition.neighbors(1, nextNeighborPositions);
+
+						// make the game less predictable :)
+						std::random_shuffle(nextNeighborPositions.begin(), nextNeighborPositions.end());
+
+						// usually we can use this tile - it's just temporarily blocked - so we can also check its neighbors
+						for (auto neighborPosition : nextNeighborPositions) {
+							if (neighborPosition.distanceTo(position) <= radius && testedPositions.count(neighborPosition) == 0) {
+								testedPositions.insert(neighborPosition);
+								testablePositions.push(neighborPosition);
+							}
+						}
+
+						break;
+					}
+
+					default:
+						break;
+					}
+				};
+
+				// let's start with direct neighbors
+				for (auto directNeighborPosition : directNeighborPositions) {
+					tile = game.getTile(directNeighborPosition);
+					if (tile == nullptr) {
+						continue;
+					}
+
+					queueNeighbors(*tile, directNeighborPosition);
+				}
+
+				// now let's continue our search until we hit a wall
+				while (!testablePositions.empty()) {
+					auto tilePosition = testablePositions.front();
+
+					tile = game.getTile(tilePosition);
 					if (tile != nullptr) {
-						auto error = tile->__queryAdd(INDEX_WHEREEVER, item, 1, indirectFlags);
-						if (error == RET_NOERROR) {
+						auto result = test(*tile, indirectFlags);
+						if (result == RET_NOERROR) {
 							return FindTileResult(tile, indirectFlags);
 						}
-						if (reportedError == RET_NOERROR) {
-							reportedError = RET_NOTPOSSIBLE;
-						}
+
+						queueNeighbors(*tile, tilePosition);
 					}
+
+					testablePositions.pop();
 				}
 			}
 		}
 	}
 
-	if (reportedError == RET_NOERROR) {
-		reportedError = RET_NOTPOSSIBLE;
+	if (finalResult == RET_NOERROR) {
+		// no tiles anywhere at target position & direct neighbors
+		finalResult = RET_NOTPOSSIBLE;
 	}
 
-	return FindTileResult(reportedError);
+	return FindTileResult(finalResult);
 }
 
 

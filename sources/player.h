@@ -56,22 +56,22 @@ class Player : public Creature, public Cylinder {
 
 public:
 
-	virtual bool       canAttack      (const Creature& creature) const;
-	virtual void       didEnterWorld  (World& world);
+	virtual bool       canAttack      (const Creature& creature) const override;
+	virtual void       didEnterWorld  (World& world) override;
 	        AccountP   getAccount     () const;
-	virtual CreatureP  getDirectOwner ();
-	virtual CreaturePC getDirectOwner () const;
-	virtual bool       isEnemy        (const Creature& creature) const;
-	virtual void       willEnterWorld (World& world);
-	virtual void       willExitWorld  (World& world);
+	virtual CreatureP  getDirectOwner () override;
+	virtual CreaturePC getDirectOwner () const override;
+	virtual bool       isEnemy        (const Creature& creature) const override;
+	virtual void       willEnterWorld (World& world) override;
+	virtual void       willExitWorld  (World& world) override;
 
 
 protected:
 
-	virtual void onFollowingStopped (bool preliminary);
-	virtual void onMove             (Tile& originTile, Tile& destinationTile);
-	virtual void onRoutingStarted   ();
-	virtual void onRoutingStopped   (bool preliminary);
+	virtual void onFollowingStopped (bool preliminary) override;
+	virtual void onMove             (Tile& originTile, Tile& destinationTile) override;
+	virtual void onRoutingStarted   () override;
+	virtual void onRoutingStopped   (bool preliminary) override;
 
 
 private:

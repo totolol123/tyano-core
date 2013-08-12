@@ -135,14 +135,16 @@ void Player::willEnterWorld(World& world) {
 	Creature::willEnterWorld(world);
 
 	for (auto condition : storedConditionList) {
-		if (condition->getType() != CONDITION_MUTED) {
+		auto ticks = condition->getTicks();
+
+		if (ticks >= 0 && condition->getType() != CONDITION_MUTED) {
 			// wall time, not game time
-			auto timePassed = (time(nullptr) - lastLoad) * 1000;
-			if (timePassed >= condition->getTicks()) {
+			auto timePassed = (time(nullptr) - lastLogout) * 1000;
+			if (timePassed >= ticks) {
 				continue;
 			}
 
-			condition->setTicks(condition->getTicks() - timePassed);
+			condition->setTicks(ticks - timePassed);
 		}
 
 		addCondition(condition);

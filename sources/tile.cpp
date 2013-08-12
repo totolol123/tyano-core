@@ -399,6 +399,9 @@ Tile* Tile::getCreatureForwardingTile(const Creature& creature) const {
 	}
 
 	auto moveFlags = creature.getMoveFlags();
+	if (isLocalForwarder()) {
+		moveFlags |= FLAG_IGNOREBLOCKCREATURE;
+	}
 
 	auto result = server.world().findTileForThingNearPosition(creature, tile->getPosition(), MAXIMUM_DISTANCE, moveFlags|FLAG_PATHFINDING, moveFlags|FLAG_IGNOREFIELDDAMAGE|FLAG_PATHFINDING);
 	return result.getTile();
