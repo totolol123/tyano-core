@@ -46,8 +46,8 @@ World::World()
 {}
 
 
-World::~World() {
-}
+World::~World()
+{}
 
 
 ReturnValue World::addCreature(const CreatureP& creature, const Position& position, uint16_t radius) {
