@@ -9035,11 +9035,11 @@ int32_t LuaScriptInterface::luaGetPlayersOnline(lua_State* L)
 
 	uint32_t index = 0;
 	for (auto& player : server.world().getPlayers()) {
+		++index;
+
 		lua_pushnumber(L, index);
 		lua_pushnumber(L, env->addThing(player));
 		pushTable(L);
-
-		++index;
 	}
 
 	return 1;
