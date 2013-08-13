@@ -60,31 +60,27 @@ complete this list over time :)
 Setup
 -----
 
-Once the remaining bigger issues (e.g. missing data folder) are solved I'll set up a step-by-step guide to get your first
-Tyano Core server up and running :)
+Will add a step-by-step guide soon :)
+
+All relevant files for running the compiled server are located in the `server` directory.
 
 
 Issues
 ------
 
-I'm aware that you cannot use the server as it is right now out of the box.
-
-Especially the data folder is missing completely. You can use the
-[data folder of The Forgotten Server 0.3.6pl1](http://otland.net/subversion.php?svn=public&file=dl.php&repname=forgottenserver&path=%2Ftags%2F0.3.6pl1%2Fdata%2F&rev=102&peg=102&isdir=1)
-as a starting point for now. I'll provide an own data folder later.
-
 Also a few features of The Forgotten Server are (at least parially) broken for now:
 
-- Account Manager (didn't test that though)  
-  I'll remove the Account Manager in the future. You should always provide a website with your server and allow the complete
-  account management there.
+- Account Manager  
+  The account manager will be removed in a future release. Provide a website where players can sign up and manage their
+  account and characters.
 
 - Standalone login server (did anyone actually need that yet?)
 
 - Maps with large dimensions (no matter if there are a lot of holes or not) take more memory than they should.
+  May also cause the server to crash if it doesn't have enough memory.
 
-- There aren't more than 9 items or 10 items+creatures per tile allowed. That currently leads to some problems e.g. if a creature dies on a tile
-  with 9 items on it. There will be no corpse and thus the loot is lost.
+- There aren't more than 9 items or 10 items+creatures per tile allowed. That currently leads to some problems e.g. when using stairs or
+  teleporters when the destination is full. A full rework of the networking code might help with that in the future.
   
 - Swimming pools might be broken.
 
