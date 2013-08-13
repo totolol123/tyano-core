@@ -22,6 +22,7 @@
 #include "game.h"
 #include "configmanager.h"
 #include "server.h"
+#include "world.h"
 
 
 Party::Party(Player* _leader)
@@ -349,7 +350,7 @@ bool Party::canUseSharedExperience(const Player* player, uint32_t highestLevel/*
 		leader->getPosition(), player->getPosition()))
 		return false;
 
-	CountMap::const_iterator it = pointMap.find(player->getID());
+	CountMap::const_iterator it = pointMap.find(player->getId());
 	return it != pointMap.end() && (OTSYS_TIME() - it->second.ticks) <= server.configManager().getNumber(
 		ConfigManager::EXPERIENCE_SHARE_ACTIVITY);
 }
@@ -380,14 +381,14 @@ void Party::addPlayerHealedMember(Player* player, uint32_t points)
 	if(points <= 0)
 		return;
 
-	CountMap::iterator it = pointMap.find(player->getID());
+	CountMap::iterator it = pointMap.find(player->getId());
 	if(it != pointMap.end())
 	{
 		it->second.totalHeal += points;
 		it->second.ticks = OTSYS_TIME();
 	}
 	else
-		pointMap[player->getID()] = CountBlock_t(points, 0);
+		pointMap[player->getId()] = CountBlock_t(points, 0);
 
 	updateSharedExperience();
 }
@@ -397,21 +398,21 @@ void Party::addPlayerDamageMonster(Player* player, uint32_t points)
 	if(points <= 0)
 		return;
 
-	CountMap::iterator it = pointMap.find(player->getID());
+	CountMap::iterator it = pointMap.find(player->getId());
 	if(it != pointMap.end())
 	{
 		it->second.totalDamage += points;
 		it->second.ticks = OTSYS_TIME();
 	}
 	else
-		pointMap[player->getID()] = CountBlock_t(0, points);
+		pointMap[player->getId()] = CountBlock_t(0, points);
 
 	updateSharedExperience();
 }
 
 void Party::clearPlayerPoints(Player* player)
 {
-	CountMap::iterator it = pointMap.find(player->getID());
+	CountMap::iterator it = pointMap.find(player->getId());
 	if(it == pointMap.end())
 		return;
 
@@ -437,5 +438,5 @@ bool Party::isPlayerInvited(const Player* player, bool result/* = false*/) const
 
 bool Party::canOpenCorpse(uint32_t ownerId)
 {
-	return leader->getID() == ownerId || isPlayerMember(server.game().getPlayerByID(ownerId));
+	return leader->getId() == ownerId || isPlayerMember(server.world().getPlayerById(ownerId).get());
 }

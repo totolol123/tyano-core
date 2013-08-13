@@ -541,7 +541,7 @@ void ProtocolAdmin::adminCommandKickPlayer(const std::string& param)
 	Player* player = nullptr;
 	if(server.game().getPlayerByNameWildcard(param, player) == RET_NOERROR)
 	{
-		server.scheduler().addTask(SchedulerTask::create(Milliseconds(SCHEDULER_MINTICKS), std::bind(&Game::kickPlayer, &server.game(), player->getID(), false)));
+		server.scheduler().addTask(SchedulerTask::create(Milliseconds(SCHEDULER_MINTICKS), std::bind(&Game::kickPlayer, &server.game(), player->getId(), false)));
 		addLogLine(LogType::EVENT, "kicking player " + player->getName());
 		output->AddByte(AP_MSG_COMMAND_OK);
 	}

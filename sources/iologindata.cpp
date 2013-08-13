@@ -40,6 +40,7 @@
 #include "game.h"
 #include "group.h"
 #include "server.h"
+#include "world.h"
 
 
 LOGGER_DEFINITION(IOLoginData);
@@ -1580,11 +1581,11 @@ DeleteCharacter_t IOLoginData::deleteCharacter(uint32_t accountId, const std::st
 	query << "DELETE FROM `player_viplist` WHERE `vip_id` = " << id;
 	db.executeQuery(query.str());
 
-	for(AutoList<Player>::iterator it = Player::autoList.begin(); it != Player::autoList.end(); ++it)
-	{
-		VIPListSet::iterator it_ = it->second->VIPList.find(id);
-		if(it_ != it->second->VIPList.end())
-			it->second->VIPList.erase(it_);
+	for (auto& player : server.world().getPlayers()) {
+		auto i = player->VIPList.find(id);
+		if (i != player->VIPList.end()) {
+			player->VIPList.erase(i);
+		}
 	}
 
 	return DELETE_SUCCESS;

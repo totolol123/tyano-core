@@ -29,6 +29,7 @@
 #include "scheduler.h"
 #include "schedulertask.h"
 #include "server.h"
+#include "world.h"
 
 #define MINSPAWN_INTERVAL 1000
 #define DEFAULTSPAWN_INTERVAL 60000
@@ -359,8 +360,10 @@ void Spawns::startup()
 	if(!isLoaded() || isStarted())
 		return;
 
-	for(NpcList::iterator it = npcList.begin(); it != npcList.end(); ++it) {
-		server.game().placeCreature((*it).get(), (*it)->getMasterPosition(), false, true);
+	for (auto& npc : npcList) {
+		if (npc->enterWorld(npc->getMasterPosition()) != RET_NOERROR) {
+			LOGe("Cannot spawn npc '" << npc->getName() << "' at " << npc->getMasterPosition() << ".");
+		}
 	}
 	npcList.clear();
 
@@ -449,9 +452,8 @@ bool Spawn::spawnMonster(uint32_t spawnId, MonsterType* mType, const Position& p
 {
 	spawnMap[spawnId].lastSpawn = OTSYS_TIME();
 
-	boost::intrusive_ptr<Monster> monster = Monster::create(mType, this);
-	if(!server.game().placeCreature(monster.get(), pos, false, true))
-	{
+	auto monster = Monster::create(mType, this);
+	if (monster->enterWorld(pos) != RET_NOERROR) {
 		LOGe("Cannot spawn monster '" << mType->name << "' at " << pos << ".");
 		return false;
 	}
@@ -493,7 +495,7 @@ void Spawn::checkSpawn()
 		spawnId = it->first;
 		monster = it->second.get();
 
-		if(monster->isRemoved())
+		if(!monster->isAlive())
 		{
 			if(spawnId != 0)
 				spawnMap[spawnId].lastSpawn = OTSYS_TIME();

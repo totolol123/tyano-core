@@ -128,7 +128,7 @@ ChatChannel::~ChatChannel() {
 
 bool ChatChannel::addUser(Player* player)
 {
-	if(m_users.find(player->getID()) != m_users.end())
+	if(m_users.find(player->getId()) != m_users.end())
 		return false;
 
 	ChatChannel* channel = server.chat().getChannel(player, m_id);
@@ -137,7 +137,7 @@ bool ChatChannel::addUser(Player* player)
 		return false;
 	}
 
-	m_users[player->getID()] = player;
+	m_users[player->getId()] = player;
 	CreatureEventList joinEvents = player->getCreatureEvents(CREATURE_EVENT_CHANNEL_JOIN);
 	for(CreatureEventList::iterator it = joinEvents.begin(); it != joinEvents.end(); ++it)
 		(*it)->executeChannelJoin(player, m_id, m_users);
@@ -147,7 +147,7 @@ bool ChatChannel::addUser(Player* player)
 
 bool ChatChannel::removeUser(Player* player)
 {
-	UsersMap::iterator it = m_users.find(player->getID());
+	UsersMap::iterator it = m_users.find(player->getId());
 	if(it == m_users.end())
 		return false;
 
@@ -161,7 +161,7 @@ bool ChatChannel::removeUser(Player* player)
 
 bool ChatChannel::talk(Player* player, SpeakClasses type, const std::string& text, uint32_t _time/* = 0*/)
 {
-	UsersMap::iterator it = m_users.find(player->getID());
+	UsersMap::iterator it = m_users.find(player->getId());
 	if(it == m_users.end())
 		return false;
 

@@ -164,7 +164,6 @@ public:
 	bool                 isSightClear        (const Position& origin, const Position& to, bool requireSameFloor) const;
 	bool                 load                (const std::string& identifier);
 	void                 onCreatureMoved     (Creature* creature, const Tile* fromTile, const Tile* toTile);
-	bool                 placeCreature       (const Position& center, Creature* creature, bool extendedRangeInSight = false, bool ignoreObstacles = false);
 	bool                 save                () const;
 	bool                 setTile             (uint16_t x, uint16_t y, uint16_t z, Tile* tile);
 	bool                 setTile             (const Position& position, Tile* tile);

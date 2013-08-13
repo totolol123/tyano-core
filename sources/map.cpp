@@ -957,55 +957,6 @@ void Map::onCreatureMoved(Creature* creature, const Tile* fromTile, const Tile* 
 }
 
 
-bool Map::placeCreature(const Position& center, Creature* creature, bool extendedRangeInSight /*= false*/, bool ignoreObstacles /*= false*/) {
-	Tile* tile = getTile(center);
-	if (tile == nullptr) {
-		return false;
-	}
-
-	uint32_t flags = FLAG_PATHFINDING;
-	if (creature->isAccountManager()) {
-		flags |= FLAG_IGNOREBLOCKCREATURE;
-	}
-	if (tile->hasFlag(TILESTATE_PROTECTIONZONE)) {
-		flags |= FLAG_IGNORE_PROTECTION_ZONE;
-	}
-	if (ignoreObstacles) {
-		flags |= FLAG_IGNOREFIELDDAMAGE;
-	}
-
-	if (tile->addCreature(creature, flags) == RET_NOERROR) {
-		return true;
-	}
-
-	auto directNeighbors = tile->neighbors(1);
-	std::random_shuffle(directNeighbors.begin(), directNeighbors.end());
-
-	for (auto neighbor : directNeighbors) {
-		if (neighbor->addCreature(creature, flags) == RET_NOERROR) {
-			return true;
-		}
-	}
-
-	if (extendedRangeInSight) {
-		auto extendedNeighbors = tile->neighbors(2);
-		std::random_shuffle(extendedNeighbors.begin(), extendedNeighbors.end());
-
-		for (auto neighbor : extendedNeighbors) {
-			if (!isSightClear(center, neighbor->getPosition(), false)) {
-				continue;
-			}
-
-			if (neighbor->addCreature(creature, flags) == RET_NOERROR) {
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-
 bool Map::save() const {
 	IOMapSerialize& serializer = *IOMapSerialize::getInstance();
 

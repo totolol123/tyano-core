@@ -334,12 +334,6 @@ private:
 		virtual Npc* getNpc() {return this;}
 		virtual const Npc* getNpc() const {return this;}
 
-		virtual uint32_t rangeId() {return 0x80000000;}
-		static AutoList<Npc> autoList;
-
-		void addList() {autoList[id] = this;}
-		void removeList() {autoList.erase(id);}
-
 		static void clear();
 
 		virtual bool isPushable() const {return false;}

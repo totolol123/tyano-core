@@ -31,6 +31,7 @@
 #include "raids.h"
 #include "task.h"
 #include "server.h"
+#include "world.h"
 
 
 LOGGER_DEFINITION(Monster);
@@ -62,7 +63,7 @@ void Monster::babble() {
 
 
 bool Monster::canAttack(const Creature& creature) const {
-	if (creature.isRemoved()) {
+	if (!creature.isAlive()) {
 		return false;
 	}
 
@@ -386,7 +387,7 @@ bool Monster::isMasterInRange() const {
 
 
 void Monster::notifyMasterChanged(const CreatureP& previousMaster) {
-	if (isRemoved()) {
+	if (!isInWorld()) {
 		return;
 	}
 
@@ -436,7 +437,7 @@ bool Monster::onDeath() {
 		return false;
 	}
 
-	remove();
+	exitWorld();
 
 	return true;
 }
@@ -449,7 +450,8 @@ void Monster::onThink(Duration elapsedTime) {
 		return;
 	}
 
-	if (shouldBeRemoved() && remove()) {
+	if (despawn()) {
+		exitWorld();
 		return;
 	}
 
@@ -545,15 +547,6 @@ void Monster::setRetargetDelay(Duration retargetDelay) {
 }
 
 
-bool Monster::shouldBeRemoved() const {
-	if (despawn()) {
-		return true;
-	}
-
-	return false;
-}
-
-
 bool Monster::shouldTeleportToMaster() const {
 	if (!hasMaster()) {
 		return false;
@@ -597,7 +590,7 @@ bool Monster::target(const CreatureP& creature) {
 		}
 
 		setRetargetDelay(_type->retargetInterval);
-		server.dispatcher().addTask(Task::create(std::bind(&Game::checkCreatureAttack, &server.game(), getID())));
+		server.dispatcher().addTask(Task::create(std::bind(&Game::checkCreatureAttack, &server.game(), getId())));
 	}
 
 	return true;
@@ -813,7 +806,7 @@ void Monster::updateTarget() {
 }
 
 
-void Monster::willRemove() {
+void Monster::willExitWorld(World& world) {
 	killSummons();
 
 	target(nullptr);
@@ -822,7 +815,7 @@ void Monster::willRemove() {
 	removeFromSpawn();
 	removeFromRaid();
 
-	Creature::willRemove();
+	Creature::willExitWorld(world);
 }
 
 
@@ -843,9 +836,6 @@ void Monster::willRemove() {
 
 
 
-
-
-AutoList<Monster>Monster::autoList;
 
 
 Monster::Monster(MonsterType* __type, Raid* raid, Spawn* spawn)
@@ -937,7 +927,7 @@ void Monster::doAttacking(uint32_t interval)
 	const Position& myPos = getPosition();
 	for(SpellList::iterator it = _type->spellAttackList.begin(); it != _type->spellAttackList.end(); ++it)
 	{
-		if(!attackedCreature || attackedCreature->isRemoved())
+		if(!attackedCreature || !attackedCreature->isAlive())
 			break;
 
 		const Position& targetPos = attackedCreature->getPosition();
@@ -1019,8 +1009,9 @@ bool Monster::canUseSpell(const Position& pos, const Position& targetPos,
 	return false;
 }
 
-void Monster::onThinkDefense(uint32_t interval)
-{
+void Monster::onThinkDefense(uint32_t interval) {
+	auto& game = server.game();
+
 	resetTicks = true;
 	defenseTicks += interval;
 	for(SpellList::iterator it = _type->spellDefenseList.begin(); it != _type->spellDefenseList.end(); ++it)
@@ -1067,7 +1058,7 @@ void Monster::onThinkDefense(uint32_t interval)
 				uint32_t typeCount = 0;
 				for(MonsterList::iterator cit = summons.begin(); cit != summons.end(); ++cit)
 				{
-					if(!(*cit)->isRemoved() && (*cit)->getMonster() &&
+					if(!(*cit)->isAlive() && (*cit)->getMonster() &&
 						(*cit)->getMonster()->getName() == it->name)
 						typeCount++;
 				}
@@ -1075,15 +1066,9 @@ void Monster::onThinkDefense(uint32_t interval)
 				if(typeCount >= it->amount)
 					continue;
 
-				if((it->chance >= (uint32_t)random_range(1, 100)))
-				{
-					if(boost::intrusive_ptr<Monster> summon = Monster::create(it->name))
-					{
-						summon->setMaster(this);
-						if(server.game().placeCreature(summon.get(), getPosition()))
-							server.game().addMagicEffect(getPosition(), MAGIC_EFFECT_WRAPS_BLUE);
-						else
-							summon->setMaster(nullptr);
+				if((it->chance >= (uint32_t)random_range(1, 100))) {
+					if (game.placeSummon(this, it->name)) {
+						game.addMagicEffect(getPosition(), MAGIC_EFFECT_WRAPS_BLUE);
 					}
 				}
 			}
@@ -1323,7 +1308,7 @@ boost::intrusive_ptr<Item> Monster::createCorpse(DeathList deathList)
 		}
 	}
 
-	auto attackerWithMostDamage = server.game().getCreatureByID(attackerIdWithMostDamage);
+	auto attackerWithMostDamage = server.world().getCreatureById(attackerIdWithMostDamage);
 	if (attackerWithMostDamage == nullptr) {
 		return corpse;
 	}
@@ -1333,7 +1318,7 @@ boost::intrusive_ptr<Item> Monster::createCorpse(DeathList deathList)
 		return corpse;
 	}
 
-	corpse->setCorpseOwner(owner->getID());
+	corpse->setCorpseOwner(owner->getId());
 
 	return corpse;
 }

@@ -27,6 +27,7 @@
 #include "game.h"
 #include "player.h"
 #include "server.h"
+#include "world.h"
 
 
 LOGGER_DEFINITION(ProtocolStatus);
@@ -153,15 +154,16 @@ std::string Status::getStatusString(bool sendPlayers) const
 	if(sendPlayers)
 	{
 		std::stringstream ss;
-		for(AutoList<Player>::iterator it = Player::autoList.begin(); it != Player::autoList.end(); ++it)
-		{
-			if(it->second->isRemoved() || it->second->isGhost())
+		for (auto& player : server.world().getPlayers()) {
+			if (!player->isAlive() || player->isGhost()) {
 				continue;
+			}
 
-			if(!ss.str().empty())
+			if (!ss.str().empty()) {
 				ss << ";";
+			}
 
-			ss << it->second->getName() << "," << it->second->getVocationId() << "," << it->second->getLevel();
+			ss << player->getName() << "," << player->getVocationId() << "," << player->getLevel();
 		}
 
 		xmlNodeSetContent(p, (const xmlChar*)ss.str().c_str());
@@ -263,10 +265,12 @@ void Status::getInfo(uint32_t requestedInfo, OutputMessage_ptr output, NetworkMe
 	{
 		output->AddByte(0x21);
 		std::list<std::pair<std::string, uint32_t> > players;
-		for(AutoList<Player>::iterator it = Player::autoList.begin(); it != Player::autoList.end(); ++it)
-		{
-			if(!it->second->isRemoved() && !it->second->isGhost())
-				players.push_back(std::make_pair(it->second->getName(), it->second->getLevel()));
+		for (auto& player : server.world().getPlayers()) {
+			if (!player->isAlive() || player->isGhost()) {
+				return;
+			}
+
+			players.push_back(std::make_pair(player->getName(), player->getLevel()));
 		}
 
 		output->AddU32(players.size());

@@ -34,6 +34,7 @@
 #include "scheduler.h"
 #include "schedulertask.h"
 #include "server.h"
+#include "world.h"
 
 
 const Duration Creature::THINK_DURATION = Seconds(1);
@@ -135,15 +136,23 @@ bool Creature::canStep() const {
 }
 
 
-void Creature::didRemove() {
-	if (!_removing) {
-		return;
-	}
+void Creature::didEnterWorld(World& world) {
+	// override in subclasses
+}
 
-	removeList();
 
-	_removed = true;
-	_removing = false;
+void Creature::didExitWorld(World& world) {
+	// override in subclasses
+}
+
+
+ReturnValue Creature::enterWorld(const Position& position) {
+	return server.world().addCreature(this, position);
+}
+
+
+void Creature::exitWorld() {
+	server.world().removeCreature(this);
 }
 
 
@@ -189,6 +198,11 @@ CreaturePC Creature::getFinalOwner() const {
 
 CreatureP Creature::getFollowedCreature() const {
 	return _followedCreature;
+}
+
+
+auto Creature::getId() const -> Id {
+	return _id;
 }
 
 
@@ -238,7 +252,7 @@ bool Creature::hasToThinkAboutCreature(const CreaturePC& creature) const {
 
 
 bool Creature::isAlive() const {
-	return (!_removed && !_removing && health > 0 && _tile != nullptr);
+	return (isInWorld() && health > 0 && _tile != nullptr);
 }
 
 
@@ -254,6 +268,11 @@ bool Creature::isDrunk() const {
 
 bool Creature::isFollowing() const {
 	return (_followedCreature != nullptr);
+}
+
+
+bool Creature::isInWorld() const {
+	return (_id != 0);
 }
 
 
@@ -273,12 +292,8 @@ bool Creature::isPlayer() const {
 
 
 bool Creature::isRemoved() const {
-	return _removed;
-}
-
-
-bool Creature::isRemoving() const {
-	return _removing;
+	// legacy for ScriptEnviroment::getThingByUID and Player::isRemoved
+	return !isInWorld();
 }
 
 
@@ -449,8 +464,9 @@ void Creature::onCreatureMove(const CreatureP& creature, const Position& origin,
 					despawnList.push_back((*cit).get());
 			}
 
-			for(std::list<Creature*>::iterator cit = despawnList.begin(); cit != despawnList.end(); ++cit)
-				server.game().removeCreature(*cit, true);
+			for (auto creature : despawnList) {
+				creature->exitWorld();
+			}
 		}
 
 		if(destinationTile->getZone() != originTile->getZone())
@@ -504,7 +520,7 @@ void Creature::onCreatureMove(const CreatureP& creature, const Position& origin,
 		{
 			if(hasExtraSwing()) //our target is moving lets see if we can get in hit
 				server.dispatcher().addTask(Task::create(
-					std::bind(&Game::checkCreatureAttack, &server.game(), getID())));
+					std::bind(&Game::checkCreatureAttack, &server.game(), getId())));
 
 			if(destinationTile->getZone() != originTile->getZone())
 				onAttackedCreatureChangeZone(attackedCreature->getZone());
@@ -607,15 +623,6 @@ void Creature::releaseSummons() {
 }
 
 
-bool Creature::remove() {
-	if (isRemoved()) {
-		return true;
-	}
-
-	return server.game().removeCreature(this, true);
-}
-
-
 Direction Creature::route() {
 	if (!isRouting()) {
 		return Direction::NONE;
@@ -650,6 +657,13 @@ Direction Creature::route() {
 
 void Creature::setDefaultOutfit(Outfit_t defaultOutfit) {
 	this->defaultOutfit = defaultOutfit;
+}
+
+
+void Creature::setId(Id id) {
+	assert((id != 0) != (_id != 0));
+
+	_id = id;
 }
 
 
@@ -973,14 +987,12 @@ Direction Creature::wander() {
 }
 
 
-void Creature::willRemove() {
-	if (_removed || _removing) {
-		assert(!_removed && !_removing);
-		return;
-	}
+void Creature::willEnterWorld(World& world) {
+	// override in subclasses
+}
 
-	_removing = true;
 
+void Creature::willExitWorld(World& world) {
 	stopThinking();
 	releaseSummons();
 }
@@ -998,23 +1010,13 @@ void Creature::willRemove() {
 
 
 
-
-
-
-boost::recursive_mutex AutoId::lock;
-uint32_t AutoId::count = 1000;
-AutoId::List AutoId::list;
-
-
 Creature::Creature()
-	: _needsNewRouteToFollowedCreature(false),
-	  _removed(false),
-	  _removing(false),
+	: _id(0),
+	  _needsNewRouteToFollowedCreature(false),
 	  _thinkTaskId(0),
 	  _tile(nullptr),
 	  _wandering(false)
 {
-	id = 0;
 	direction = Direction::SOUTH;
 	lootDrop = LOOT_DROP_FULL;
 	skillLoss = true;
@@ -1192,7 +1194,7 @@ void Creature::onRemoveTileItem(const Tile* tile, const Position& pos, const Ite
 
 
 void Creature::setParent(Cylinder* cylinder) {
-	assert(!_removed);
+	assert(isInWorld());
 
 	Thing::setParent(cylinder);
 
@@ -1287,10 +1289,11 @@ bool Creature::onDeath()
 			it->setUnjustified(true);
 	}
 
-	for(CountMap::iterator it = damageMap.begin(); it != damageMap.end(); ++it)
-	{
-		if((tmp = server.game().getCreatureByID(it->first)))
-			tmp->onAttackedCreatureKilled(this);
+	auto& world = server.world();
+	for (auto& damageEntry : damageMap) {
+		if (auto creature = world.getCreatureById(damageEntry.first)) {
+			creature->onAttackedCreatureKilled(this);
+		}
 	}
 
 	dropCorpse(deathList);
@@ -1374,14 +1377,15 @@ void Creature::dropCorpse(DeathList deathList)
 	server.game().startDecay(corpse.get());
 }
 
-DeathList Creature::getKillers()
-{
+DeathList Creature::getKillers() {
+	auto& world = server.world();
+
 	DeathList list;
-	Creature* lhc = nullptr;
-	if(!(lhc = server.game().getCreatureByID(lastHitCreature)))
+	CreatureP lhc = nullptr;
+	if(!(lhc = world.getCreatureById(lastHitCreature)))
 		list.push_back(DeathEntry(getCombatName(lastDamageSource), 0));
 	else
-		list.push_back(DeathEntry(lhc, 0));
+		list.push_back(DeathEntry(lhc.get(), 0));
 
 	int32_t requiredTime = server.configManager().getNumber(ConfigManager::DEATHLIST_REQUIRED_TIME);
 	int64_t now = OTSYS_TIME();
@@ -1393,7 +1397,7 @@ DeathList Creature::getKillers()
 		if((now - cb.ticks) > requiredTime)
 			continue;
 
-		Creature* mdc = server.game().getCreatureByID(it->first);
+		CreatureP mdc = world.getCreatureById(it->first);
 		if(!mdc || mdc == lhc || (lhc && (mdc->getDirectOwner() == lhc || lhc->getDirectOwner() == mdc)))
 			continue;
 
@@ -1414,7 +1418,7 @@ DeathList Creature::getKillers()
 		}
 
 		if(!deny)
-			list.push_back(DeathEntry(mdc, cb.total));
+			list.push_back(DeathEntry(mdc.get(), cb.total));
 	}
 
 	if(list.size() > 1)
@@ -1666,7 +1670,7 @@ double Creature::getDamageRatio(Creature* attacker) const
 	for(CountMap::const_iterator it = damageMap.begin(); it != damageMap.end(); ++it)
 	{
 		totalDamage += it->second.total;
-		if(it->first == attacker->getID())
+		if(it->first == attacker->getId())
 			attackerDamage += it->second.total;
 	}
 
@@ -1677,7 +1681,7 @@ void Creature::addDamagePoints(Creature* attacker, int32_t damagePoints)
 {
 	uint32_t attackerId = 0;
 	if(attacker)
-		attackerId = attacker->getID();
+		attackerId = attacker->getId();
 
 	CountMap::iterator it = damageMap.find(attackerId);
 	if(it != damageMap.end())
@@ -1700,7 +1704,7 @@ void Creature::addHealPoints(Creature* caster, int32_t healthPoints)
 
 	uint32_t casterId = 0;
 	if(caster)
-		casterId = caster->getID();
+		casterId = caster->getId();
 
 	CountMap::iterator it = healMap.find(casterId);
 	if(it != healMap.end())
@@ -2086,9 +2090,6 @@ Duration Creature::getStepDuration(Direction dir) const
 
 Duration Creature::getStepDuration() const
 {
-	if(_removed || _removing)
-		return Duration::zero();
-
 	uint32_t stepSpeed = getStepSpeed();
 	if(!stepSpeed)
 		return Duration::zero();
@@ -2222,6 +2223,6 @@ std::ostream& operator << (std::ostream& stream, const Creature* creature) {
 
 
 std::ostream& operator << (std::ostream& stream, const Creature& creature) {
-	return stream << "Creature('" << creature.getName() << "', " << creature.getID() << ")";
+	return stream << "Creature('" << creature.getName() << "', " << creature.getId() << ")";
 }
 

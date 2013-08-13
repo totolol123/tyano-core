@@ -34,6 +34,7 @@
 #include "vocation.h"
 
 #include "server.h"
+#include "world.h"
 
 
 LOGGER_DEFINITION(Combat);
@@ -397,7 +398,7 @@ bool Combat::isProtected(Player* attacker, Player* target)
 	if(!attacker->getVocation()->isAttackable() || !target->getVocation()->isAttackable())
 		return true;
 
-	return attacker->checkLoginDelay(target->getID());
+	return attacker->checkLoginDelay(target->getId());
 }
 
 void Combat::setPlayerCombatValues(formulaType_t _type, double _mina, double _minb, double _maxa, double _maxb, double _minl, double _maxl, double _minm, double _maxm, int32_t _minc, int32_t _maxc)
@@ -592,7 +593,7 @@ bool Combat::CombatConditionFunc(const CreatureP& caster, const CreatureP& targe
 
 		Condition* tmp = (*it)->clone();
 		if(caster)
-			tmp->setParam(CONDITIONPARAM_OWNER, caster->getID());
+			tmp->setParam(CONDITIONPARAM_OWNER, caster->getId());
 
 		//TODO: infight condition until all aggressive conditions has ended
 		if(!target->addCombatCondition(tmp) && result)
@@ -673,7 +674,7 @@ void Combat::combatTileEffects(const SpectatorList& list, const CreatureP& caste
 		if(boost::intrusive_ptr<Item> item = Item::CreateItem(itemId))
 		{
 			if(caster)
-				item->setOwner(caster->getID());
+				item->setOwner(caster->getId());
 
 			if(server.game().internalAddItem(caster.get(), tile, item.get()) == RET_NOERROR)
 				server.game().startDecay(item.get());
@@ -1444,7 +1445,7 @@ void MagicField::onStepInField(const CreatureP& creature)
 	uint32_t ownerId = getOwner();
 	if(ownerId && !getTile()->hasFlag(TILESTATE_PVPZONE))
 	{
-		if(Creature* owner = server.game().getCreatureByID(ownerId))
+		if(auto owner = server.world().getCreatureById(ownerId))
 		{
 			bool harmful = true;
 			if((server.game().getWorldType() == WORLD_TYPE_NO_PVP || getTile()->hasFlag(TILESTATE_NOPVPZONE))

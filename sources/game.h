@@ -19,7 +19,6 @@
 #define _GAME_H
 
 #include "map.h"
-#include "templates.h"
 #include "tile.h"
 
 class  CombatInfo;
@@ -147,8 +146,7 @@ class Game {
 
 public:
 
-	Tile* getAvailableTileForThingNearPosition (const Thing& thing, const Position& position, uint16_t radius, uint32_t directFlags = FLAG_PATHFINDING, uint32_t indirectFlags = FLAG_IGNOREFIELDDAMAGE|FLAG_PATHFINDING) const;
-	Tile* getNextTile                          (const Tile& tile, Direction direction) const;
+	Tile* getNextTile (const Tile& tile, Direction direction) const;
 
 
 private:
@@ -205,33 +203,20 @@ private:
 		Tile* getTile(int32_t x, int32_t y, int32_t z) const {return map->getTile(x, y, z);}
 		Tile* getTile(const Position& pos) const {return map->getTile(pos);}
 
-		/**
-		  * Returns a creature based on the unique creature identifier
-		  * \param id is the unique creature id to get a creature pointer to
-		  * \returns A Creature pointer to the creature
-		  */
-		Creature* getCreatureByID(uint32_t id);
-
-		/**
-		  * Returns a player based on the unique creature identifier
-		  * \param id is the unique player id to get a player pointer to
-		  * \returns A Pointer to the player
-		  */
-		Player* getPlayerByID(uint32_t id);
 
 		/**
 		  * Returns a creature based on a string name identifier
 		  * \param s is the name identifier
 		  * \returns A Pointer to the creature
 		  */
-		Creature* getCreatureByName(std::string s);
+		Creature* getCreatureByName(const std::string& name);
 
 		/**
 		  * Returns a player based on a string name identifier
 		  * \param s is the name identifier
 		  * \returns A Pointer to the player
 		  */
-		PlayerP getPlayerByName(std::string s);
+		PlayerP getPlayerByName(const std::string& name);
 
 		/**
 		  * Returns a player based on a string name identifier
@@ -275,21 +260,21 @@ private:
 		  * \param acc is the account identifier
 		  * \returns A Pointer to the player
 		  */
-		Player* getPlayerByAccount(uint32_t acc);
+		Player* getPlayerByAccount(uint32_t accountId);
 
 		/**
 		  * Returns all players based on their name
 		  * \param s is the player name
 		  * \return A vector of all players with the selected name
 		  */
-		PlayerVector getPlayersByName(std::string s);
+		PlayerVector getPlayersByName(const std::string& name);
 
 		/**
 		  * Returns all players based on their account number identifier
 		  * \param acc is the account identifier
 		  * \return A vector of all players with the selected account number
 		  */
-		PlayerVector getPlayersByAccount(uint32_t acc);
+		PlayerVector getPlayersByAccount(uint32_t accountId);
 
 		/**
 		  * Returns all players with a certain IP address
@@ -299,30 +284,7 @@ private:
 		  */
 		PlayerVector getPlayersByIP(uint32_t ip, uint32_t mask = 0xFFFFFFFF);
 
-		/**
-		  * Place Creature on the map without sending out events to the surrounding.
-		  * \param creature Creature to place on the map
-		  * \param pos The position to place the creature
-		  * \param forced If true, placing the creature will not fail because of obstacles (creatures/items)
-		  */
-		bool internalPlaceCreature(Creature* creature, const Position& pos, bool extendedPos = false, bool forced = false);
-
-		/**
-		  * Place Creature on the map.
-		  * \param creature Creature to place on the map
-		  * \param pos The position to place the creature
-		  * \param forced If true, placing the creature will not fail because of obstacles (creatures/items)
-		  */
-		bool placeCreature(const CreatureP& creature, const Position& pos, bool extendedPos = false, bool forced = false);
 		ReturnValue placeSummon(Creature* creature, const std::string& name);
-
-		/**
-		  * Remove Creature from the map.
-		  * Removes the Creature the map
-		  * \param c Creature to remove
-		  */
-		bool removeCreature(Creature* creature, bool isLogout = true);
-
 
 		uint32_t getPlayersOnline();
 		uint32_t getMonstersOnline();
@@ -615,7 +577,6 @@ private:
 
 		std::vector<boost::intrusive_ptr<ReferenceCounted>> autoreleasePool;
 		TradeItemMap tradeItems;
-		AutoList<Creature> autoList;
 		RuleViolationsMap ruleViolations;
 
 		void clear();

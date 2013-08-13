@@ -25,6 +25,7 @@
 #include "player.h"
 #include "combat.h"
 #include "server.h"
+#include "world.h"
 
 Condition::Condition(ConditionId_t _id, ConditionType_t _type, int32_t _ticks, bool _buff, uint32_t _subId):
 id(_id), subId(_subId), ticks(_ticks), endTime(0), conditionType(_type), buff(_buff)
@@ -1154,7 +1155,7 @@ bool ConditionDamage::doDamage(Creature* creature, int32_t damage)
 		return true;
 
 	CombatType_t combatType = Combat::ConditionToDamageType(conditionType);
-	Creature* attacker = server.game().getCreatureByID(owner);
+	auto attacker = server.world().getCreatureById(owner);
 	if(server.game().combatBlockHit(combatType, attacker, creature, damage, false, false))
 		return false;
 

@@ -56,19 +56,22 @@ class Player : public Creature, public Cylinder {
 
 public:
 
-	virtual bool       canAttack      (const Creature& creature) const;
+	virtual bool       canAttack      (const Creature& creature) const override;
+	virtual void       didEnterWorld  (World& world) override;
 	        AccountP   getAccount     () const;
-	virtual CreatureP  getDirectOwner ();
-	virtual CreaturePC getDirectOwner () const;
-	virtual bool       isEnemy        (const Creature& creature) const;
+	virtual CreatureP  getDirectOwner () override;
+	virtual CreaturePC getDirectOwner () const override;
+	virtual bool       isEnemy        (const Creature& creature) const override;
+	virtual void       willEnterWorld (World& world) override;
+	virtual void       willExitWorld  (World& world) override;
 
 
 protected:
 
-	virtual void onFollowingStopped (bool preliminary);
-	virtual void onMove             (Tile& originTile, Tile& destinationTile);
-	virtual void onRoutingStarted   ();
-	virtual void onRoutingStopped   (bool preliminary);
+	virtual void onFollowingStopped (bool preliminary) override;
+	virtual void onMove             (Tile& originTile, Tile& destinationTile) override;
+	virtual void onRoutingStarted   () override;
+	virtual void onRoutingStopped   (bool preliminary) override;
 
 
 private:
@@ -105,12 +108,6 @@ private:
 
 		void setGUID(uint32_t _guid) {guid = _guid;}
 		uint32_t getGUID() const {return guid;}
-
-		static AutoList<Player> autoList;
-		virtual uint32_t rangeId() {return 0x10000000;}
-
-		void addList();
-		void removeList();
 
 		static uint64_t getExpForLevel(uint32_t lv)
 		{
@@ -173,7 +170,7 @@ private:
 		void setClientVersion(uint32_t version) {clientVersion = version;}
 
 		bool hasClient() const {return client;}
-		bool isVirtual() const {return (getID() == 0);}
+		bool isVirtual() const {return (getId() == 0);}
 		void disconnect();
 		uint32_t getIP() const;
 		bool canOpenCorpse(uint32_t ownerId);
@@ -401,7 +398,6 @@ private:
 		virtual void onBlockHit(BlockType_t blockType);
 		virtual void onChangeZone(ZoneType_t zone);
 		virtual void onAttackedCreatureChangeZone(ZoneType_t zone);
-		virtual void onPlacedCreature();
 
 		virtual void getCreatureLight(LightInfo& light) const;
 		Skulls_t getSkull() const;

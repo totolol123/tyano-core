@@ -38,6 +38,7 @@ class Spells;
 class TalkActions;
 class Towns;
 class Weapons;
+class World;
 
 extern Server server;
 
@@ -71,6 +72,7 @@ public:
 	TalkActions&     talkActions() const;
 	Towns&           towns() const;
 	Weapons&         weapons() const;
+	World&           world() const;
 
 
 private:
@@ -83,24 +85,25 @@ private:
 
 	bool _ready;
 
-	std::unique_ptr<Actions>         _actions;
-	std::unique_ptr<Admin>           _admin;
-	std::unique_ptr<Chat>            _chat;
-	std::unique_ptr<ConfigManager>   _configManager;
-	std::unique_ptr<CreatureEvents>  _creatureEvents;
-	std::unique_ptr<DatabaseManager> _databaseManager;
-	std::unique_ptr<Dispatcher>      _dispatcher;
-	std::unique_ptr<Game>            _game;
-	std::unique_ptr<GlobalEvents>    _globalEvents;
-	std::unique_ptr<Items>           _items;
-	std::unique_ptr<Monsters>        _monsters;
-	std::unique_ptr<MoveEvents>      _moveEvents;
-	std::unique_ptr<Npcs>            _npcs;
-	std::unique_ptr<Scheduler>       _scheduler;
-	std::unique_ptr<Spells>          _spells;
-	std::unique_ptr<TalkActions>     _talkActions;
-	std::unique_ptr<Towns>           _towns;
-	std::unique_ptr<Weapons>         _weapons;
+	Unique<Actions>         _actions;
+	Unique<Admin>           _admin;
+	Unique<Chat>            _chat;
+	Unique<ConfigManager>   _configManager;
+	Unique<CreatureEvents>  _creatureEvents;
+	Unique<DatabaseManager> _databaseManager;
+	Unique<Dispatcher>      _dispatcher;
+	Unique<Game>            _game;
+	Unique<GlobalEvents>    _globalEvents;
+	Unique<Items>           _items;
+	Unique<Monsters>        _monsters;
+	Unique<MoveEvents>      _moveEvents;
+	Unique<Npcs>            _npcs;
+	Unique<Scheduler>       _scheduler;
+	Unique<Spells>          _spells;
+	Unique<TalkActions>     _talkActions;
+	Unique<Towns>           _towns;
+	Unique<Weapons>         _weapons;
+	Unique<World>           _world;
 
 };
 

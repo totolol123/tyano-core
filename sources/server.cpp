@@ -36,6 +36,7 @@
 #include "talkaction.h"
 #include "town.h"
 #include "weapons.h"
+#include "world.h"
 
 
 static const std::string LOGGING_CONFIGURATION_FILE("configuration/logging.xml");
@@ -123,6 +124,7 @@ void Server::destroy() {
 	_talkActions.reset();
 	_towns.reset();
 	_weapons.reset();
+	_world.reset();
 }
 
 
@@ -220,6 +222,7 @@ void Server::setupComponents() {
 	_talkActions.reset(new TalkActions);
 	_towns.reset(new Towns);
 	_weapons.reset(new Weapons);
+	_world.reset(new World);
 }
 
 
@@ -289,4 +292,10 @@ Towns& Server::towns() const {
 Weapons& Server::weapons() const {
 	assert(_ready);
 	return *_weapons;
+}
+
+
+World& Server::world() const {
+	assert(_ready);
+	return *_world;
 }

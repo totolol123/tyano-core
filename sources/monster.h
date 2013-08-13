@@ -71,7 +71,7 @@ public:
 	        bool       target             (const CreatureP& creature);
 	        bool       targetClosestEnemy ();
 	        bool       targetRandomEnemy  ();
-	virtual void       willRemove         ();
+	virtual void       willExitWorld      (World& world);
 
 
 protected:
@@ -93,7 +93,6 @@ private:
 	void retarget               ();
 	void setMaster              (const CreatureP& master);
 	void setRetargetDelay       (Duration retargetDelay);
-	bool shouldBeRemoved        () const;
 	bool shouldTeleportToMaster () const;
 	bool teleportToMaster       ();
 	void updateBabbling         (Duration elapsedTime);
@@ -126,12 +125,6 @@ private:
 
 		virtual Monster* getMonster() {return this;}
 		virtual const Monster* getMonster() const {return this;}
-
-		virtual uint32_t rangeId() {return 0x40000000;}
-		static AutoList<Monster> autoList;
-
-		void addList() {autoList[id] = this;}
-		void removeList() {autoList.erase(id);}
 
 		virtual const std::string& getName() const;
 		virtual const std::string& getNameDescription() const;

@@ -79,6 +79,29 @@ uint32_t Position::distanceTo(const Position& position) const {
 }
 
 
+bool Position::isNeighborOf(const Position& position) const {
+	if (position.z != z) {
+		return false;
+	}
+
+	auto dx = std::abs(position.x - x);
+	if (dx > 1) {
+		return false;
+	}
+
+	auto dy = std::abs(position.y - y);
+	if (dy > 1) {
+		return false;
+	}
+
+	if (dx + dy == 0) {
+		return false;
+	}
+
+	return true;
+}
+
+
 bool Position::isValid() const {
 	return isValid(x, y, z);
 }
@@ -90,10 +113,16 @@ bool Position::isValid(int_fast32_t x, int_fast32_t y, int_fast32_t z) {
 
 
 std::vector<Position> Position::neighbors(uint16_t distance) const {
-	std::vector<Position> neighbors;
+	std::vector<Position> target;
+	neighbors(distance, target);
 
+	return target;
+}
+
+
+void Position::neighbors(uint16_t distance, std::vector<Position>& target) const {
 	if (distance == 0) {
-		return neighbors;
+		return;
 	}
 
 	auto startOffset = -static_cast<int32_t>(distance);
@@ -126,11 +155,9 @@ std::vector<Position> Position::neighbors(uint16_t distance) const {
 
 			neighbor.y = static_cast<int16_t>(y);
 
-			neighbors.push_back(neighbor);
+			target.push_back(neighbor);
 		}
 	}
-
-	return neighbors;
 }
 
 

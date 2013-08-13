@@ -50,6 +50,7 @@
 #include "chat.h"
 #include "tools.h"
 #include "server.h"
+#include "world.h"
 
 
 LOGGER_DEFINITION(TalkActions);
@@ -1137,10 +1138,11 @@ bool TalkAction::ghost(Creature* creature, const std::string& cmd, const std::st
 	{
 		player->sendTextMessage(MSG_INFO_DESCR, "You are visible again.");
 		IOLoginData::getInstance()->updateOnlineStatus(player->getGUID(), true);
-		for(AutoList<Player>::iterator pit = Player::autoList.begin(); pit != Player::autoList.end(); ++pit)
-		{
-			if(!pit->second->canSeeCreature(player))
-				pit->second->notifyLogIn(player);
+
+		for (auto& otherPlayer : server.world().getPlayers()) {
+			if (!otherPlayer->canSeeCreature(player)) {
+				otherPlayer->notifyLogIn(player);
+			}
 		}
 
 		for(it = list.begin(); it != list.end(); ++it)
@@ -1162,10 +1164,10 @@ bool TalkAction::ghost(Creature* creature, const std::string& cmd, const std::st
 				tmpPlayer->sendMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 		}
 
-		for(AutoList<Player>::iterator pit = Player::autoList.begin(); pit != Player::autoList.end(); ++pit)
-		{
-			if(!pit->second->canSeeCreature(player))
-				pit->second->notifyLogOut(player);
+		for (auto& otherPlayer : server.world().getPlayers()) {
+			if (!otherPlayer->canSeeCreature(player)) {
+				otherPlayer->notifyLogOut(player);
+			}
 		}
 
 		IOLoginData::getInstance()->updateOnlineStatus(player->getGUID(), false);
