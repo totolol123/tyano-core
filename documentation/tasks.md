@@ -37,6 +37,8 @@ Soon
 Improvements
 ------------
 
+- Improve warnings about wrong house entrances.
+- Support `text` and `writer` attributes in items.xml.
 - Use custom class for errors.
 - Don't use canSeeCreature for notifyLogIn/Out because then invisibility affects VIP lists.
 - Improve spawning on log-in in cases where there is not enough room to spawn the player.
