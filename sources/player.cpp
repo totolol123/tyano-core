@@ -629,6 +629,10 @@ void Player::sendIcons() const {
 		return;
 	}
 
+	if (!isAlive()) {
+		return;
+	}
+
 	uint32_t icons = 0;
 	for(ConditionList::const_iterator it = conditions.begin(); it != conditions.end(); ++it)
 	{

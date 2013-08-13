@@ -1222,7 +1222,6 @@ void Tile::onUpdateTile()
 		(*it)->onUpdateTile(this, cylinderMapPos);
 }
 
-
 ReturnValue Tile::__queryAdd(int32_t index, const Item* item, uint32_t count, uint32_t flags) const {
 	if (isForwarder()) {
 		if (getAvailableItemForwardingTile(*item) == nullptr) {
