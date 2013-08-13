@@ -100,7 +100,7 @@ bool Combat::getMinMaxValues(const CreatureP& creature, const CreatureP& target,
 					Item* tool = player->getWeapon();
 					if(WeaponPC weapon = server.weapons().getWeapon(tool))
 					{
-						max = (int32_t)(weapon->getWeaponDamage(player, target.get(), tool, true) * maxa + maxb);
+						max = (int32_t)(weapon->getWeaponDamage(*player, target.get(), tool, true) * maxa + maxb);
 						if(params.useCharges && tool->hasCharges() && server.configManager().getBool(ConfigManager::REMOVE_WEAPON_CHARGES))
 							server.game().transformItem(tool, tool->getId(), std::max((int32_t)0, ((int32_t)tool->getCharges()) - 1));
 					}

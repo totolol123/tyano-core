@@ -341,8 +341,8 @@ private:
 
 		ReturnValue internalMoveCreature(Creature* creature, Direction direction, uint32_t flags = 0);
 
-		ReturnValue internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cylinder* toCylinder, int32_t index,
-			Item* item, uint32_t count, Item** _moveItem, uint32_t flags = 0);
+		ReturnValue internalMoveItem(const CreatureP& actor, Cylinder* fromCylinder, Cylinder* toCylinder, int32_t index,
+			const ItemP& item, uint32_t count, ItemP* _moveItem, uint32_t flags = 0);
 
 		ReturnValue internalAddItem(Creature* actor, Cylinder* toCylinder, Item* item, int32_t index = INDEX_WHEREEVER,
 			uint32_t flags = 0, bool test = false);
@@ -533,7 +533,7 @@ private:
 		Position getClosestFreeTile(Creature* creature, Position pos, bool extended = false, bool ignoreHouse = true);
 		std::string getSearchString(const Position fromPos, const Position toPos, bool fromIsCreature = false, bool toIsCreature = false);
 
-		void changeLight(const Creature* creature);
+		void changeLight(const CreatureP& creature);
 		void changeSpeed(Creature* creature, int32_t varSpeedDelta);
 		void internalCreatureChangeOutfit(Creature* creature, const Outfit_t& oufit, bool forced = false);
 		void internalCreatureChangeVisible(Creature* creature, Visible_t visible);

@@ -199,7 +199,7 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 		for (auto spectator : spectators) {
 			if (auto player = spectator->getPlayer()) {
 				if (player->canSeeCreature(creature.get())) { // FIXME remove .get()
-					player->sendCreatureMove(creature.get(), this, newPosition, previousTile, previousPosition, previousIndexes[i], teleported, "Tile::addCreature(move)");
+					player->sendCreatureMove(creature, this, newPosition, previousTile, previousPosition, previousIndexes[i], teleported, "Tile::addCreature(move)");
 				}
 
 				++i;
@@ -216,7 +216,7 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 		for (auto spectator : spectators) {
 			if (auto player = spectator->getPlayer()) {
 				if (player->canSeeCreature(creature.get())) { // FIXME remove .get()
-					player->sendCreatureAppear(creature.get(), "Tile::addCreature(add)"); // FIXME remove .get()
+					player->sendCreatureAppear(creature, "Tile::addCreature(add)"); // FIXME remove .get()
 				}
 			}
 		}

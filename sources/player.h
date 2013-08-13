@@ -428,18 +428,18 @@ private:
 		void sendUpdateTile(const Tile* tile, const Position& pos);
 
 		void sendChannelMessage(std::string author, std::string text, SpeakClasses type, uint8_t channel);
-		void sendCreatureAppear(const Creature* creature, const char* callSource);
-		void sendCreatureDisappear(const Creature* creature, uint32_t stackpos, const char* callSource);
-		void sendCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos,
+		void sendCreatureAppear(const CreatureP& creature, const char* callSource);
+		void sendCreatureDisappear(const CreatureP& creature, uint32_t stackpos, const char* callSource);
+		void sendCreatureMove(const CreatureP& creature, const Tile* newTile, const Position& newPos,
 				const Tile* oldTile, const Position& oldPos, uint32_t oldStackpos, bool teleport, const char* callSource);
 
-		void sendCreatureTurn(const Creature* creature);
-		void sendCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos = nullptr);
-		void sendCreatureSquare(const Creature* creature, SquareColor_t color);
-		void sendCreatureChangeOutfit(const Creature* creature, const Outfit_t& outfit);
-		void sendCreatureChangeVisible(const Creature* creature, Visible_t visible, const char* callSource);
-		void sendCreatureLight(const Creature* creature);
-		void sendCreatureShield(const Creature* creature);
+		void sendCreatureTurn(const CreatureP& creature);
+		void sendCreatureSay(const CreatureP& creature, SpeakClasses type, const std::string& text, Position* pos = nullptr);
+		void sendCreatureSquare(const CreatureP& creature, SquareColor_t color);
+		void sendCreatureChangeOutfit(const CreatureP& creature, const Outfit_t& outfit);
+		void sendCreatureChangeVisible(const CreatureP& creature, Visible_t visible, const char* callSource);
+		void sendCreatureLight(const CreatureP& creature);
+		void sendCreatureShield(const CreatureP& creature);
 
 		//container
 		void sendAddContainerItem(const Container* container, const Item* item);

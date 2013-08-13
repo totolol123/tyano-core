@@ -1295,7 +1295,7 @@ void Player::sendHouseWindow(House* house, uint32_t listId) const
 		client->sendHouseWindow(windowTextId, house, listId, text);
 }
 
-void Player::sendCreatureChangeVisible(const Creature* creature, Visible_t visible, const char* callSource)
+void Player::sendCreatureChangeVisible(const CreatureP& creature, Visible_t visible, const char* callSource)
 {
 	if(!client)
 		return;
@@ -1305,7 +1305,7 @@ void Player::sendCreatureChangeVisible(const Creature* creature, Visible_t visib
 		|| (!player && canSeeInvisibility()))
 		sendCreatureChangeOutfit(creature, creature->getCurrentOutfit());
 	else if(visible == VISIBLE_DISAPPEAR || visible == VISIBLE_GHOST_DISAPPEAR)
-		sendCreatureDisappear(creature, creature->getTile()->getClientIndexOfThing(this, creature), callSource);
+		sendCreatureDisappear(creature, creature->getTile()->getClientIndexOfThing(this, creature.get()), callSource);
 	else
 		sendCreatureAppear(creature, callSource);
 }
@@ -3229,8 +3229,8 @@ void Player::doAttacking(uint32_t interval)
 		return;
 	}
 
-	Item* tool = getWeapon();
-	if(WeaponPC weapon = server.weapons().getWeapon(tool))
+	ItemP tool = getWeapon();
+	if(WeaponPC weapon = server.weapons().getWeapon(tool.get()))
 	{
 		if(weapon->interruptSwing() && !canDoAction())
 		{
@@ -4920,18 +4920,18 @@ void Player::sendUpdateTile(const Tile* tile, const Position& pos)
 
 void Player::sendChannelMessage(std::string author, std::string text, SpeakClasses type, uint8_t channel)
 	{if(client) client->sendChannelMessage(author, text, type, channel);}
-void Player::sendCreatureAppear(const Creature* creature, const char* callSource)
+void Player::sendCreatureAppear(const CreatureP& creature, const char* callSource)
 	{if(client) client->sendAddCreature(creature, StackPosition(creature->getPosition(), creature->getTile()->getClientIndexOfThing(
-		this, creature)), callSource);}
-void Player::sendCreatureDisappear(const Creature* creature, uint32_t stackpos, const char* callSource)
+		this, creature.get())), callSource);}
+void Player::sendCreatureDisappear(const CreatureP& creature, uint32_t stackpos, const char* callSource)
 	{if(client) client->sendRemoveCreature(creature, StackPosition(creature->getPosition(), stackpos), callSource);}
 
-void Player::sendCreatureMove(const Creature* creature, const Tile* newTile, const Position& newPos, const Tile* oldTile, const Position& oldPos, uint32_t oldStackpos, bool teleport, const char* callSource) {
+void Player::sendCreatureMove(const CreatureP& creature, const Tile* newTile, const Position& newPos, const Tile* oldTile, const Position& oldPos, uint32_t oldStackpos, bool teleport, const char* callSource) {
 	if (client == nullptr) {
 		return;
 	}
 
-	int32_t newIndex = newTile->getClientIndexOfThing(this, creature);
+	int32_t newIndex = newTile->getClientIndexOfThing(this, creature.get());
 	if (newIndex < 0) {
 		return;
 	}
@@ -4939,17 +4939,17 @@ void Player::sendCreatureMove(const Creature* creature, const Tile* newTile, con
 	client->sendMoveCreature(creature, newTile, StackPosition(newPos, newIndex), oldTile, StackPosition(oldPos, oldStackpos), teleport, callSource);
 }
 
-void Player::sendCreatureTurn(const Creature* creature)
-	{if(client) client->sendCreatureTurn(creature, StackPosition(creature->getPosition(), creature->getTile()->getClientIndexOfThing(this, creature)));}
-void Player::sendCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos)
+void Player::sendCreatureTurn(const CreatureP& creature)
+	{if(client) client->sendCreatureTurn(creature, StackPosition(creature->getPosition(), creature->getTile()->getClientIndexOfThing(this, creature.get())));}
+void Player::sendCreatureSay(const CreatureP& creature, SpeakClasses type, const std::string& text, Position* pos)
 	{if(client) client->sendCreatureSay(creature, type, text, pos);}
-void Player::sendCreatureSquare(const Creature* creature, SquareColor_t color)
+void Player::sendCreatureSquare(const CreatureP& creature, SquareColor_t color)
 	{if(client) client->sendCreatureSquare(creature, color);}
-void Player::sendCreatureChangeOutfit(const Creature* creature, const Outfit_t& outfit)
+void Player::sendCreatureChangeOutfit(const CreatureP& creature, const Outfit_t& outfit)
 	{if(client) client->sendCreatureOutfit(creature, outfit);}
-void Player::sendCreatureLight(const Creature* creature)
+void Player::sendCreatureLight(const CreatureP& creature)
 	{if(client) client->sendCreatureLight(creature);}
-void Player::sendCreatureShield(const Creature* creature)
+void Player::sendCreatureShield(const CreatureP& creature)
 	{if(client) client->sendCreatureShield(creature);}
 
 //container

@@ -1197,7 +1197,7 @@ bool Game::playerMoveItem(uint32_t playerId, const ExtendedPosition& origin, con
 			ExtendedPosition position = origin;
 			if(position.hasPosition(true) && Position::areInRange<1,1,0>(mapFromPos, player->getPosition()) && !Position::areInRange<1,1,0>(mapFromPos, walkPos)) {
 				//need to pickup the item first
-				Item* moveItem = nullptr;
+				ItemP moveItem;
 				ReturnValue ret = internalMoveItem(player, fromCylinder, player, INDEX_WHEREEVER, item, count, &moveItem);
 				if(ret != RET_NOERROR)
 				{
@@ -1206,7 +1206,7 @@ bool Game::playerMoveItem(uint32_t playerId, const ExtendedPosition& origin, con
 				}
 
 				//changing the position since its now in the inventory of the player
-				position = internalGetPosition(moveItem, position);
+				position = internalGetPosition(moveItem.get(), position);
 			}
 
 			std::deque<Direction> route;
@@ -1261,8 +1261,8 @@ bool Game::playerMoveItem(uint32_t playerId, const ExtendedPosition& origin, con
 	return false;
 }
 
-ReturnValue Game::internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cylinder* toCylinder,
-	int32_t index, Item* item, uint32_t count, Item** _moveItem, uint32_t flags /*= 0*/)
+ReturnValue Game::internalMoveItem(const CreatureP& actor, Cylinder* fromCylinder, Cylinder* toCylinder,
+	int32_t index, const ItemP& item, uint32_t count, ItemP* _moveItem, uint32_t flags /*= 0*/)
 {
 	if(!toCylinder)
 		return RET_NOTPOSSIBLE;
@@ -1270,14 +1270,14 @@ ReturnValue Game::internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cyli
 	if(!item->getParent())
 	{
 		assert(fromCylinder == item->getParent());
-		return internalAddItem(actor, toCylinder, item, INDEX_WHEREEVER, FLAG_NOLIMIT);
+		return internalAddItem(actor.get(), toCylinder, item.get(), INDEX_WHEREEVER, FLAG_NOLIMIT);
 	}
 
 	Item* toItem = nullptr;
 	Cylinder* subCylinder = nullptr;
 
 	int32_t floor = 0;
-	while((subCylinder = toCylinder->__queryDestination(index, item, &toItem, flags)) != toCylinder)
+	while((subCylinder = toCylinder->__queryDestination(index, item.get(), &toItem, flags)) != toCylinder)
 	{
 		toCylinder = subCylinder;
 		flags = 0;
@@ -1291,11 +1291,11 @@ ReturnValue Game::internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cyli
 		return RET_NOERROR; //silently ignore move
 
 	//check if we can add this item
-	ReturnValue ret = toCylinder->__queryAdd(index, item, count, flags);
+	ReturnValue ret = toCylinder->__queryAdd(index, item.get(), count, flags);
 	if(ret == RET_NEEDEXCHANGE)
 	{
 		//check if we can add it to source cylinder
-		int32_t fromIndex = fromCylinder->__getIndexOfThing(item);
+		int32_t fromIndex = fromCylinder->__getIndexOfThing(item.get());
 
 		ret = fromCylinder->__queryAdd(fromIndex, toItem, toItem->getItemCount(), 0);
 		if(ret == RET_NOERROR)
@@ -1314,15 +1314,15 @@ ReturnValue Game::internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cyli
 				autorelease(toItem);
 				toCylinder->__removeThing(toItem, toItem->getItemCount());
 
-				fromCylinder->__addThing(actor, toItem);
+				fromCylinder->__addThing(actor.get(), toItem);
 				if(oldToItemIndex != -1)
-					toCylinder->postRemoveNotification(actor, toItem, fromCylinder, oldToItemIndex, true);
+					toCylinder->postRemoveNotification(actor.get(), toItem, fromCylinder, oldToItemIndex, true);
 
 				int32_t newToItemIndex = fromCylinder->__getIndexOfThing(toItem);
 				if(newToItemIndex != -1)
-					fromCylinder->postAddNotification(actor, toItem, toCylinder, newToItemIndex);
+					fromCylinder->postAddNotification(actor.get(), toItem, toCylinder, newToItemIndex);
 
-				ret = toCylinder->__queryAdd(index, item, count, flags);
+				ret = toCylinder->__queryAdd(index, item.get(), count, flags);
 				toItem = nullptr;
 			}
 		}
@@ -1333,7 +1333,7 @@ ReturnValue Game::internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cyli
 
 	//check how much we can move
 	uint32_t maxQueryCount = 0;
-	ReturnValue retMaxCount = toCylinder->__queryMaxCount(index, item, count, maxQueryCount, flags);
+	ReturnValue retMaxCount = toCylinder->__queryMaxCount(index, item.get(), count, maxQueryCount, flags);
 	if(retMaxCount != RET_NOERROR && !maxQueryCount)
 		return retMaxCount;
 
@@ -1343,19 +1343,19 @@ ReturnValue Game::internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cyli
 
 	boost::intrusive_ptr<Item> moveItem = item;
 	//check if we can remove this item
-	ret = fromCylinder->__queryRemove(item, m, flags);
+	ret = fromCylinder->__queryRemove(item.get(), m, flags);
 	if(ret != RET_NOERROR)
 		return ret;
 
 	//remove the item
-	int32_t itemIndex = fromCylinder->__getIndexOfThing(item);
+	int32_t itemIndex = fromCylinder->__getIndexOfThing(item.get());
 	// requires netcode & container code update
 //	if (fromCylinder == toCylinder && index > itemIndex) {
 //		--index;
 //	}
 
 	autorelease(item);
-	fromCylinder->__removeThing(item, m);
+	fromCylinder->__removeThing(item.get(), m);
 
 	bool isCompleteRemoval = item->isRemoved();
 	Item* updateItem = nullptr;
@@ -1379,23 +1379,23 @@ ReturnValue Game::internalMoveItem(Creature* actor, Cylinder* fromCylinder, Cyli
 
 	//add item
 	if(moveItem /*m - n > 0*/)
-		toCylinder->__addThing(actor, index, moveItem.get());
+		toCylinder->__addThing(actor.get(), index, moveItem.get());
 
 	if(itemIndex != -1)
-		fromCylinder->postRemoveNotification(actor, item, toCylinder, itemIndex, isCompleteRemoval);
+		fromCylinder->postRemoveNotification(actor.get(), item.get(), toCylinder, itemIndex, isCompleteRemoval);
 
 	if(moveItem)
 	{
 		int32_t moveItemIndex = toCylinder->__getIndexOfThing(moveItem.get());
 		if(moveItemIndex != -1)
-			toCylinder->postAddNotification(actor, moveItem.get(), fromCylinder, moveItemIndex);
+			toCylinder->postAddNotification(actor.get(), moveItem.get(), fromCylinder, moveItemIndex);
 	}
 
 	if(updateItem)
 	{
 		int32_t updateItemIndex = toCylinder->__getIndexOfThing(updateItem);
 		if(updateItemIndex != -1)
-			toCylinder->postAddNotification(actor, updateItem, fromCylinder, updateItemIndex);
+			toCylinder->postAddNotification(actor.get(), updateItem, fromCylinder, updateItemIndex);
 	}
 
 	if(_moveItem)
@@ -2258,9 +2258,8 @@ bool Game::playerUseItemEx(uint32_t playerId, const ExtendedPosition& origin, co
 			if(Position::areInRange<1,1,0>(origin.getPosition(true), player->getPosition())
 					&& !Position::areInRange<1,1,0>(origin.getPosition(true), destination.getPosition(true)))
 			{
-				Item* moveItem = nullptr;
-				ReturnValue retTmp = internalMoveItem(player, item->getParent(), player,
-					INDEX_WHEREEVER, item, item->getItemCount(), &moveItem);
+				ItemP moveItem;
+				ReturnValue retTmp = internalMoveItem(player, item->getParent(), player, INDEX_WHEREEVER, item, item->getItemCount(), &moveItem);
 				if(retTmp != RET_NOERROR)
 				{
 					player->sendCancelMessage(retTmp);
@@ -2268,7 +2267,7 @@ bool Game::playerUseItemEx(uint32_t playerId, const ExtendedPosition& origin, co
 				}
 
 				//changing the position since its now in the inventory of the player
-				position = internalGetPosition(moveItem, origin);
+				position = internalGetPosition(moveItem.get(), origin);
 			}
 
 			std::deque<Direction> route;
@@ -3970,7 +3969,7 @@ void Game::internalCreatureChangeVisible(Creature* creature, Visible_t visible)
 }
 
 
-void Game::changeLight(const Creature* creature)
+void Game::changeLight(const CreatureP& creature)
 {
 	const SpectatorList& list = getSpectators(creature->getPosition());
 

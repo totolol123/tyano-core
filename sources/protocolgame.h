@@ -183,17 +183,17 @@ class ProtocolGame : public Protocol
 		void sendDistanceShoot(const Position& from, const Position& to, uint8_t type);
 		void sendMagicEffect(const Position& pos, uint8_t type);
 		void sendAnimatedText(const Position& pos, uint8_t color, std::string text);
-		void sendCreatureHealth(const Creature* creature);
+		void sendCreatureHealth(const CreatureP& creature);
 		void sendSkills();
 		void sendPing();
 		void sendCreatureTurn(const CreatureP& creature, const StackPosition& position);
-		void sendCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos = nullptr);
+		void sendCreatureSay(const CreatureP& creature, SpeakClasses type, const std::string& text, Position* pos = nullptr);
 
 		void sendCancel(const std::string& message);
 		void sendCancelWalk();
-		void sendChangeSpeed(const Creature* creature, uint32_t speed);
+		void sendChangeSpeed(const CreatureP& creature, uint32_t speed);
 		void sendCancelTarget();
-		void sendCreatureOutfit(const Creature* creature, const Outfit_t& outfit);
+		void sendCreatureOutfit(const CreatureP& creature, const Outfit_t& outfit);
 		void sendStats();
 		void sendTextMessage(MessageClasses mclass, const std::string& message);
 		void sendReLoginWindow();
@@ -201,8 +201,8 @@ class ProtocolGame : public Protocol
 		void sendTutorial(uint8_t tutorialId);
 		void sendAddMarker(const Position& pos, MapMarks_t markType, const std::string& desc);
 
-		void sendCreatureSkull(const Creature* creature);
-		void sendCreatureShield(const Creature* creature);
+		void sendCreatureSkull(const CreatureP& creature);
+		void sendCreatureShield(const CreatureP& creature);
 
 		void sendShop(const ShopInfoList& shop);
 		void sendCloseShop();
@@ -222,10 +222,10 @@ class ProtocolGame : public Protocol
 		void sendVIPLogOut(uint32_t guid);
 		void sendVIP(uint32_t guid, const std::string& name, bool isOnline);
 
-		void sendCreatureLight(const Creature* creature);
+		void sendCreatureLight(const CreatureP& creature);
 		void sendWorldLight(const LightInfo& lightInfo);
 
-		void sendCreatureSquare(const Creature* creature, SquareColor_t color);
+		void sendCreatureSquare(const CreatureP& creature, SquareColor_t color);
 
 		//tiles
 		void sendAddTileItem(const Tile* tile, const StackPosition& position, const Item* item, const char* callSource);

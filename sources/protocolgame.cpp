@@ -399,7 +399,7 @@ bool ProtocolGame::connect(uint32_t playerId, OperatingSystem_t operatingSystem,
 	player->isConnecting = false;
 
 	player->client = this;
-	player->sendCreatureAppear(player.get(), BOOST_CURRENT_FUNCTION);
+	player->sendCreatureAppear(player, BOOST_CURRENT_FUNCTION);
 
 	player->setOperatingSystem(operatingSystem);
 	player->setClientVersion(version);
@@ -1769,11 +1769,11 @@ void ProtocolGame::sendOpenPrivateChannel(const std::string& receiver)
 	}
 }
 
-void ProtocolGame::sendCreatureOutfit(const Creature* creature, const Outfit_t& outfit)
+void ProtocolGame::sendCreatureOutfit(const CreatureP& creature, const Outfit_t& outfit)
 {
 //	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureOutfit(" << creature << ") - canSee = " << (canSee(creature) ? "true" : "false"));
 
-	if(!canSee(creature))
+	if(!canSee(creature.get()))
 		return;
 
 	NetworkMessage_ptr msg = getOutputBuffer();
@@ -1782,22 +1782,22 @@ void ProtocolGame::sendCreatureOutfit(const Creature* creature, const Outfit_t& 
 		TRACK_MESSAGE(msg);
 		msg->AddByte(0x8E);
 		msg->AddU32(creature->getID());
-		AddCreatureOutfit(msg, creature, outfit);
+		AddCreatureOutfit(msg, creature.get(), outfit);
 	}
 }
 
-void ProtocolGame::sendCreatureLight(const Creature* creature)
+void ProtocolGame::sendCreatureLight(const CreatureP& creature)
 {
-	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureLight(" << creature << ") - canSee = " << (canSee(creature) ? "true" : "false"));
+	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureLight(" << creature << ") - canSee = " << (canSee(creature.get()) ? "true" : "false"));
 
-	if(!canSee(creature))
+	if(!canSee(creature.get()))
 		return;
 
 	NetworkMessage_ptr msg = getOutputBuffer();
 	if(msg)
 	{
 		TRACK_MESSAGE(msg);
-		AddCreatureLight(msg, creature);
+		AddCreatureLight(msg, creature.get());
 	}
 }
 
@@ -1813,11 +1813,11 @@ void ProtocolGame::sendWorldLight(const LightInfo& lightInfo)
 	}
 }
 
-void ProtocolGame::sendCreatureShield(const Creature* creature)
+void ProtocolGame::sendCreatureShield(const CreatureP& creature)
 {
-	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureShield(" << creature << ") - canSee = " << (canSee(creature) ? "true" : "false"));
+	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureShield(" << creature << ") - canSee = " << (canSee(creature.get()) ? "true" : "false"));
 
-	if(!canSee(creature))
+	if(!canSee(creature.get()))
 		return;
 
 	NetworkMessage_ptr msg = getOutputBuffer();
@@ -1826,15 +1826,15 @@ void ProtocolGame::sendCreatureShield(const Creature* creature)
 		TRACK_MESSAGE(msg);
 		msg->AddByte(0x91);
 		msg->AddU32(creature->getID());
-		msg->AddByte(player->getPartyShield(creature));
+		msg->AddByte(player->getPartyShield(creature.get()));
 	}
 }
 
-void ProtocolGame::sendCreatureSkull(const Creature* creature)
+void ProtocolGame::sendCreatureSkull(const CreatureP& creature)
 {
-	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureSkull(" << creature << ") - canSee = " << (canSee(creature) ? "true" : "false"));
+	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureSkull(" << creature << ") - canSee = " << (canSee(creature.get()) ? "true" : "false"));
 
-	if(!canSee(creature))
+	if(!canSee(creature.get()))
 		return;
 
 	NetworkMessage_ptr msg = getOutputBuffer();
@@ -1843,15 +1843,15 @@ void ProtocolGame::sendCreatureSkull(const Creature* creature)
 		TRACK_MESSAGE(msg);
 		msg->AddByte(0x90);
 		msg->AddU32(creature->getID());
-		msg->AddByte(player->getSkullClient(creature));
+		msg->AddByte(player->getSkullClient(creature.get()));
 	}
 }
 
-void ProtocolGame::sendCreatureSquare(const Creature* creature, SquareColor_t color)
+void ProtocolGame::sendCreatureSquare(const CreatureP& creature, SquareColor_t color)
 {
-	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureSquare(" << creature << ") - canSee = " << (canSee(creature) ? "true" : "false"));
+	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureSquare(" << creature << ") - canSee = " << (canSee(creature.get()) ? "true" : "false"));
 
-	if(!canSee(creature))
+	if(!canSee(creature.get()))
 		return;
 
 	NetworkMessage_ptr msg = getOutputBuffer();
@@ -2245,7 +2245,7 @@ void ProtocolGame::sendCreatureTurn(const CreatureP& creature, const StackPositi
 	}
 }
 
-void ProtocolGame::sendCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos/* = nullptr*/)
+void ProtocolGame::sendCreatureSay(const CreatureP& creature, SpeakClasses type, const std::string& text, Position* pos/* = nullptr*/)
 {
 	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureSay(" << creature << "");
 
@@ -2253,7 +2253,7 @@ void ProtocolGame::sendCreatureSay(const Creature* creature, SpeakClasses type, 
 	if(msg)
 	{
 		TRACK_MESSAGE(msg);
-		AddCreatureSpeak(msg, creature, type, text, 0, 0, pos);
+		AddCreatureSpeak(msg, creature.get(), type, text, 0, 0, pos);
 	}
 }
 
@@ -2294,11 +2294,11 @@ void ProtocolGame::sendCancelTarget()
 		}
 }
 
-void ProtocolGame::sendChangeSpeed(const Creature* creature, uint32_t speed)
+void ProtocolGame::sendChangeSpeed(const CreatureP& creature, uint32_t speed)
 {
-	LOGt("ProtocolGame(" << player->getName() << ")::setChangeSpeed(" << creature << ", speed = " << speed << ") - canSee = " << (canSee(creature) ? "true" : "false"));
+	LOGt("ProtocolGame(" << player->getName() << ")::setChangeSpeed(" << creature << ", speed = " << speed << ") - canSee = " << (canSee(creature.get()) ? "true" : "false"));
 
-	if(!canSee(creature))
+	if(!canSee(creature.get()))
 		return;
 
 	NetworkMessage_ptr msg = getOutputBuffer();
@@ -2393,18 +2393,18 @@ void ProtocolGame::sendAnimatedText(const Position& pos, uint8_t color, std::str
 	}
 }
 
-void ProtocolGame::sendCreatureHealth(const Creature* creature)
+void ProtocolGame::sendCreatureHealth(const CreatureP& creature)
 {
 	LOGt("ProtocolGame(" << player->getName() << ")::sendCreatureHealth(" << creature << ")");
 
-	if(!canSee(creature))
+	if(!canSee(creature.get()))
 		return;
 
 	NetworkMessage_ptr msg = getOutputBuffer();
 	if(msg)
 	{
 		TRACK_MESSAGE(msg);
-		AddCreatureHealth(msg, creature);
+		AddCreatureHealth(msg, creature.get());
 	}
 }
 
