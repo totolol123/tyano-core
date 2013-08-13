@@ -42,7 +42,7 @@ CREATE TABLE `accounts`
 	`blocked` TINYINT(1) NOT NULL DEFAULT FALSE COMMENT 'internal usage',
 	`warnings` INT NOT NULL DEFAULT 0,
 	`group_id` INT NOT NULL DEFAULT 1,
-	`premiumExpiration` int(10) unsigned DEFAULT NULL,
+	`premiumExpiration` INT(10) UNSIGNED DEFAULT NULL,
 	PRIMARY KEY (`id`), UNIQUE (`name`)
 ) ENGINE = InnoDB;
 
