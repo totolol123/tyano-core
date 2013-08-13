@@ -714,8 +714,11 @@ ReturnValue Tile::testAddCreature(const Creature& creature, uint32_t flags) cons
 			}
 		}
 	}
-	else if (hasFlag(TILESTATE_BLOCKSOLID)) {
+	else if (hasFlag(TILESTATE_IMMOVABLEBLOCKSOLID)) {
 		return RET_NOTPOSSIBLE;
+	}
+	else if (hasFlag(TILESTATE_BLOCKSOLID)) {
+		return RET_NOTENOUGHROOM;
 	}
 
 	if (!hasBitSet(FLAG_IGNOREBLOCKCREATURE, flags)) {

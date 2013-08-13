@@ -1130,6 +1130,15 @@ bool Game::playerMoveItem(uint32_t playerId, const ExtendedPosition& origin, con
 		return false;
 	}
 
+	if (auto tile = toCylinder->getTile()) {
+		if (!item->isMoveable() || item->getKind()->blockSolid) {
+			if (tile->isForwarder()) {
+				player->sendCancelMessage(RET_NOTPOSSIBLE);
+				return false;
+			}
+		}
+	}
+
 	const Position& mapFromPos = fromCylinder->getTile()->getPosition();
 	const Position& mapToPos = toCylinder->getTile()->getPosition();
 
