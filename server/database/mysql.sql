@@ -38,15 +38,13 @@ CREATE TABLE `accounts`
 	`name` VARCHAR(32) NOT NULL DEFAULT '',
 	`password` VARCHAR(255) NOT NULL/* VARCHAR(32) NOT NULL COMMENT 'MD5'*//* VARCHAR(40) NOT NULL COMMENT 'SHA1'*/,
 	`email` VARCHAR(255) NOT NULL DEFAULT '',
-	`key` VARCHAR(20) NOT NULL DEFAULT '0',
+	`key` VARCHAR(20) NOT NULL DEFAULT '',
 	`blocked` TINYINT(1) NOT NULL DEFAULT FALSE COMMENT 'internal usage',
 	`warnings` INT NOT NULL DEFAULT 0,
 	`group_id` INT NOT NULL DEFAULT 1,
 	`premiumExpiration` INT(10) UNSIGNED DEFAULT NULL,
 	PRIMARY KEY (`id`), UNIQUE (`name`)
 ) ENGINE = InnoDB;
-
-INSERT INTO `accounts` VALUES (1, '1', '1', 65535, 0, '', '0', 0, 0, 1);
 
 CREATE TABLE `players`
 (
@@ -95,7 +93,6 @@ CREATE TABLE `players`
 	`loss_skills` INT NOT NULL DEFAULT 100,
 	`loss_containers` INT NOT NULL DEFAULT 100,
 	`loss_items` INT NOT NULL DEFAULT 100,
-	`premend` INT NOT NULL DEFAULT 0 COMMENT 'NOT IN USE BY THE SERVER',
 	`online` TINYINT(1) NOT NULL DEFAULT 0,
 	`marriage` INT UNSIGNED NOT NULL DEFAULT 0,
 	`promotion` INT NOT NULL DEFAULT 0,
@@ -106,8 +103,6 @@ CREATE TABLE `players`
 	KEY (`online`), KEY (`deleted`),
 	FOREIGN KEY (`account_id`) REFERENCES `accounts`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB;
-
-INSERT INTO `players` VALUES (1, 'Account Manager', 0, 1, 1, 1, 0, 150, 150, 0, 0, 0, 0, 0, 110, 0, 0, 0, 0, 0, 0, 0, 50, 50, 7, '', 400, 0, 0, 0, 0, 0, 0, 0, '', 0, 0, 0, 201660000, 0, 100, 100, 100, 100, 100, 0, 0, 0, 0, 0, '');
 
 CREATE TABLE `account_viplist`
 (

@@ -9,6 +9,7 @@
 	<talkaction log="yes" words="/promote;/demote" access="5" event="script" value="promote.lua"/>
 	<talkaction log="yes" words="/shutdown" access="5" event="script" value="shutdown.lua"/>
 	<talkaction log="yes" access="5" words="/mode" event="script" value="mode.lua"/>
+	<talkaction log="yes" access="5" words="/premium" script="god/premium.lua"/> <!-- premium management -->
 
 	<!-- Community Managers -->
 	<talkaction log="yes" words="/s" access="4" event="script" value="summon.lua"/>
@@ -66,6 +67,7 @@
 	<talkaction words="!q" event="script" value="money.lua"/>
 	<talkaction words="!serverinfo" event="script" value="serverinfo.lua"/>
 	<talkaction words="/commands" event="script" value="commands.lua"/>
+	<talkaction words="!premium" script="player/premium.lua"/> <!-- premium status -->
 
 	<!-- Houses -->
 	<talkaction words="alana res" filter="word-spaced" event="function" value="houseBuy"/>

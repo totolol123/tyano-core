@@ -454,6 +454,8 @@ bool Spawn::spawnMonster(uint32_t spawnId, MonsterType* mType, const Position& p
 
 	auto monster = Monster::create(mType, this);
 	if (monster->enterWorld(pos) != RET_NOERROR) {
+		monster->removeFromSpawn();
+
 		LOGe("Cannot spawn monster '" << mType->name << "' at " << pos << ".");
 		return false;
 	}

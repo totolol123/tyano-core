@@ -183,7 +183,6 @@ PlayerFlag_IgnoreProtectionZone = 33
 PlayerFlag_IgnoreSpellCheck = 34
 PlayerFlag_IgnoreWeaponCheck = 35
 PlayerFlag_CannotBeMuted = 36
-PlayerFlag_IsAlwaysPremium = 37
 PlayerFlag_CanAnswerRuleViolations = 38
 PlayerFlag_39 = 39 -- ignore
 PlayerFlag_ShowGroupNameInsteadOfVocation = 40

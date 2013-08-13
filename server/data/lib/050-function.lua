@@ -83,10 +83,6 @@ function doPlayerDepositMoney(cid, amount)
 	return true
 end
 
-function isPremium(cid)
-	return (isPlayer(cid) and (getPlayerPremiumDays(cid) > 0 or getBooleanFromString(getConfigInfo('freePremium'))))
-end
-
 function getMonthDayEnding(day)
 	if(day == "01" or day == "21" or day == "31") then
 		return "st"
@@ -660,3 +656,13 @@ function getMonsterSummonList(name)
 	local monster = getMonsterInfo(name)
 	return monster and monster.summons or false
 end
+
+
+
+-- new premium system
+
+function doPlayerRemovePremiumDays(cid, days)
+	return doPlayerAddPremiumDays(cid, -days)
+end
+
+isPremium = playerHasPremium -- backward compatibility only

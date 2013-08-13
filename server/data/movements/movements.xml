@@ -853,4 +853,7 @@
 	<!-- Other -->
 	<movevent type="Equip" itemid="9956" slot="pickupable" event="function" value="onEquipItem"/>
 	<movevent type="DeEquip" itemid="9956" slot="pickupable" event="function" value="onDeEquipItem"/>
+	
+	<!-- premium teleporter -->
+	<movevent type="willAddCreature" uniqueid="30000" event="script" value="premium/teleporter.lua"/> 
 </movements>

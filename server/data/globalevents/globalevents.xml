@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <globalevents>
 	<globalevent name="save" interval="900" event="script" value="save.lua"/>
+	<globalevent name="premium" interval="60" event="script" value="premium.lua"/>
 
 	<globalevent name="serverstart" type="start" event="script" value="start.lua"/>
 	<globalevent name="playersrecord" type="record" event="script" value="record.lua"/>
