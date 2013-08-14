@@ -37,6 +37,7 @@ Soon
 Improvements
 ------------
 
+- Doors are bugged when two creatures stand in them and one moves out (e.g. one is a ghost - the door will move to a different tile!)
 - Improve warnings about wrong house entrances.
 - Support `text` and `writer` attributes in items.xml.
 - Use custom class for errors.
