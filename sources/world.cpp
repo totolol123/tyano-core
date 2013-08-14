@@ -139,6 +139,9 @@ auto World::findTileForThingNearPosition(const Thing& thing, const Position& pos
 		if (!directNeighborPositions.empty()) {
 			bool hasDirectNeighborTiles = false;
 
+			// make the game less predictable :)
+			std::random_shuffle(directNeighborPositions.begin(), directNeighborPositions.end());
+
 			// next try direct neighbors
 			for (auto directNeighborPosition : directNeighborPositions) {
 				tile = game.getTile(directNeighborPosition);
