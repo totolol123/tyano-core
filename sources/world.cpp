@@ -53,8 +53,7 @@ World::~World()
 ReturnValue World::addCreature(const CreatureP& creature, const Position& position, uint16_t radius) {
 	assert(creature != nullptr);
 
-	auto id = creature->getId();
-	if (id != 0) {
+	if (creature->isInWorld()) {
 		LOGw("Cannot add " << creature << " to world at position " << position << " because it already entered the world.");
 		return RET_NOTPOSSIBLE;
 	}
@@ -66,6 +65,7 @@ ReturnValue World::addCreature(const CreatureP& creature, const Position& positi
 
 	creature->willEnterWorld(*this);
 
+	Creature::Id id;
 	if (auto monster = creature->getMonster()) { // most likely
 		id = _monstersById.insert(monster);
 		_monsters.push_back(monster);
@@ -87,6 +87,7 @@ ReturnValue World::addCreature(const CreatureP& creature, const Position& positi
 	_creatures.push_back(creature);
 
 	creature->setId(id);
+	creature->setInWorld(true);
 
 	auto result = findTileResult.getTile()->addCreature(creature, findTileResult.getFlags());
 	assert(result == RET_NOERROR);
@@ -284,8 +285,7 @@ auto World::getPlayers() const -> const Players& {
 ReturnValue World::removeCreature(const CreatureP& creature) {
 	assert(creature != nullptr);
 
-	auto id = creature->getId();
-	if (id == 0) {
+	if (!creature->isInWorld()) {
 		LOGw("Cannot remove " << creature << " from the world because it did not enter the world.");
 		return RET_NOTPOSSIBLE;
 	}
@@ -341,7 +341,7 @@ ReturnValue World::removeCreature(const CreatureP& creature) {
 		_creatures.erase(i);
 	}
 
-	creature->setId(0);
+	creature->setInWorld(false);
 	creature->didExitWorld(*this);
 
 	return RET_NOERROR;

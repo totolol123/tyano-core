@@ -227,7 +227,8 @@ void Game::setGameState(GameState_t newState)
 			{
 				server.globalEvents().execute(GLOBAL_EVENT_SHUTDOWN);
 
-				for (auto& player : server.world().getPlayers()) {
+				auto players = server.world().getPlayers();
+				for (auto& player : players) {
 					player->kickPlayer(true, true);
 				}
 
@@ -241,7 +242,8 @@ void Game::setGameState(GameState_t newState)
 
 			case GAME_STATE_CLOSED:
 			{
-				for (auto& player : server.world().getPlayers()) {
+				auto players = server.world().getPlayers();
+				for (auto& player : players) {
 					if (!player->hasFlag(PlayerFlag_CanAlwaysLogin)) {
 						player->kickPlayer(true, true);
 					}

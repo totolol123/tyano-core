@@ -272,7 +272,7 @@ bool Creature::isFollowing() const {
 
 
 bool Creature::isInWorld() const {
-	return (_id != 0);
+	return _inWorld;
 }
 
 
@@ -667,6 +667,11 @@ void Creature::setId(Id id) {
 }
 
 
+void Creature::setInWorld(bool inWorld) {
+	_inWorld = inWorld;
+}
+
+
 bool Creature::shouldStagger() const {
 	// 25% chance when drunk
 	return (isDrunk() && random_range(1, 100) <= 25);
@@ -1012,6 +1017,7 @@ void Creature::willExitWorld(World& world) {
 
 Creature::Creature()
 	: _id(0),
+	  _inWorld(false),
 	  _needsNewRouteToFollowedCreature(false),
 	  _thinkTaskId(0),
 	  _tile(nullptr),

@@ -1164,6 +1164,8 @@ bool ProtocolGame::registerCreature(const CreatureP& creature, const StackPositi
 
 		if (creatureToRemove != nullptr) {
 			removedCreatureId = (*creatureToRemove)->getId();
+			assert(removedCreatureId != 0);
+
 			_registeredCreatures.erase(*creatureToRemove);
 		}
 	}

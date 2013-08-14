@@ -118,7 +118,6 @@ public:
 
 	typedef std::deque<Direction>   DirectionRoute;
 	typedef uint32_t                Id;
-	typedef std::map<Id,CreatureP>  CreaturesById;
 	typedef std::deque<Position>    Route;
 
 	virtual bool         canAttack               (const Creature& creature) const = 0;
@@ -165,6 +164,7 @@ public:
 	        void         releaseSummons          ();
 	        Direction    route                   ();
 	        void         setId                   (Id id);
+	        void         setInWorld              (bool inWorld);
 	        bool         shouldStagger           () const;
 	        Direction    stagger                 ();
 	        void         setDefaultOutfit        (Outfit_t defaultOutfit);
@@ -217,10 +217,9 @@ private:
 	static const Duration THINK_DURATION;
 	static const Duration THINK_INTERVAL;
 
-	static CreaturesById  _allById;
-
 	CreatureP         _followedCreature;
 	Id                _id;
+	bool              _inWorld;
 	bool              _needsNewRouteToFollowedCreature;
 	Time              _nextMoveTime;
 	Time              _nextWanderingTime;
