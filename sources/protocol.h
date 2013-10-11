@@ -48,6 +48,7 @@ class Protocol : boost::noncopyable
 		void onSendMessage(OutputMessage_ptr msg);
 
 		virtual void parsePacket(NetworkMessage& msg) {}
+		uint32_t getLocalIP() const;
 		uint32_t getIP() const;
 
 		Connection_ptr getConnection() {return m_connection;}

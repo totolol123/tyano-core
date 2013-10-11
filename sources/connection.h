@@ -119,6 +119,7 @@ class Connection : public std::enable_shared_from_this<Connection>, boost::nonco
 		}
 
 		boost::asio::ip::tcp::socket& getHandle() {return *m_socket;}
+		uint32_t getLocalIP() const;
 		uint32_t getIP() const;
 
 		void handle(Protocol* protocol);

@@ -522,6 +522,17 @@ void Connection::internalSend(OutputMessage_ptr msg)
 	}
 }
 
+uint32_t Connection::getLocalIP() const
+{
+	//ip is expressed in network byte order
+	boost::system::error_code error;
+	const boost::asio::ip::tcp::endpoint ip = m_socket->local_endpoint(error);
+	if(!error)
+		return htonl(ip.address().to_v4().to_ulong());
+
+	return 0;
+}
+
 uint32_t Connection::getIP() const
 {
 	//ip is expressed in network byte order

@@ -38,25 +38,30 @@ uint32_t ProtocolStatus::protocolStatusCount = 0;
 #endif
 IpConnectMap ProtocolStatus::ipConnectMap;
 
-void ProtocolStatus::onRecvFirstMessage(NetworkMessage& msg)
-{
-	for(StringVector::const_iterator it = server.game().blacklist.begin(); it != server.game().blacklist.end(); ++it)
-	{
-		if((*it) == convertIPAddress(getIP()))
+void ProtocolStatus::onRecvFirstMessage(NetworkMessage& msg) {
+	auto ip = getIP();
+	if ((ip & 0x000000FF) != 0x0000007F || ip == getLocalIP()) {
+		// anything except 127.x.x.x (localhost) and our own IP address
+
+		for(StringVector::const_iterator it = server.game().blacklist.begin(); it != server.game().blacklist.end(); ++it)
+		{
+			if((*it) == convertIPAddress(getIP()))
+			{
+				getConnection()->close();
+				return;
+			}
+		}
+
+		IpConnectMap::const_iterator it = ipConnectMap.find(ip);
+		if(it != ipConnectMap.end() && OTSYS_TIME() < it->second + server.configManager().getNumber(ConfigManager::STATUSQUERY_TIMEOUT))
 		{
 			getConnection()->close();
 			return;
 		}
+
+		ipConnectMap[ip] = OTSYS_TIME();
 	}
 
-	IpConnectMap::const_iterator it = ipConnectMap.find(getIP());
-	if(it != ipConnectMap.end() && OTSYS_TIME() < it->second + server.configManager().getNumber(ConfigManager::STATUSQUERY_TIMEOUT))
-	{
-		getConnection()->close();
-		return;
-	}
-
-	ipConnectMap[getIP()] = OTSYS_TIME();
 	switch(msg.GetByte())
 	{
 		case 0xFF:

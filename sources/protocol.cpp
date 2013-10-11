@@ -198,6 +198,14 @@ bool Protocol::RSA_decrypt(RSA* rsa, NetworkMessage& msg)
 	return false;
 }
 
+uint32_t Protocol::getLocalIP() const
+{
+	if(getConnection())
+		return getConnection()->getLocalIP();
+
+	return 0;
+}
+
 uint32_t Protocol::getIP() const
 {
 	if(getConnection())
