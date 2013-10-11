@@ -90,12 +90,11 @@ void ConnectionManager::shutdown()
 	m_connections.clear();
 }
 
-void Connection::close()
-{
-	//any thread
+void Connection::close() {
 	LOGt("Connection::close()");
 
-	boost::recursive_mutex::scoped_lock lockClass(m_connectionLock);
+	boost::recursive_mutex::scoped_lock lock(m_connectionLock);
+
 	if(m_connectionState == CONNECTION_STATE_CLOSED || m_connectionState == CONNECTION_STATE_REQUEST_CLOSE)
 		return;
 
@@ -192,16 +191,14 @@ bool ConnectionManager::acceptConnection(uint32_t clientIp)
 LOGGER_DEFINITION(Connection);
 
 
-void Connection::closeConnection()
-{
-	//dispatcher thread
+void Connection::closeConnection() {
 	LOGt("Connection::closeConnection()");
 
-	m_connectionLock.lock();
+	boost::recursive_mutex::scoped_lock lock(m_connectionLock);
+
 	if(m_connectionState != CONNECTION_STATE_REQUEST_CLOSE)
 	{
 		LOGe("[Connection::closeConnection] m_connectionState = " << m_connectionState);
-		m_connectionLock.unlock();
 		return;
 	}
 
@@ -219,15 +216,13 @@ void Connection::closeConnection()
 		releaseConnection();
 		m_connectionState = CONNECTION_STATE_CLOSED;
 	}
-
-	m_connectionLock.unlock();
 }
 
-void Connection::closeSocket()
-{
+void Connection::closeSocket() {
 	LOGt("Connection::closeSocket()");
 
-	m_connectionLock.lock();
+	boost::recursive_mutex::scoped_lock lock(m_connectionLock);
+
 	if(m_socket->is_open())
 	{
 		m_pendingRead = m_pendingWrite = 0;
@@ -246,8 +241,6 @@ void Connection::closeSocket()
 			}
 		}
 	}
-
-	m_connectionLock.unlock();
 }
 
 void Connection::releaseConnection()
@@ -265,25 +258,27 @@ void Connection::onStop()
 {
 	LOGt("Connection::onStop()");
 
-	//service thread
-	m_connectionLock.lock();
-	m_readTimer.cancel();
-	m_writeTimer.cancel();
-
-	try
 	{
-		if(m_socket->is_open())
-		{
-			boost::system::error_code error;
-			m_socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both, error);
-			m_socket->close();
-		}
-	}
-	catch(boost::system::system_error&) {}
-	delete m_socket;
-	m_socket = nullptr;
+		boost::recursive_mutex::scoped_lock lock(m_connectionLock);
 
-	m_connectionLock.unlock();
+		m_readTimer.cancel();
+		m_writeTimer.cancel();
+
+		try
+		{
+			if(m_socket->is_open())
+			{
+				boost::system::error_code error;
+				m_socket->shutdown(boost::asio::ip::tcp::socket::shutdown_both, error);
+				m_socket->close();
+			}
+		}
+		catch(boost::system::system_error&) {}
+
+		delete m_socket;
+		m_socket = nullptr;
+	}
+
 	ConnectionManager::getInstance()->releaseConnection(shared_from_this());
 }
 
@@ -347,7 +342,8 @@ void Connection::parseHeader(const boost::system::error_code& error)
 {
 	LOGt("Connection::parseHeader()");
 
-	m_connectionLock.lock();
+	boost::recursive_mutex::scoped_lock lock(m_connectionLock);
+
 	m_readTimer.cancel();
 
 	int32_t size = m_msg.decodeHeader();
@@ -357,7 +353,6 @@ void Connection::parseHeader(const boost::system::error_code& error)
 	if(m_connectionState != CONNECTION_STATE_OPEN || m_readError)
 	{
 		close();
-		m_connectionLock.unlock();
 		return;
 	}
 
@@ -383,15 +378,14 @@ void Connection::parseHeader(const boost::system::error_code& error)
 			close();
 		}
 	}
-
-	m_connectionLock.unlock();
 }
 
 void Connection::parsePacket(const boost::system::error_code& error)
 {
 	LOGt("Connection::parsePacket()");
 
-	m_connectionLock.lock();
+	boost::recursive_mutex::scoped_lock lock(m_connectionLock);
+
 	m_readTimer.cancel();
 	if(error)
 		handleReadError(error);
@@ -399,7 +393,6 @@ void Connection::parsePacket(const boost::system::error_code& error)
 	if(m_connectionState != CONNECTION_STATE_OPEN || m_readError)
 	{
 		close();
-		m_connectionLock.unlock();
 		return;
 	}
 
@@ -426,7 +419,6 @@ void Connection::parsePacket(const boost::system::error_code& error)
 			if(!m_protocol)
 			{
 				close();
-				m_connectionLock.unlock();
 				return;
 			}
 
@@ -461,18 +453,15 @@ void Connection::parsePacket(const boost::system::error_code& error)
 			close();
 		}
 	}
-
-	m_connectionLock.unlock();
 }
 
-bool Connection::send(OutputMessage_ptr msg)
-{
+bool Connection::send(OutputMessage_ptr msg) {
 	LOGt("Connection::send()");
 
-	m_connectionLock.lock();
+	boost::recursive_mutex::scoped_lock lock(m_connectionLock);
+
 	if(m_connectionState != CONNECTION_STATE_OPEN || m_writeError)
 	{
-		m_connectionLock.unlock();
 		return false;
 	}
 
@@ -494,7 +483,6 @@ bool Connection::send(OutputMessage_ptr msg)
 		OutputMessagePool::getInstance()->autoSend(msg);
 	}
 
-	m_connectionLock.unlock();
 	return true;
 }
 
@@ -544,11 +532,11 @@ uint32_t Connection::getIP() const
 	return 0;
 }
 
-void Connection::onWrite(OutputMessage_ptr msg, const boost::system::error_code& error)
-{
+void Connection::onWrite(OutputMessage_ptr msg, const boost::system::error_code& error) {
 	LOGt("Connection::onWrite()");
 
-	m_connectionLock.lock();
+	boost::recursive_mutex::scoped_lock lock(m_connectionLock);
+
 	m_writeTimer.cancel();
 
 	TRACK_MESSAGE(msg);
@@ -561,19 +549,18 @@ void Connection::onWrite(OutputMessage_ptr msg, const boost::system::error_code&
 		closeSocket();
 		close();
 
-		m_connectionLock.unlock();
 		return;
 	}
 
 	--m_pendingWrite;
-	m_connectionLock.unlock();
 }
 
 void Connection::handleReadError(const boost::system::error_code& error)
 {
 	LOGt("Connection::handleReadError()");
 
-	boost::recursive_mutex::scoped_lock lockClass(m_connectionLock);
+	boost::recursive_mutex::scoped_lock lock(m_connectionLock);
+
 	if(error == boost::asio::error::operation_aborted) //Operation aborted because connection will be closed
 		{}
 	else if(error == boost::asio::error::eof ||
@@ -591,9 +578,9 @@ void Connection::handleReadError(const boost::system::error_code& error)
 	m_readError = true;
 }
 
-void Connection::onReadTimeout()
-{
-	boost::recursive_mutex::scoped_lock lockClass(m_connectionLock);
+void Connection::onReadTimeout() {
+	boost::recursive_mutex::scoped_lock lock(m_connectionLock);
+
 	if(m_pendingRead > 0 || m_readError)
 	{
 		closeSocket();
@@ -601,9 +588,9 @@ void Connection::onReadTimeout()
 	}
 }
 
-void Connection::onWriteTimeout()
-{
-	boost::recursive_mutex::scoped_lock lockClass(m_connectionLock);
+void Connection::onWriteTimeout() {
+	boost::recursive_mutex::scoped_lock lock(m_connectionLock);
+
 	if(m_pendingWrite > 0 || m_writeError)
 	{
 		closeSocket();
@@ -622,9 +609,9 @@ void Connection::handleReadTimeout(std::weak_ptr<Connection> weak, const boost::
 	}
 }
 
-void Connection::handleWriteError(const boost::system::error_code& error)
-{
-	boost::recursive_mutex::scoped_lock lockClass(m_connectionLock);
+void Connection::handleWriteError(const boost::system::error_code& error) {
+	boost::recursive_mutex::scoped_lock lock(m_connectionLock);
+
 	if(error == boost::asio::error::operation_aborted) //Operation aborted because connection will be closed
 		{}
 	else if(error == boost::asio::error::eof ||
