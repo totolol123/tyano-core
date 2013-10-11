@@ -259,6 +259,10 @@ ReturnValue Combat::canDoCombat(const CreatureP& attacker, const CreatureP& targ
 	if(!attacker)
 		return RET_NOERROR;
 
+	if (!attacker->isAlive() || !target->isAlive()) {
+		return RET_NOTPOSSIBLE;
+	}
+
 	bool success = true;
 	CreatureEventList combatEvents = attacker->getCreatureEvents(CREATURE_EVENT_COMBAT);
 	for(CreatureEventList::iterator it = combatEvents.begin(); it != combatEvents.end(); ++it)
@@ -269,6 +273,10 @@ ReturnValue Combat::canDoCombat(const CreatureP& attacker, const CreatureP& targ
 
 	if(!success)
 		return RET_NOTPOSSIBLE;
+
+	if (!attacker->isAlive() || !target->isAlive()) {
+		return RET_NOTPOSSIBLE;
+	}
 
 	const Monster* attackerMonster = attacker->getMonster();
 
