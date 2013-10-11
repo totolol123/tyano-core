@@ -141,8 +141,8 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 
 				for (auto spectator : spectators) {
 					if (auto player = spectator->getPlayer()) {
-						if (player->canSeeCreature(creature.get())) { // FIXME remove .get()
-							player->sendCreatureTurn(creature.get());
+						if (player->canSeeCreature(*creature)) {
+							player->sendCreatureTurn(creature.get());  // FIXME remove .get()
 						}
 					}
 				}
@@ -200,7 +200,7 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 		size_t i = 0;
 		for (auto spectator : spectators) {
 			if (auto player = spectator->getPlayer()) {
-				if (player->canSeeCreature(creature.get())) { // FIXME remove .get()
+				if (player->canSeeCreature(*creature)) {
 					player->sendCreatureMove(creature, this, newPosition, previousTile, previousPosition, previousIndexes[i], teleported, "Tile::addCreature(move)");
 				}
 
@@ -217,7 +217,7 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 	else {
 		for (auto spectator : spectators) {
 			if (auto player = spectator->getPlayer()) {
-				if (player->canSeeCreature(creature.get())) { // FIXME remove .get()
+				if (player->canSeeCreature(*creature)) {
 					player->sendCreatureAppear(creature, "Tile::addCreature(add)"); // FIXME remove .get()
 				}
 			}
@@ -554,7 +554,7 @@ ReturnValue Tile::removeCreature(const CreatureP& creature, const CreatureP& act
 	size_t i = 0;
 	for (auto spectator : spectators) {
 		if (auto player = spectator->getPlayer()) {
-			if (player->canSeeCreature(creature.get())) { // FIXME remove .get()
+			if (player->canSeeCreature(*creature)) {
 				player->sendCreatureDisappear(creature.get(), previousIndexes[i], "Tile::removeCreature()"); // FIXME remove .get()
 			}
 
@@ -1859,7 +1859,7 @@ int32_t Tile::getClientIndexOfThing(const Player* player, const Thing* thing) co
 			if((*cit) == thing)
 				return ++n;
 
-			if(player->canSeeCreature((*cit).get()))
+			if(player->canSeeCreature(**cit))
 				++n;
 		}
 	}

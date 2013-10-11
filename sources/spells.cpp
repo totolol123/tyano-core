@@ -1121,7 +1121,7 @@ bool InstantSpell::playerCastInstant(Player* player, const std::string& param)
 
 		if(!useDirection)
 		{
-			bool canSee = player->canSeeCreature(target);
+			bool canSee = player->canSeeCreature(*target);
 			if(!canSee || !canThrowSpell(player, target))
 			{
 				player->sendCancelMessage(canSee ? RET_CREATUREISNOTREACHABLE : RET_PLAYERWITHTHISNAMEISNOTONLINE);

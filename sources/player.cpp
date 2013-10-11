@@ -68,7 +68,7 @@ void Player::didEnterWorld(World& world) {
 	}
 	else {
 		for (auto& player : server.world().getPlayers()) {
-			if (player->canSeeCreature(this)) {
+			if (player->canSeeCreature(*this)) {
 				player->notifyLogIn(this);
 			}
 		}
@@ -154,7 +154,7 @@ void Player::willEnterWorld(World& world) {
 
 void Player::willExitWorld(World& world) {
 	for (auto& player : server.world().getPlayers()) {
-		if (player->canSeeCreature(this)) {
+		if (player->canSeeCreature(*this)) {
 			player->notifyLogOut(this);
 		}
 	}
@@ -964,30 +964,27 @@ bool Player::canSee(const Position& pos) const
 	return false;
 }
 
-bool Player::canSeeCreature(const Creature* creature) const
+bool Player::canSeeCreature(const Creature& creature) const
 {
-	if(creature == this)
+	if(&creature == this)
 		return true;
 
-	if(const Player* player = creature->getPlayer())
+	if(const Player* player = creature.getPlayer())
 		return !player->isGhost() || getGhostAccess() >= player->getGhostAccess();
 
-	return !creature->isInvisible() || canSeeInvisibility();
+	return !creature.isInvisible() || canSeeInvisibility();
 }
 
-bool Player::canWalkthrough(const Creature* creature) const
+bool Player::canWalkthrough(const Creature& creature) const
 {
-	if(!creature)
-		return true;
-
-	if(creature == this)
+	if(&creature == this)
 		return false;
 
 	if (isGhost()) {
 		return true;
 	}
 
-	const Player* player = creature->getPlayer();
+	const Player* player = creature.getPlayer();
 	if(!player)
 		return false;
 

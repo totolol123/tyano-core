@@ -818,7 +818,7 @@ bool Game::playerMoveCreature(uint32_t playerId, uint32_t movingCreatureId,
 		return false;
 	}
 
-	if((!movingCreature->isPushable() && !player->hasFlag(PlayerFlag_CanPushAllCreatures)) || !player->canSeeCreature(movingCreature.get()))
+	if((!movingCreature->isPushable() && !player->hasFlag(PlayerFlag_CanPushAllCreatures)) || !player->canSeeCreature(*movingCreature))
 	{
 		player->sendCancelMessage(RET_NOTMOVEABLE);
 		return false;
@@ -3260,7 +3260,7 @@ bool Game::playerRequestAddVip(uint32_t playerId, const std::string& vipName)
 
 	bool online = false;
 	if(PlayerP target = getPlayerByName(name))
-		online = player->canSeeCreature(target.get());
+		online = player->canSeeCreature(*target);
 
 	return player->addVIP(guid, name, online);
 }
@@ -3453,7 +3453,7 @@ bool Game::playerSpeakTo(Player* player, SpeakClasses type, const std::string& r
 		return false;
 	}
 
-	bool canSee = player->canSeeCreature(toPlayer.get());
+	bool canSee = player->canSeeCreature(*toPlayer);
 	if(toPlayer->hasCondition(CONDITION_GAMEMASTER, GAMEMASTER_IGNORE)
 		&& !player->hasFlag(PlayerFlag_CannotBeMuted))
 	{
@@ -3689,7 +3689,7 @@ bool Game::internalCreatureSay(Creature* creature, SpeakClasses type, const std:
 		if(!(tmpPlayer = (*it)->getPlayer()))
 			continue;
 
-		if(!ghostMode || tmpPlayer->canSeeCreature(creature))
+		if(!ghostMode || tmpPlayer->canSeeCreature(*creature))
 			tmpPlayer->sendCreatureSay(creature, type, text, &destPos);
 	}
 

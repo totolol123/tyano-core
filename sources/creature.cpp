@@ -1134,6 +1134,10 @@ void Creature::onThink(Duration elapsedTime) {
 		blockTicks = 0;
 	}
 
+	if (!isAlive()) {
+		return;
+	}
+
 	onAttacking(std::chrono::duration_cast<Milliseconds>(elapsedTime).count());
 	executeConditions(std::chrono::duration_cast<Milliseconds>(elapsedTime).count());
 

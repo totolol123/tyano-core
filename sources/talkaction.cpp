@@ -1140,14 +1140,14 @@ bool TalkAction::ghost(Creature* creature, const std::string& cmd, const std::st
 		IOLoginData::getInstance()->updateOnlineStatus(player->getGUID(), true);
 
 		for (auto& otherPlayer : server.world().getPlayers()) {
-			if (!otherPlayer->canSeeCreature(player)) {
+			if (!otherPlayer->canSeeCreature(*player)) {
 				otherPlayer->notifyLogIn(player);
 			}
 		}
 
 		for(it = list.begin(); it != list.end(); ++it)
 		{
-			if((tmpPlayer = (*it)->getPlayer()) && !tmpPlayer->canSeeCreature(player))
+			if((tmpPlayer = (*it)->getPlayer()) && !tmpPlayer->canSeeCreature(*player))
 				tmpPlayer->sendMagicEffect(player->getPosition(), MAGIC_EFFECT_TELEPORT);
 		}
 
@@ -1160,12 +1160,12 @@ bool TalkAction::ghost(Creature* creature, const std::string& cmd, const std::st
 		server.game().internalCreatureChangeVisible(creature, VISIBLE_GHOST_DISAPPEAR);
 		for(it = list.begin(); it != list.end(); ++it)
 		{
-			if((tmpPlayer = (*it)->getPlayer()) && !tmpPlayer->canSeeCreature(player))
+			if((tmpPlayer = (*it)->getPlayer()) && !tmpPlayer->canSeeCreature(*player))
 				tmpPlayer->sendMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 		}
 
 		for (auto& otherPlayer : server.world().getPlayers()) {
-			if (!otherPlayer->canSeeCreature(player)) {
+			if (!otherPlayer->canSeeCreature(*player)) {
 				otherPlayer->notifyLogOut(player);
 			}
 		}

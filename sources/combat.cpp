@@ -295,7 +295,7 @@ ReturnValue Combat::canDoCombat(const CreatureP& attacker, const CreatureP& targ
 				isProtected(const_cast<Player*>(attackerPlayer), const_cast<Player*>(targetPlayer))
 				|| (server.configManager().getBool(ConfigManager::CANNOT_ATTACK_SAME_LOOKFEET) &&
 				attackerPlayer->getDefaultOutfit().lookFeet == targetPlayer->getDefaultOutfit().lookFeet)
-				|| !attackerPlayer->canSeeCreature(targetPlayer))
+				|| !attackerPlayer->canSeeCreature(*targetPlayer))
 				return RET_YOUMAYNOTATTACKTHISPLAYER;
 		}
 	}

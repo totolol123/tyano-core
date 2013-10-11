@@ -943,7 +943,7 @@ void ProtocolGame::GetTileDescription(const Tile* tile, NetworkMessage_ptr msg)
 
 			Creature& creature = **cit;
 
-			if(!player->canSeeCreature(&creature))
+			if(!player->canSeeCreature(creature))
 				continue;
 
 			AddCreature(msg, *cit, StackPosition(creature.getPosition(), count));
@@ -1187,7 +1187,7 @@ void ProtocolGame::updateCreaturesAtPosition(const Position& position) {
 	CreatureVector* creatures = tile->getCreatures();
 	if (creatures != nullptr) {
 		for (const auto& creature : *creatures) {
-			if (!player->canSeeCreature(creature.get())) {
+			if (!player->canSeeCreature(*creature)) {
 				continue;
 			}
 
@@ -1250,7 +1250,7 @@ ProtocolGame::CreatureValidationResult ProtocolGame::validateRegisteredCreature(
 	LOGf("\t\tPosition: " << player->getPosition());
 	LOGf("\tCreature:");
 	LOGf("\t\tID:       " << creature->getId());
-	LOGf("\t\tName:     " << creature->getName() << (creature->isInWorld() ? (player->canSeeCreature(creature.get()) ? "": " (invisible)") : " (not in world)"));
+	LOGf("\t\tName:     " << creature->getName() << (creature->isInWorld() ? (player->canSeeCreature(*creature) ? "": " (invisible)") : " (not in world)"));
 	LOGf("\t\tPrevious: " << previousPosition << (previousPosition.isValid() && !canSee(previousPosition) ? " (too far away)" : ""));
 	LOGf("\t\tExpected: " << expectedPosition.str());
 	LOGf("\t\tNew:      " << newPosition << (newPosition.isValid() && !canSee(newPosition) ? " (too far away)" : ""));
@@ -1264,7 +1264,7 @@ ProtocolGame::CreatureValidationResult ProtocolGame::validateRegisteredCreature(
 
 bool ProtocolGame::canSee(const Creature* c) const
 {
-	return c->isInWorld() && (c == player || (player->canSeeCreature(c) && canSee(c->getPosition())));
+	return c->isInWorld() && (c == player || (player->canSeeCreature(*c) && canSee(c->getPosition())));
 }
 
 bool ProtocolGame::canSee(const Position& pos) const
@@ -2452,7 +2452,7 @@ void ProtocolGame::sendAddTileItem(const Tile* tile, const StackPosition& positi
 		if (tile->getCreatures() != nullptr) {
 			StackPosition creaturePosition(position);
 			for (const auto& creature : boost::adaptors::reverse(*tile->getCreatures())) {
-				if (!player->canSeeCreature(creature.get())) {
+				if (!player->canSeeCreature(*creature)) {
 					continue;
 				}
 
@@ -2508,7 +2508,7 @@ void ProtocolGame::sendRemoveTileItem(const Tile* tile, const StackPosition& pos
 		if (tile->getCreatures() != nullptr) {
 			StackPosition creaturePosition(position);
 			for (const auto& creature : boost::adaptors::reverse(*tile->getCreatures())) {
-				if (!player->canSeeCreature(creature.get())) {
+				if (!player->canSeeCreature(*creature)) {
 					continue;
 				}
 
@@ -2636,7 +2636,7 @@ void ProtocolGame::sendAddCreature(const CreatureP& creature, const StackPositio
 		if(IOLoginData::getInstance()->getNameByGuid((*it), vipName))
 		{
 			PlayerP tmpPlayer = server.game().getPlayerByName(vipName);
-			sendVIP((*it), vipName, (tmpPlayer && player->canSeeCreature(tmpPlayer.get())));
+			sendVIP((*it), vipName, (tmpPlayer && player->canSeeCreature(*tmpPlayer)));
 		}
 	}
 }
@@ -2740,7 +2740,7 @@ void ProtocolGame::sendMoveCreature(const CreatureP& creature, const Tile* newTi
 	}
 	else if(canSee(oldPosition) && canSee(newPosition))
 	{
-		if(!player->canSeeCreature(creature.get()))
+		if(!player->canSeeCreature(*creature))
 			return;
 
 		NetworkMessage_ptr msg = getOutputBuffer();
@@ -2767,7 +2767,7 @@ void ProtocolGame::sendMoveCreature(const CreatureP& creature, const Tile* newTi
 	}
 	else if(canSee(oldPosition))
 	{
-		if(!player->canSeeCreature(creature.get()))
+		if(!player->canSeeCreature(*creature))
 			return;
 		LOGt("gone");
 
@@ -2781,7 +2781,7 @@ void ProtocolGame::sendMoveCreature(const CreatureP& creature, const Tile* newTi
 			updateCreaturesAtPosition(oldPosition);
 		}
 	}
-	else if(canSee(creature.get()) && player->canSeeCreature(creature.get()))
+	else if(canSee(creature.get()) && player->canSeeCreature(*creature))
 	{
 		LOGt("came");
 		NetworkMessage_ptr msg = getOutputBuffer();
@@ -3154,7 +3154,7 @@ void ProtocolGame::AddCreature(NetworkMessage_ptr msg, const CreatureP& creature
 	if(added)
 		msg->AddByte(0x00); // war emblem
 
-	msg->AddByte(!player->canWalkthrough(creature.get()));
+	msg->AddByte(!player->canWalkthrough(*creature));
 }
 
 void ProtocolGame::AddPlayerStats(NetworkMessage_ptr msg)
