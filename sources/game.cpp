@@ -1788,7 +1788,7 @@ ReturnValue Game::internalTeleport(Thing* thing, const Position& newPos, bool pu
 	{
 		if(Creature* creature = thing->getCreature())
 		{
-			return toTile->addCreature(creature);
+			return toTile->addCreature(creature, flags);
 		}
 
 		if(Item* item = thing->getItem())
