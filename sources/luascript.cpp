@@ -207,7 +207,7 @@ int LuaScriptInterface::luaTeleportThingNearPosition(lua_State* L) {
 	auto& game = server.game();
 	auto tile = result.getTile();
 
-	game.internalTeleport(thing, tile->getPosition(), false, directFlags|indirectFlags);
+	game.internalTeleport(thing, tile->getPosition(), false, result.getFlags());
 
 	auto newPosition = thing->getPosition();
 	if (newPosition.distanceTo(previousPosition) >= 2) {
