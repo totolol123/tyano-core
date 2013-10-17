@@ -159,7 +159,7 @@ private:
 
 		bool isFleeing() const;
 
-		virtual BlockType_t blockHit(Creature* attacker, CombatType_t combatType, int32_t& damage,
+		virtual BlockType_t blockHit(const CreatureP& attacker, CombatType_t combatType, int32_t& damage,
 			bool checkDefense = false, bool checkArmor = false);
 
 		int32_t minCombatValue;
