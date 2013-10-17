@@ -92,7 +92,7 @@ ReturnValue Tile::addCreature(const CreatureP& creature, uint32_t flags, const C
 			return RET_DESTINATIONOUTOFREACH;
 		}
 
-		result = destinationTile->addCreature(creature, flags, actor);
+		result = destinationTile->addCreature(creature, FLAG_NOLIMIT|FLAG_IGNOREBLOCKCREATURE, actor);
 		if (result != RET_NOERROR) {
 			return result;
 		}
