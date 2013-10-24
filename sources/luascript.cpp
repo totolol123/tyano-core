@@ -116,7 +116,7 @@ int LuaScriptInterface::luaGetPlayerPremiumExpirationText(lua_State* L) {
 		return 1;
 	}
 
-	auto time = Clock::to_time_t(account->getPremiumExpiration());
+	auto time = RealClock::to_time_t(account->getPremiumExpiration());
 	auto timeComponents = std::gmtime(&time);
 
 	char buffer[512];
