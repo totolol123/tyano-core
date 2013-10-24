@@ -78,6 +78,10 @@ AC_CHECK_HEADERS([mysql/mysql.h])
 AC_CHECK_LIB([mysqlclient], [main])
 
 
+# pthread
+AC_CHECK_LIB([pthread], [pthread_create])
+
+
 # XML >= 2.6.5
 AM_PATH_XML2([2.6.5], [LIBS="$XML_LIBS $LIBS"], AC_MSG_ERROR([*** Cannot find working libxml2.]))
 
