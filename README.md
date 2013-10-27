@@ -112,11 +112,8 @@ Branches not listed below are for working on a single new feature or bigger chan
 ### master [![Build Status](https://travis-ci.org/fluidsonic/tyano-core.png?branch=master)](https://travis-ci.org/fluidsonic/tyano-core)
 Primary branch with the latest set of completed features and fixes.
 
-### stable [![Build Status](https://travis-ci.org/fluidsonic/tyano-core.png?branch=stable)](https://travis-ci.org/fluidsonic/tyano-core)
-Latest version known to be as stable as possible.
-
 ### cutting-edge [![Build Status](https://travis-ci.org/fluidsonic/tyano-core.png?branch=stable)](https://travis-ci.org/fluidsonic/tyano-core)
-Most-recent changes and new features which are still in development. Once completed and tested, changes here will be merged into `master`.
+Most-recent changes and new features which are still in development.
 
 
 Notes
