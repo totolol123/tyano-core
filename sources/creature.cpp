@@ -1364,25 +1364,33 @@ void Creature::dropCorpse(DeathList deathList)
 	}
 
 	if (server.game().internalAddItem(nullptr, tile, corpse.get(), INDEX_WHEREEVER, FLAG_NOLIMIT) == RET_TILEISFULL) {
+		auto now = Clock::now();
+
 		auto items = tile->getItemList();
 		if (items != nullptr) {
-			ItemP itemWithShortestDuration;
-			int32_t minimumDuration = std::numeric_limits<int32_t>::max();
+			ItemP itemWithShortestExpiration;
+			int64_t minimumExpiration = std::numeric_limits<int64_t>::max();
 
 			for (auto item : *items) {
-				if (item->getDecaying() != DECAYING_TRUE) {
-					continue;
+				if (item->getDecaying() == DECAYING_TRUE) {
+					auto duration = item->getDuration();
+					if (duration > 0 && duration < minimumExpiration) {
+						itemWithShortestExpiration = item;
+						minimumExpiration = duration;
+					}
 				}
 
-				auto duration = item->getDuration();
-				if (duration > 0 && duration < minimumDuration) {
-					itemWithShortestDuration = item;
-					minimumDuration = duration;
+				if (item->isReleased()) {
+					auto expiration = std::chrono::duration_cast<Milliseconds>(item->getExpirationTime() - now).count();
+					if (expiration < minimumExpiration) {
+						itemWithShortestExpiration = item;
+						minimumExpiration = expiration;
+					}
 				}
 			}
 
-			if (itemWithShortestDuration != nullptr) {
-				if (server.game().internalRemoveItem(nullptr, itemWithShortestDuration.get(), 1) == RET_NOERROR) {
+			if (itemWithShortestExpiration != nullptr) {
+				if (server.game().internalRemoveItem(nullptr, itemWithShortestExpiration.get(), 1) == RET_NOERROR) {
 					server.game().internalAddItem(nullptr, tile, corpse.get(), INDEX_WHEREEVER, FLAG_NOLIMIT);
 				}
 			}
