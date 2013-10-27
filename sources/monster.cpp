@@ -881,8 +881,6 @@ void Monster::updateTarget() {
 
 
 void Monster::willExitWorld(World& world) {
-	killSummons();
-
 	target(nullptr);
 
 	release();

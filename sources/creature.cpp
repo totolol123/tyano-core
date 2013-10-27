@@ -999,7 +999,7 @@ void Creature::willEnterWorld(World& world) {
 
 void Creature::willExitWorld(World& world) {
 	stopThinking();
-	releaseSummons();
+	killSummons();
 }
 
 
