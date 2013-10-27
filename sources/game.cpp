@@ -5494,15 +5494,16 @@ void Game::loadPlayersRecord()
 	playersRecord = result->getDataInt("record");
 }
 
-bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)
-{
+bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/) {
 	bool done = false;
+	bool modsNeedReload = false;
+
 	switch(reload)
 	{
 		case RELOAD_ACTIONS:
 		{
 			if(server.actions().reload())
-				done = true;
+				modsNeedReload = done = true;
 			else
 				LOGe("[Game::reloadInfo] Failed to reload actions.");
 
@@ -5512,7 +5513,7 @@ bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)
 		case RELOAD_CHAT:
 		{
 			if(server.chat().reload())
-				done = true;
+				modsNeedReload = done = true;
 			else
 				LOGe("[Game::reloadInfo] Failed to reload chat.");
 
@@ -5532,7 +5533,7 @@ bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)
 		case RELOAD_CREATUREEVENTS:
 		{
 			if(server.creatureEvents().reload())
-				done = true;
+				modsNeedReload = done = true;
 			else
 				LOGe("[Game::reloadInfo] Failed to reload creature events.");
 
@@ -5554,7 +5555,7 @@ bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)
 		case RELOAD_GLOBALEVENTS:
 		{
 			if(server.globalEvents().reload())
-				done = true;
+				modsNeedReload = done = true;
 			else
 				LOGe("[Error - Game::reloadInfo] Failed to reload global events.");
 
@@ -5613,7 +5614,7 @@ bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)
 		case RELOAD_MONSTERS:
 		{
 			if(server.monsters().reload())
-				done = true;
+				modsNeedReload = done = true;
 			else
 				LOGe("[Game::reloadInfo] Failed to reload monsters.");
 
@@ -5623,7 +5624,7 @@ bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)
 		case RELOAD_MOVEEVENTS:
 		{
 			if(server.moveEvents().reload())
-				done = true;
+				modsNeedReload = done = true;
 			else
 				LOGe("[Game::reloadInfo] Failed to reload move events.");
 
@@ -5641,14 +5642,14 @@ bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)
 		{
 			//TODO
 			LOGw("[Game::reloadInfo] Cannot reload outfits yet.");
-			done = true;
+			modsNeedReload = done = true;
 			break;
 		}
 
 		case RELOAD_QUESTS:
 		{
 			if(Quests::getInstance()->reload())
-				done = true;
+				modsNeedReload = done = true;
 			else
 				LOGe("[Game::reloadInfo] Failed to reload quests.");
 
@@ -5674,7 +5675,7 @@ bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)
 			else if(!server.monsters().reload())
 				LOGe("[Game::reloadInfo] Failed to reload monsters when reloading spells.");
 			else
-				done = true;
+				modsNeedReload = done = true;
 
 			break;
 		}
@@ -5692,7 +5693,7 @@ bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)
 		case RELOAD_TALKACTIONS:
 		{
 			if(server.talkActions().reload())
-				done = true;
+				modsNeedReload = done = true;
 			else
 				LOGe("[Game::reloadInfo] Failed to reload talk actions.");
 
@@ -5713,7 +5714,7 @@ bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)
 		{
 			//TODO
 			LOGw("[Game::reloadInfo] Cannot reload weapons yet.");
-			done = true;
+			modsNeedReload = done = true;
 			break;
 		}
 
@@ -5743,9 +5744,19 @@ bool Game::reloadInfo(ReloadInfo_t reload, uint32_t playerId/* = 0*/)
 	if(!player || player->isRemoved())
 		return done;
 
+	if (modsNeedReload) {
+		ScriptingManager::getInstance()->reloadMods();
+	}
+
 	if(done)
 	{
-		player->sendTextMessage(MSG_STATUS_CONSOLE_BLUE, "Reloaded successfully.");
+		if (modsNeedReload) {
+			player->sendTextMessage(MSG_STATUS_CONSOLE_BLUE, "Reloaded successfully. Also reloaded mods.");
+		}
+		else {
+			player->sendTextMessage(MSG_STATUS_CONSOLE_BLUE, "Reloaded successfully.");
+		}
+
 		return true;
 	}
 
