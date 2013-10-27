@@ -729,7 +729,7 @@ ReturnValue Tile::testAddCreature(const Creature& creature, uint32_t flags) cons
 		if (existingCreatures != nullptr && !existingCreatures->empty()) {
 			if (monster != nullptr && monster->canPushCreatures() && !monster->hasController()) {
 				for (const auto& existingCreature : *existingCreatures) {
-					if (creature.canWalkthrough(existingCreature.get())) { // FIXME remove .get()
+					if (creature.canWalkthrough(*existingCreature)) {
 						continue;
 					}
 
@@ -749,7 +749,7 @@ ReturnValue Tile::testAddCreature(const Creature& creature, uint32_t flags) cons
 			}
 			else {
 				for (const auto& existingCreature : *existingCreatures) {
-					if (!creature.canWalkthrough(existingCreature.get())) { // FIXME remove .get()
+					if (!creature.canWalkthrough(*existingCreature)) {
 						return RET_NOTENOUGHROOM;
 					}
 				}

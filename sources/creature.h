@@ -276,7 +276,7 @@ private:
 
 		virtual bool canSee(const Position& pos) const;
 		virtual bool canSeeCreature(const CreatureP& creature) const;
-		virtual bool canWalkthrough(const Creature* creature) const {return creature->isWalkable() || creature->isGhost();}
+		virtual bool canWalkthrough(const Creature& creature) const {return creature.isWalkable() || creature.isGhost();}
 
 		Direction getDirection() const {return direction;}
 		void setDirection(Direction dir);
