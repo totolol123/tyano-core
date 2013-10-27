@@ -3375,6 +3375,10 @@ bool Game::playerSay(uint32_t playerId, uint16_t channelId, SpeakClasses type, c
 		case SPEAK_CHANNEL_RA:
 		case SPEAK_CHANNEL_W:
 		{
+			if (player->getGroup() != nullptr) {
+				type = player->getGroup()->getSpeakClass();
+			}
+
 			if(playerTalkToChannel(player.get(), type, text, channelId))
 				return true;
 
@@ -3488,16 +3492,9 @@ bool Game::playerTalkToChannel(Player* player, SpeakClasses type, const std::str
 {
 	switch(type)
 	{
-		case SPEAK_CHANNEL_Y:
-		{
-			if(channelId == CHANNEL_HELP && player->hasFlag(PlayerFlag_TalkOrangeHelpChannel))
-				type = SPEAK_CHANNEL_O;
-			break;
-		}
-
 		case SPEAK_CHANNEL_O:
 		{
-			if(channelId != CHANNEL_HELP || !player->hasFlag(PlayerFlag_TalkOrangeHelpChannel))
+			if(!player->hasFlag(PlayerFlag_TalkOrangeHelpChannel))
 				type = SPEAK_CHANNEL_Y;
 			break;
 		}

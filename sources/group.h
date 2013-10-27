@@ -18,6 +18,9 @@
 #ifndef _GROUP_H
 #define _GROUP_H
 
+#include "const.h"
+
+
 class Group
 {
 	public:
@@ -34,6 +37,8 @@ class Group
 			m_access = m_ghostAccess = m_outfit = m_depotLimit = m_maxVips = m_flags = m_customFlags = 0;
 			m_violationReasons = m_nameViolationFlags = m_statementViolationFlags = 0;
 		}
+
+		SpeakClasses getSpeakClass() const;
 
 		std::string getName() const {return m_name;}
 		void setName(const std::string& v) {m_name = v;}
@@ -70,6 +75,7 @@ class Group
 		bool hasCustomFlag(uint64_t value) const {return (m_customFlags & ((uint64_t)1 << value));}
 
 	private:
+
 		std::string m_name, m_fullName;
 		uint8_t m_violationReasons;
 		int16_t m_nameViolationFlags, m_statementViolationFlags;

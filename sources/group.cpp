@@ -146,6 +146,19 @@ int32_t Groups::getGroupId(const std::string& name)
 	return -1;
 }
 
+
+SpeakClasses Group::getSpeakClass() const {
+	if (hasFlag(PlayerFlag_CanTalkRedChannel)) {
+		return SPEAK_CHANNEL_RN;
+	}
+	if (hasFlag(PlayerFlag_TalkOrangeHelpChannel)) {
+		return SPEAK_CHANNEL_O;
+	}
+
+	return SPEAK_CHANNEL_Y;
+}
+
+
 uint32_t Group::getDepotLimit() const
 {
 	if(m_depotLimit > 0)
