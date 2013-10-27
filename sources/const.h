@@ -480,29 +480,29 @@ enum ShootEffect_t
 
 enum SpeakClasses
 {
-	SPEAK_CLASS_NONE	= 0x00,
-	SPEAK_CLASS_FIRST 	= 0x01,
-	SPEAK_SAY		= SPEAK_CLASS_FIRST,
-	SPEAK_WHISPER		= 0x02,
-	SPEAK_YELL		= 0x03,
-	SPEAK_PRIVATE_PN	= 0x04,
-	SPEAK_PRIVATE_NP	= 0x05,
-	SPEAK_PRIVATE		= 0x06,
-	SPEAK_CHANNEL_Y		= 0x07,
-	SPEAK_CHANNEL_W		= 0x08,
-	SPEAK_RVR_CHANNEL	= 0x09,
-	SPEAK_RVR_ANSWER	= 0x0A,
-	SPEAK_RVR_CONTINUE	= 0x0B,
-	SPEAK_BROADCAST		= 0x0C,
-	SPEAK_CHANNEL_RN	= 0x0D, //red - #c text
-	SPEAK_PRIVATE_RED	= 0x0E,	//@name@text
-	SPEAK_CHANNEL_O		= 0x0F,
-	//SPEAK_UNKNOWN_1		= 0x10,
-	SPEAK_CHANNEL_RA	= 0x11,	//red anonymous - #d text
-	//SPEAK_UNKNOWN_2		= 0x12,
-	SPEAK_MONSTER_SAY	= 0x13,
-	SPEAK_MONSTER_YELL	= 0x14,
-	SPEAK_CLASS_LAST 	= SPEAK_MONSTER_YELL
+	SPEAK_CLASS_NONE	= 0x00,  // crashes client
+	SPEAK_SAY			= 0x01,  // yellow, always in "Default" tab and over character (prepended with "<name> says:")
+	SPEAK_WHISPER		= 0x02,  // yellow, always in "Default" tab and over character (prepended with "<name> whispers:")
+	SPEAK_YELL			= 0x03,  // yellow, always in "Default" tab and over character (prepended with "<name> yells:")
+	SPEAK_PRIVATE_PN	= 0x04,  // crashes client
+	SPEAK_PRIVATE_NP	= 0x05,  // cyan, always in "NPCs" tab and over character (prepended with "<name>:")
+	SPEAK_PRIVATE		= 0x06,  // cyan, always in "Default" tab and in the middle of the screen (prepended with "<name>:")
+	SPEAK_CHANNEL_Y		= 0x07,  // yellow, in destination channel tab
+	SPEAK_CHANNEL_W		= 0x08,  // white, anonymous, in destination channel tab
+	SPEAK_RVR_CHANNEL	= 0x09,  // white, in "Rule Violations" tab
+	SPEAK_RVR_ANSWER	= 0x0A,  // not visible
+	SPEAK_RVR_CONTINUE	= 0x0B,  // not visible
+	SPEAK_BROADCAST		= 0x0C,  // red, always in "Server Log" tab and in the middle of the screen (prepended with "<name>:")
+	SPEAK_CHANNEL_RN	= 0x0D,  // red, in destination channel tab
+	SPEAK_PRIVATE_RED	= 0x0E,  // red, always in "Server Log" tab and in the middle of the screen (prepended with "<name>:")
+	SPEAK_CHANNEL_O		= 0x0F,  // orange, in destination channel tab
+						         // 0x10 unused, crashes client
+	SPEAK_CHANNEL_RA	= 0x11,  // red, anonymous, in destination channel tab
+						         // 0x12 unused, crashes client
+	SPEAK_MONSTER_SAY	= 0x13,  // orange, anonymous, over character
+	SPEAK_MONSTER_YELL	= 0x14,  // orange, anonymous, over character
+	SPEAK_CLASS_FIRST 	= SPEAK_SAY,
+	SPEAK_CLASS_LAST 	= SPEAK_MONSTER_YELL,
 };
 
 enum MessageClasses
