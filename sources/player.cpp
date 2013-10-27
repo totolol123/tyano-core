@@ -1221,6 +1221,10 @@ void Player::sendCancelMessage(ReturnValue message) const
 			sendCancel("Turn secure mode off if you really want to attack unmarked players.");
 			break;
 
+		case RET_PREMIUM_REQUIRED:
+			sendCancel("You need a premium account to perform this action.");
+			break;
+
 		case RET_YOUNEEDTOLEARNTHISSPELL:
 			sendCancel("You need to learn this move first.");
 			break;
@@ -3563,9 +3567,9 @@ void Player::onTargetCreatureGainHealth(Creature* target, int32_t points)
 	}
 }
 
-bool Player::onKilledCreature(Creature* target, uint32_t& flags)
+bool Player::onKilledCreature(Creature* target, uint32_t& flags, double experience)
 {
-	if(!Creature::onKilledCreature(target, flags))
+	if(!Creature::onKilledCreature(target, flags, experience))
 		return false;
 
 	if(hasFlag(PlayerFlag_NotGenerateLoot))
@@ -3648,7 +3652,7 @@ bool Player::rateExperience(double& gainExp, bool fromMonster)
 	return true;
 }
 
-void Player::onGainExperience(double& gainExp, bool fromMonster, bool multiplied)
+void Player::onGainExperience(double& gainExp, bool fromMonster, bool multiplied, CountBlock_t& counter)
 {
 	if(party && party->isSharedExperienceEnabled() && party->isSharedExperienceActive())
 	{
@@ -3658,7 +3662,7 @@ void Player::onGainExperience(double& gainExp, bool fromMonster, bool multiplied
 	}
 
 	if(gainExperience(gainExp, fromMonster))
-		Creature::onGainExperience(gainExp, fromMonster, true);
+		Creature::onGainExperience(gainExp, fromMonster, true, counter);
 }
 
 void Player::onGainSharedExperience(double& gainExp, bool fromMonster, bool multiplied)
@@ -3828,10 +3832,10 @@ Skulls_t Player::getSkullClient(const Creature* creature) const
 {
 	if(const Player* player = creature->getPlayer())
 	{
-		if(server.game().getWorldType() != WORLD_TYPE_PVP)
+		if(server.game().getWorldType() != WORLD_TYPE_PVP || player == this)
 			return SKULL_NONE;
 
-		if((player == this || (skull != SKULL_NONE && player->getSkull() < SKULL_RED)) && player->hasAttacked(this))
+		if((skull != SKULL_NONE && player->getSkull() < SKULL_RED) && player->hasAttacked(this))
 			return SKULL_YELLOW;
 
 		if(player->getSkull() == SKULL_NONE && isPartner(player) && server.game().getWorldType() != WORLD_TYPE_NO_PVP)

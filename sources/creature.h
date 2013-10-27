@@ -240,6 +240,25 @@ private:
 		Creature();
 
 	public:
+
+		struct CountBlock_t
+		{
+			uint32_t total;
+			int64_t ticks, start;
+			double experience;
+
+			CountBlock_t(uint32_t points)
+				: experience(0)
+			{
+				start = ticks = OTSYS_TIME();
+				total = points;
+			}
+
+			CountBlock_t() :
+				experience(0)
+			{start = ticks = total = 0;}
+		};
+
 		virtual ~Creature();
 
 		virtual Creature* getCreature() {return this;}
@@ -384,9 +403,9 @@ private:
 		virtual void onAttackedCreatureDrain(Creature* target, int32_t points);
 		virtual void onSummonAttackedCreatureDrain(Creature* summon, Creature* target, int32_t points) {}
 		virtual void onTargetCreatureGainHealth(Creature* target, int32_t points);
-		virtual void onAttackedCreatureKilled(Creature* target);
-		virtual bool onKilledCreature(Creature* target, uint32_t& flags);
-		virtual void onGainExperience(double& gainExp, bool fromMonster, bool multiplied);
+		virtual void onAttackedCreatureKilled(Creature* target, CountBlock_t& counter);
+		virtual bool onKilledCreature(Creature* target, uint32_t& flags, double experience);
+		virtual void onGainExperience(double& gainExp, bool fromMonster, bool multiplied, CountBlock_t& counter);
 		virtual void onGainSharedExperience(double& gainExp, bool fromMonster, bool multiplied);
 		virtual void onAttackedCreatureBlockHit(Creature* target, BlockType_t blockType) {}
 		virtual void onBlockHit(BlockType_t blockType) {}
@@ -478,19 +497,6 @@ private:
 
 		//combat variables
 		Creature* attackedCreature;
-		struct CountBlock_t
-		{
-			uint32_t total;
-			int64_t ticks, start;
-
-			CountBlock_t(uint32_t points)
-			{
-				start = ticks = OTSYS_TIME();
-				total = points;
-			}
-
-			CountBlock_t() {start = ticks = total = 0;}
-		};
 
 		typedef std::map<uint32_t, CountBlock_t> CountMap;
 		CountMap damageMap;

@@ -138,6 +138,7 @@ class Spell : public BaseSpell, virtual public EventBase
 		int32_t getManaPercent() const {return manaPercent;}
 		uint32_t getExhaustion() const {return exhaustion;}
 		bool isEnabled() const {return enabled;}
+		bool requiresPremium() const;
 
 		virtual bool isInstant() const = 0;
 		bool isLearnable() const {return learnable;}
@@ -156,6 +157,7 @@ class Spell : public BaseSpell, virtual public EventBase
 		int32_t magLevel;
 		bool learnable;
 		bool enabled;
+		bool _requiresPremium;
 
 		int32_t mana;
 		int32_t manaPercent;

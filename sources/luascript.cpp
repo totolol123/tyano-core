@@ -3635,6 +3635,7 @@ int32_t LuaScriptInterface::luaGetPlayerInstantSpellInfo(lua_State* L)
 	setField(L, "mlevel", spell->getMagicLevel());
 	setField(L, "mana", spell->getManaCost(player));
 	setField(L, "manapercent", spell->getManaPercent());
+	setFieldBool(L, "requiresPremium", spell->requiresPremium());
 	return 1;
 }
 
@@ -3656,6 +3657,7 @@ int32_t LuaScriptInterface::luaGetInstantSpellInfo(lua_State* L)
 	setField(L, "mlevel", spell->getMagicLevel());
 	setField(L, "mana", spell->getManaCost(nullptr));
 	setField(L, "manapercent", spell->getManaPercent());
+	setFieldBool(L, "requiresPremium", spell->requiresPremium());
 	return 1;
 }
 

@@ -384,16 +384,30 @@ bool Monster::isMasterInRange() const {
 
 
 void Monster::notifyMasterChanged(const CreatureP& previousMaster) {
-	if (!isInWorld()) {
-		return;
-	}
-
-	Game& game = server.game();
-
 	SpectatorList spectators;
-	game.getSpectators(spectators, getPosition(), false, true);
-	if (hasMaster()) {
-		game.getSpectators(spectators, _master->getPosition(), true, true);
+
+	if (isAlive()) {
+		Game& game = server.game();
+
+		game.getSpectators(spectators, getPosition(), false, true);
+		if (hasMaster()) {
+			game.getSpectators(spectators, _master->getPosition(), true, true);
+		}
+
+		if (previousMaster != nullptr && std::find(spectators.begin(), spectators.end(), previousMaster) == spectators.end()) {
+			spectators.push_back(previousMaster);
+		}
+		if (_master != nullptr && std::find(spectators.begin(), spectators.end(), _master) == spectators.end()) {
+			spectators.push_back(_master);
+		}
+	}
+	else {
+		if (previousMaster != nullptr) {
+			spectators.push_back(previousMaster);
+		}
+		if (_master != nullptr) {
+			spectators.push_back(_master);
+		}
 	}
 
 	for (const auto& spectator : spectators) {
@@ -594,21 +608,13 @@ void Monster::setMaster(const CreatureP& master) {
 		return;
 	}
 
-	const CreatureP& previousMaster = _master;
+	auto previousMaster = _master;
 	_master = master;
 
-	if (master != nullptr) {
-		setDropLoot(LOOT_DROP_NONE);
-		setLossSkill(false);
-
-		removeFromRaid();
-		removeFromSpawn();
-	}
-	else {
-		setDropLoot(LOOT_DROP_NONE);
-		setLossSkill(false);
-	}
-
+	setDropLoot(LOOT_DROP_NONE);
+	setLossSkill(false);
+	removeFromRaid();
+	removeFromSpawn();
 	stopFollowing();
 	target(nullptr);
 

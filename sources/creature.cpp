@@ -1261,6 +1261,13 @@ bool Creature::onDeath()
 	if(limit > 0 && size > limit)
 		size = limit;
 
+	auto& world = server.world();
+	for (auto& damageEntry : damageMap) {
+		if (auto creature = world.getCreatureById(damageEntry.first)) {
+			creature->onAttackedCreatureKilled(this, damageEntry.second);
+		}
+	}
+
 	Creature* tmp = nullptr;
 	CreatureVector justifyVec;
 	for(DeathList::iterator it = deathList.begin(); it != deathList.end(); ++it, ++i)
@@ -1292,18 +1299,17 @@ bool Creature::onDeath()
 			tmp = nullptr;
 		}
 
-		if(!it->getKillerCreature()->onKilledCreature(this, flags) && lastHit)
+		double experience = 0;
+		auto damageIt = damageMap.find(it->getKillerCreature()->getId());
+		if (damageIt != damageMap.end()) {
+			experience = damageIt->second.experience;
+		}
+
+		if(!it->getKillerCreature()->onKilledCreature(this, flags, experience) && lastHit)
 			return false;
 
 		if(hasBitSet((uint32_t)KILLFLAG_UNJUSTIFIED, flags))
 			it->setUnjustified(true);
-	}
-
-	auto& world = server.world();
-	for (auto& damageEntry : damageMap) {
-		if (auto creature = world.getCreatureById(damageEntry.first)) {
-			creature->onAttackedCreatureKilled(this);
-		}
 	}
 
 	dropCorpse(deathList);
@@ -1805,51 +1811,55 @@ void Creature::onTargetCreatureGainHealth(Creature* target, int32_t points)
 	target->addHealPoints(this, points);
 }
 
-void Creature::onAttackedCreatureKilled(Creature* target)
+void Creature::onAttackedCreatureKilled(Creature* target, CountBlock_t& counter)
 {
 	if(target == this)
 		return;
 
 	double gainExp = target->getGainedExperience(this);
-	onGainExperience(gainExp, !target->getPlayer(), false);
+	onGainExperience(gainExp, !target->getPlayer(), false, counter);
 }
 
-bool Creature::onKilledCreature(Creature* target, uint32_t& flags)
+bool Creature::onKilledCreature(Creature* target, uint32_t& flags, double experience)
 {
 	bool ret = true;
 
 	CreatureP directOwner = getDirectOwner();
 	if (directOwner != nullptr) {
-		ret = directOwner->onKilledCreature(target, flags);
+		ret = directOwner->onKilledCreature(target, flags, 0);
 	}
 
 	CreatureEventList killEvents = getCreatureEvents(CREATURE_EVENT_KILL);
 	if(!hasBitSet((uint32_t)KILLFLAG_LASTHIT, flags))
 	{
 		for(CreatureEventList::iterator it = killEvents.begin(); it != killEvents.end(); ++it)
-			(*it)->executeKill(this, target, false);
+			(*it)->executeKill(this, target, false, experience);
 
 		return true;
 	}
 
 	for(CreatureEventList::iterator it = killEvents.begin(); it != killEvents.end(); ++it)
 	{
-		if(!(*it)->executeKill(this, target, true) && ret)
+		if(!(*it)->executeKill(this, target, true, experience) && ret)
 			ret = false;
 	}
 
 	return ret;
 }
 
-void Creature::onGainExperience(double& gainExp, bool fromMonster, bool multiplied)
+void Creature::onGainExperience(double& gainExp, bool fromMonster, bool multiplied, CountBlock_t& counter)
 {
 	if(gainExp <= 0)
 		return;
 
+	counter.experience = gainExp;
+
 	CreatureP directOwner = getDirectOwner();
 	if (directOwner != nullptr) {
 		gainExp = gainExp / 2;
-		directOwner->onGainExperience(gainExp, fromMonster, multiplied);
+
+		CountBlock_t fake = counter;
+		directOwner->onGainExperience(gainExp, fromMonster, multiplied, fake);
 	}
 	else if(!multiplied)
 		gainExp *= server.configManager().getDouble(ConfigManager::RATE_EXPERIENCE);

@@ -24,6 +24,7 @@
 #include "housetile.h"
 #include "combat.h"
 
+#include "account.h"
 #include "condition.h"
 #include "creatureevent.h"
 #include "items.h"
@@ -450,6 +451,7 @@ LOGGER_DEFINITION(Spell);
 
 
 Spell::Spell()
+	: _requiresPremium(false)
 {
 	level = 0;
 	magLevel = 0;
@@ -467,6 +469,12 @@ Spell::Spell()
 	isAggressive = true;
 	learnable = false;
 }
+
+
+bool Spell::requiresPremium() const {
+	return _requiresPremium;
+}
+
 
 bool Spell::configureSpell(xmlNodePtr p)
 {
@@ -518,6 +526,9 @@ bool Spell::configureSpell(xmlNodePtr p)
 
 	if(readXMLString(p, "enabled", strValue))
 		enabled = booleanString(strValue);
+
+	if(readXMLString(p, "premium", strValue))
+		_requiresPremium = booleanString(strValue);
 
 	if(readXMLString(p, "needtarget", strValue))
 		needTarget = booleanString(strValue);
@@ -576,6 +587,11 @@ bool Spell::playerSpellCheck(Player* player) const
 
 	if(!isEnabled())
 		return false;
+
+	if (_requiresPremium && !player->getAccount()->hasPremium()) {
+		player->sendCancelMessage(RET_PREMIUM_REQUIRED);
+		return false;
+	}
 
 	bool exhausted = false;
 	if(isAggressive)

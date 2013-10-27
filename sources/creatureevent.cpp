@@ -1273,7 +1273,7 @@ uint32_t CreatureEvent::executeCast(Creature* creature, Creature* target/* = nul
 	}
 }
 
-uint32_t CreatureEvent::executeKill(Creature* creature, Creature* target, bool lastHit)
+uint32_t CreatureEvent::executeKill(Creature* creature, Creature* target, bool lastHit, double experience)
 {
 	//onKill(cid, target, lastHit)
 	if(m_interface->reserveEnv())
@@ -1287,6 +1287,7 @@ uint32_t CreatureEvent::executeKill(Creature* creature, Creature* target, bool l
 
 			scriptstream << "local target = " << env->addThing(target) << std::endl;
 			scriptstream << "local lastHit = " << (lastHit ? "true" : "false") << std::endl;
+			scriptstream << "local experience = " << experience << std::endl;
 
 			scriptstream << m_scriptData;
 			bool result = true;
@@ -1310,8 +1311,9 @@ uint32_t CreatureEvent::executeKill(Creature* creature, Creature* target, bool l
 			lua_pushnumber(L, env->addThing(creature));
 			lua_pushnumber(L, env->addThing(target));
 			lua_pushboolean(L, lastHit);
+			lua_pushnumber(L, experience);
 
-			bool result = m_interface->callFunction(3);
+			bool result = m_interface->callFunction(4);
 			m_interface->releaseEnv();
 			return result;
 		}

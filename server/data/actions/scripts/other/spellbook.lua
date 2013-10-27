@@ -24,7 +24,12 @@ function onUse(cid, item, fromPosition, itemEx, toPosition)
 			prevLevel = spell.level
 		end
 
-		text = text .. line .. "  " .. spell.words .. " - " .. spell.name .. " : " .. spell.mana .. "\n"
+		text = text .. line .. "  " .. spell.words .. " (" .. spell.mana .. " mana"
+		if spell.requiresPremium then
+			text = text .. ", premium"
+		end
+		
+		text = text .. ")\n   " .. spell.name .. "\n"
 	end
 
 	doShowTextDialog(cid, item.itemid, text)

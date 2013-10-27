@@ -243,12 +243,12 @@ Tile* Tile::getAvailableItemForwardingTile(const Item& item) const {
 
 	auto destination = getForwardingDestination();
 	if (!destination.isValid()) {
-		LOGe("Forwarder at position " << getPosition() << " leads to invalid position.");
+		LOGe("Forwarder " << this->getTeleporter()->getId() << " at position " << getPosition() << " leads to invalid position.");
 		return nullptr;
 	}
 
 	if (destination == getPosition()) {
-		LOGe("Forwarder at position " << getPosition() << " leads to itself.");
+		LOGe("Forwarder " << this->getTeleporter()->getId() << " at position " << getPosition() << " leads to itself.");
 		return nullptr;
 	}
 
@@ -256,7 +256,7 @@ Tile* Tile::getAvailableItemForwardingTile(const Item& item) const {
 
 	auto tile = game.getTile(destination);
 	if (tile == nullptr) {
-		LOGe("Forwarder at position " << getPosition() << " leads to unreachable destination " << destination << ".");
+		LOGe("Forwarder " << this->getTeleporter()->getId() << " at position " << getPosition() << " leads to unreachable destination " << destination << ".");
 		return nullptr;
 	}
 
