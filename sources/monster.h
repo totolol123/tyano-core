@@ -65,6 +65,7 @@ public:
 	        bool       hasRaid            () const;
 	        bool       hasSpawn           () const;
 	virtual bool       isEnemy            (const Creature& creature) const;
+	virtual void       onCreatureMove     (const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport);
 	        void       release            ();
 	        void       removeFromRaid     ();
 	        void       removeFromSpawn    ();
@@ -90,6 +91,7 @@ private:
 	void babble                 ();
 	bool isMasterInRange        () const;
 	void notifyMasterChanged    (const CreatureP& previousMaster);
+	void pushMonsters           ();
 	void retarget               ();
 	void setMaster              (const CreatureP& master);
 	void setRetargetDelay       (Duration retargetDelay);
@@ -188,8 +190,6 @@ private:
 
 		bool pushItem(Item* item, int32_t radius);
 		void pushItems(Tile* tile);
-		bool pushCreature(Creature* creature);
-		void pushCreatures(Tile* tile);
 
 		void onThinkYell(uint32_t interval);
 		void onThinkDefense(uint32_t interval);

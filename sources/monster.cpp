@@ -292,9 +292,6 @@ Direction Monster::getWanderingDirection() const {
 
 			if(canPushItems())
 				const_cast<Monster*>(this)->pushItems(tile);
-
-			if(canPushCreatures())
-				const_cast<Monster*>(this)->pushCreatures(tile);
 		}
 	}
 
@@ -432,6 +429,19 @@ void Monster::onAttackedCreatureDrain(Creature* target, int32_t points) {
 }
 
 
+void Monster::onCreatureMove(const CreatureP& creature, const Position& origin, Tile* originTile, const Position& destination, Tile* destinationTile, bool teleport) {
+	Creature::onCreatureMove(creature, origin, originTile, destination, destinationTile, teleport);
+
+	if (creature == this) {
+		if (!this->isAlive()) {
+			return;
+		}
+
+		this->pushMonsters();
+	}
+}
+
+
 bool Monster::onDeath() {
 	if (!Creature::onDeath()) {
 		return false;
@@ -471,6 +481,70 @@ void Monster::onThinkingStarted() {
 	Creature::onThinkingStarted();
 
 	startWandering();
+}
+
+
+void Monster::pushMonsters() {
+	if (!isAlive() || !canPushCreatures()) {
+		return;
+	}
+
+	auto creatures = getTile()->getCreatures();
+	if (creatures == nullptr) {
+		return;
+	}
+
+	bool hasPushableMonsters = false;
+	for (const auto& creature : *creatures) {
+		if (creature == this) {
+			continue;
+		}
+
+		auto monster = creature->getMonster();
+		if (monster == nullptr) {
+			continue;
+		}
+		if (!monster->isPushable()) {
+			continue;
+		}
+
+		hasPushableMonsters = true;
+		break;
+	}
+
+	if (!hasPushableMonsters) {
+		// optimization to prevent unnecessary vector copy below
+		return;
+	}
+
+	auto initialCreatures = *creatures;
+
+	bool killedCreatures = false;
+	for (const auto& creature : initialCreatures) {
+		if (creature == this) {
+			continue;
+		}
+
+		auto monster = creature->getMonster();
+		if (monster == nullptr) {
+			continue;
+		}
+		if (!monster->isPushable()) {
+			continue;
+		}
+
+		Direction direction = monster->getRandomStepDirection(false);
+		if (!monster->stepInDirection(direction)) {
+			monster->setDropLoot(LOOT_DROP_NONE);
+			monster->drainHealth(this, COMBAT_DEATHDAMAGE, -monster->getHealth());
+
+			killedCreatures = true;
+		}
+	}
+
+	if (killedCreatures) {
+		server.game().addMagicEffect(getPosition(), MAGIC_EFFECT_BLOCKHIT);
+	}
 }
 
 
@@ -1144,60 +1218,6 @@ void Monster::pushItems(Tile* tile)
 
 	if(removeCount > 0)
 		server.game().addMagicEffect(tile->getPosition(), MAGIC_EFFECT_POFF);
-}
-
-bool Monster::pushCreature(Creature* creature)
-{
-	std::vector<Direction> dirVector;
-	dirVector.push_back(Direction::NORTH);
-	dirVector.push_back(Direction::SOUTH);
-	dirVector.push_back(Direction::WEST);
-	dirVector.push_back(Direction::EAST);
-
-	std::random_shuffle(dirVector.begin(), dirVector.end());
-
-	Tile* tile = nullptr;
-	for(auto it = dirVector.begin(); it != dirVector.end(); ++it)
-	{
-		if((tile = server.game().getTile(Spells::getCasterPosition(creature, (*it)))) && !tile->hasProperty(
-			BLOCKPATH) && server.game().internalMoveCreature(creature, (*it)) == RET_NOERROR)
-			return true;
-	}
-
-	return false;
-}
-
-
-void Monster::pushCreatures(Tile* tile) {
-	if (tile->getCreatures() == nullptr) {
-		return;
-	}
-
-	auto creatures = *tile->getCreatures();
-
-	bool killedCreatures = false;
-	for (const auto& creature : creatures) {
-		auto monster = creature->getMonster();
-		if (monster == nullptr) {
-			continue;
-		}
-		if (!monster->isPushable()) {
-			continue;
-		}
-
-		if (pushCreature(monster)) {
-			continue;
-		}
-
-		monster->setDropLoot(LOOT_DROP_NONE);
-		monster->drainHealth(this, COMBAT_DEATHDAMAGE, -monster->getHealth());
-
-		killedCreatures = true;
-	}
-
-	if (killedCreatures) {
-		server.game().addMagicEffect(tile->getPosition(), MAGIC_EFFECT_BLOCKHIT);
-	}
 }
 
 
