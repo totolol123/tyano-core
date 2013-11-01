@@ -10,8 +10,13 @@ CLEANFILES = sources/otpch.h.gch
 
 include sources/$(DEPDIR)/server-otpch.Po
 
-server_CPPFLAGS = $(LOG4CXX_CFLAGS) $(LUA_CFLAGS) $(XML_CPPFLAGS)
+BOOST_LDFLAGS_ALL = $(BOOST_DATE_TIME_LDFLAGS) $(BOOST_FILESYSTEM_LDFLAGS) $(BOOST_REGEX_LDFLAGS) $(BOOST_SYSTEM_LDFLAGS) $(BOOST_THREAD_LDFLAGS)
+BOOST_LIBS_ALL = $(BOOST_DATE_TIME_LIBS) $(BOOST_FILESYSTEM_LIBS) $(BOOST_REGEX_LIBS) $(BOOST_SYSTEM_LIBS) $(BOOST_THREAD_LIBS)
+
+server_CPPFLAGS = $(BOOST_CPPFLAGS) $(LOG4CXX_CFLAGS) $(LUA_CFLAGS) $(XML_CPPFLAGS)
 server_CXXFLAGS = $(AM_CXXFLAGS) -iquote "$(builddir)/sources"
+server_LDADD = $(BOOST_LIBS_ALL)
+server_LDFLAGS = $(BOOST_LDFLAGS_ALL)
 server_SOURCES = sources/otpch.h.gch \
                  sources/attributes/Attribute.cpp \
                  sources/attributes/Scheme.cpp \

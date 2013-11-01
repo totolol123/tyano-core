@@ -12,7 +12,7 @@ You also need [Cygwin Ports](http://sourceware.org/cygwinports/) because the req
     - automake (1.11 or newer)
     - bash-completion
     - g++ (4.7.2 or newer)
-    - libboost1.50-all-dev (or newer)
+    - libboost-all-dev (1.50 or newer)
     - libgmp-dev
     - liblog4cxx10-dev
     - liglua5.1-dev
@@ -22,14 +22,13 @@ You also need [Cygwin Ports](http://sourceware.org/cygwinports/) because the req
     - make
     - pkg-config
     
-    e.g.
+    e.g. on Ubuntu 13.10 (Saucy Salamander)
     ```bash
-    apt-get install autoconf automake bash-completion g++ libboost1.50-all-dev libgmp-dev liblog4cxx10-dev
-            liblua5.1-dev libmysqlclient-dev libxml2-dev libz-dev make pkg-config
+    apt-get install autoconf automake bash-completion g++ libboost-all-dev libgmp-dev liblog4cxx10-dev liblua5.1-dev libmysqlclient-dev libxml2-dev libz-dev make pkg-config
     ```
     
     If you use Windows then you have to use Cygwin's `setup.exe` to install these packages.
-   
+    
 2.  Prepare the project using `./prepare.sh`.  
     You can pass additional arguments which will be passed to `configure`.
     
