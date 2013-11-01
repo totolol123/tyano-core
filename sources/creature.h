@@ -218,17 +218,17 @@ private:
 	static const Duration THINK_INTERVAL;
 
 	CreatureP         _followedCreature;
-	Id                _id;
-	bool              _inWorld;
-	bool              _needsNewRouteToFollowedCreature;
+	Id                _id = 0;
+	bool              _inWorld = false;
+	bool              _needsNewRouteToFollowedCreature = false;
 	Time              _nextMoveTime;
 	Time              _nextWanderingTime;
 	Time              _previousThinkTime;
 	Route             _route;
-	Duration          _thinkDuration;
-	Scheduler::TaskId _thinkTaskId;
-	Tile*             _tile;
-	bool              _wandering;
+	Duration          _thinkDuration = Duration::zero();
+	Scheduler::TaskId _thinkTaskId = 0;
+	Tile*             _tile = nullptr;
+	bool              _wandering = false;
 
 	friend class Monster;
 

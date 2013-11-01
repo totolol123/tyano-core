@@ -170,7 +170,7 @@ private:
 		static constexpr const Time EXPIRATION_TIME_NEVER = Time::max();
 
 		Time                _breakTime       = BREAK_TIME_NEVER;
-		Duration            _expirationDelay;
+		Duration            _expirationDelay = Duration::zero();
 		Time                _expirationTime  = EXPIRATION_TIME_NEVER;
 		Weak<SchedulerTask> _task;
 

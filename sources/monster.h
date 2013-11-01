@@ -106,12 +106,12 @@ private:
 
 	LOGGER_DECLARATION;
 
-	Duration     _babbleDelay;
+	Duration     _babbleDelay = Duration::zero();
 	CreatureP    _master;
-	Raid*        _raid;
-	Duration     _retargetDelay;
-	Spawn*       _spawn;
-	MonsterType* _type;
+	Raid*        _raid = nullptr;
+	Duration     _retargetDelay = Duration::zero();
+	Spawn*       _spawn = nullptr;
+	MonsterType* _type = nullptr;
 
 
 

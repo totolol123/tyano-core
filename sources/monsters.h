@@ -87,11 +87,11 @@ class MonsterType {
 
 public:
 
-	uint8_t     babbleChance;
+	uint8_t     babbleChance = 0;
 	VoiceVector babbleEntries;
-	Duration    babbleInterval;
-	uint8_t     retargetChance;
-	Duration    retargetInterval;
+	Duration    babbleInterval = Duration::zero();
+	uint8_t     retargetChance = 0;
+	Duration    retargetInterval = Duration::zero();
 
 
 

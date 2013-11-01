@@ -1015,14 +1015,7 @@ void Creature::willExitWorld(World& world) {
 
 
 
-Creature::Creature()
-	: _id(0),
-	  _inWorld(false),
-	  _needsNewRouteToFollowedCreature(false),
-	  _thinkTaskId(0),
-	  _tile(nullptr),
-	  _wandering(false)
-{
+Creature::Creature() {
 	direction = Direction::SOUTH;
 	lootDrop = LOOT_DROP_FULL;
 	skillLoss = true;
